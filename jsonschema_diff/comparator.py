@@ -262,7 +262,7 @@ class SchemaComparator:
             str: Formatted differences string.
         """
         # Pre-process all differences to combine type/format changes
-        processed_differences = self._combine_type_format_changes(differences)
+        processed_differences = self._combine_type_format_changes(differences, self.old_schema, self.new_schema)
         
         output: List[str] = []
         for path, old_val, new_val in processed_differences:
@@ -277,7 +277,9 @@ class SchemaComparator:
                 elif isinstance(new_val, dict):
                     # Recursively expand dictionary additions
                     sub_diffs = self._find_differences({}, new_val, path)
-                    for sub_path, sub_old, sub_new in sub_diffs:
+                    # Apply type/format combination to the expanded differences
+                    processed_sub_diffs = self._combine_type_format_changes(sub_diffs, self.old_schema, self.new_schema)
+                    for sub_path, sub_old, sub_new in processed_sub_diffs:
                         sub_p = self._format_path(sub_path)
                         # Skip only properties that are themselves objects (like 'properties')
                         # but NOT 'items' as it's a valid schema field
@@ -286,7 +288,8 @@ class SchemaComparator:
                         # If this is a dict value, expand it recursively too
                         if isinstance(sub_new, dict):
                             nested_diffs = self._find_differences({}, sub_new, sub_path)
-                            for nested_path, nested_old, nested_new in nested_diffs:
+                            nested_processed = self._combine_type_format_changes(nested_diffs, self.old_schema, self.new_schema)
+                            for nested_path, nested_old, nested_new in nested_processed:
                                 nested_p = self._format_path(nested_path)
                                 if len(nested_path) > 0 and nested_path[-1] == "properties":
                                     continue
@@ -319,9 +322,16 @@ class SchemaComparator:
                     ))
             # Simple value replacement
             elif not isinstance(old_val, (dict, list)) and not isinstance(new_val, (dict, list)):
-                output.append(self._format_output(
-                    f"{p}: {json.dumps(old_val)} -> {json.dumps(new_val)}", "replace"
-                ))
+                if old_val == new_val:
+                    # This is a no-diff context line (e.g., showing type for format changes)
+                    output.append(self._format_output(
+                        f"{p}: {json.dumps(old_val, ensure_ascii=False)}", "no_diff"
+                    ))
+                else:
+                    # This is an actual replacement
+                    output.append(self._format_output(
+                        f"{p}: {json.dumps(old_val)} -> {json.dumps(new_val)}", "replace"
+                    ))
             # Complex structures
             else:
                 old_json = json.dumps(old_val, indent=2, ensure_ascii=False)
@@ -338,13 +348,18 @@ class SchemaComparator:
         return "\n".join(output).rstrip()
 
     def _combine_type_format_changes(
-        self, differences: List[Tuple[List[str], Any, Any]]
+        self, differences: List[Tuple[List[str], Any, Any]], 
+        old_schema: Optional[Dict[str, Any]] = None, 
+        new_schema: Optional[Dict[str, Any]] = None
     ) -> List[Tuple[List[str], Any, Any]]:
         """
         Combine type and format changes into a single entry when they change together.
+        Also adds context information for standalone format changes.
         
         Args:
             differences: List of differences as (path, old_value, new_value).
+            old_schema: Original schema for context lookup.
+            new_schema: New schema for context lookup.
             
         Returns:
             List of processed differences with combined type/format changes.
@@ -369,7 +384,7 @@ class SchemaComparator:
         # Process grouped type/format changes
         for base_path_str, params in grouped.items():
             if "type" in params and "format" in params:
-                # Both type and format are present - determine how to handle them
+                # Both type and format are present in differences - determine how to handle them
                 type_path, type_old, type_new = params["type"]
                 format_path, format_old, format_new = params["format"]
                 
@@ -424,8 +439,36 @@ class SchemaComparator:
                         combined_new = f"{type_new}/{format_new}"
                         result.append((type_path, format_old, combined_new))
                 else:
-                    # Different operation types or missing values - add separately
-                    result.append(params["type"])
+                    # When only format changes and type doesn't change, show type for context
+                    if format_operation in ("change", "add", "remove") and type_operation == "none":
+                        # Type didn't change, show it for context
+                        result.append((type_path, type_old, type_old))  # no_diff for type
+                        result.append(params["format"])
+                    # When only type changes, no need for format context in most cases
+                    elif type_operation in ("change", "add", "remove") and format_operation == "none":
+                        result.append(params["type"])
+                        # Don't show format context for type-only changes to keep it clean
+                    else:
+                        # Different operation types - add separately
+                        result.append(params["type"])
+                        result.append(params["format"])
+            elif "format" in params and "type" not in params:
+                # Only format changes, but we need to find type for context
+                format_path, format_old, format_new = params["format"]
+                format_operation = self._get_operation_type(format_old, format_new)
+                
+                if format_operation in ("change", "add", "remove"):
+                    # Try to find type value for context
+                    type_path = format_path[:-1] + ["type"]
+                    type_value = self._find_type_for_context(type_path, format_old, format_new, old_schema, new_schema)
+                    
+                    if type_value:
+                        # Add context type line (no_diff)
+                        result.append((type_path, type_value, type_value))
+                    
+                    # Add the format change
+                    result.append(params["format"])
+                else:
                     result.append(params["format"])
             else:
                 # Only type or only format changed - add separately
@@ -434,14 +477,78 @@ class SchemaComparator:
         
         return result
     
+    def _find_type_for_context(
+        self, 
+        type_path: List[str], 
+        format_old: Any, 
+        format_new: Any, 
+        old_schema: Optional[Dict[str, Any]], 
+        new_schema: Optional[Dict[str, Any]]
+    ) -> Optional[str]:
+        """
+        Find the type value for providing context when only format changes.
+        
+        Args:
+            type_path: Path to the type field
+            format_old: Old format value
+            format_new: New format value  
+            old_schema: Original schema
+            new_schema: New schema
+            
+        Returns:
+            Type value if found, None otherwise
+        """
+        # The type_path already includes 'properties', so use it as-is
+        schema_path = type_path
+        
+        # Try to find type in appropriate schema
+        if format_old is not None and old_schema:
+            # Format existed before, look in old schema
+            # Start from the wrapped schema that includes {"properties": {...}}
+            wrapped_old = {"properties": old_schema.get("properties", {})}
+            type_value = self._get_value_at_path(wrapped_old, schema_path)
+            if type_value:
+                return type_value
+                
+        if format_new is not None and new_schema:
+            # Format exists now, look in new schema
+            # Start from the wrapped schema that includes {"properties": {...}}
+            wrapped_new = {"properties": new_schema.get("properties", {})}
+            type_value = self._get_value_at_path(wrapped_new, schema_path)
+            if type_value:
+                return type_value
+                
+        return None
+    
+    def _get_value_at_path(self, schema: Dict[str, Any], path: List[str]) -> Optional[str]:
+        """
+        Navigate through schema to find value at given path.
+        
+        Args:
+            schema: Schema to navigate
+            path: Path components
+            
+        Returns:
+            Value if found, None otherwise
+        """
+        current = schema
+        for segment in path:
+            if isinstance(current, dict) and segment in current:
+                current = current[segment]
+            else:
+                return None
+        return current if isinstance(current, str) else None
+    
     def _get_operation_type(self, old_val: Any, new_val: Any) -> str:
-        """Get the type of operation: add, remove, or change."""
+        """Get the type of operation: add, remove, change, or none."""
         if old_val is None and new_val is not None:
             return "add"
         elif old_val is not None and new_val is None:
             return "remove"
-        elif old_val is not None and new_val is not None:
+        elif old_val is not None and new_val is not None and old_val != new_val:
             return "change"
+        elif old_val is not None and new_val is not None and old_val == new_val:
+            return "none"  # Value didn't change
         else:
             return "none"
 
