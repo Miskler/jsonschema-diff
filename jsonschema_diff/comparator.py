@@ -137,7 +137,29 @@ class SchemaComparator:
                 continue
                 
             elif segment == "items":
-                # Skip "items", but mark that we're in array items context
+                # Replace "items" with "[0]" only if there are more path components after it
+                # that are not schema parameters (i.e., field names)
+                has_field_after = False
+                for j in range(i + 1, len(path)):
+                    next_segment = path[j]
+                    if next_segment == "properties":
+                        has_field_after = True
+                        break
+                    elif next_segment in ("type", "format", "required", "enum", "minimum", "maximum", 
+                                        "pattern", "additionalProperties", "patternProperties", "allOf", 
+                                        "anyOf", "oneOf", "not", "if", "then", "else", "const", "default", 
+                                        "examples", "title", "description", "items"):
+                        # This is a schema parameter, not a field name
+                        break
+                    else:
+                        # This could be a field name if we're not inside a schema context
+                        # We need to check the context more carefully
+                        continue
+                
+                if has_field_after:
+                    segments.append("[0]")
+                else:
+                    segments.append(f".{segment}")
                 i += 1
                 continue
                 
@@ -239,8 +261,11 @@ class SchemaComparator:
         Returns:
             str: Formatted differences string.
         """
+        # Pre-process all differences to combine type/format changes
+        processed_differences = self._combine_type_format_changes(differences)
+        
         output: List[str] = []
-        for path, old_val, new_val in differences:
+        for path, old_val, new_val in processed_differences:
             p = self._format_path(path)
             # Lists
             if isinstance(old_val, list) and isinstance(new_val, list):
@@ -249,6 +274,29 @@ class SchemaComparator:
             elif old_val is None:
                 if isinstance(new_val, list):
                     output.extend(self._format_list_diff(p, None, new_val))
+                elif isinstance(new_val, dict):
+                    # Recursively expand dictionary additions
+                    sub_diffs = self._find_differences({}, new_val, path)
+                    for sub_path, sub_old, sub_new in sub_diffs:
+                        sub_p = self._format_path(sub_path)
+                        # Skip only properties that are themselves objects (like 'properties')
+                        # but NOT 'items' as it's a valid schema field
+                        if len(sub_path) > 0 and sub_path[-1] == "properties":
+                            continue
+                        # If this is a dict value, expand it recursively too
+                        if isinstance(sub_new, dict):
+                            nested_diffs = self._find_differences({}, sub_new, sub_path)
+                            for nested_path, nested_old, nested_new in nested_diffs:
+                                nested_p = self._format_path(nested_path)
+                                if len(nested_path) > 0 and nested_path[-1] == "properties":
+                                    continue
+                                output.append(self._format_output(
+                                    f"{nested_p}: {json.dumps(nested_new, ensure_ascii=False)}", "append"
+                                ))
+                        else:
+                            output.append(self._format_output(
+                                f"{sub_p}: {json.dumps(sub_new, ensure_ascii=False)}", "append"
+                            ))
                 else:
                     output.append(self._format_output(
                         f"{p}: {json.dumps(new_val, ensure_ascii=False)}", "append"
@@ -257,6 +305,14 @@ class SchemaComparator:
             elif new_val is None:
                 if isinstance(old_val, list):
                     output.extend(self._format_list_diff(p, old_val, None))
+                elif isinstance(old_val, dict):
+                    # Recursively expand dictionary removals
+                    sub_diffs = self._find_differences(old_val, {}, path)
+                    for sub_path, sub_old, sub_new in sub_diffs:
+                        sub_p = self._format_path(sub_path)
+                        output.append(self._format_output(
+                            f"{sub_p}: {json.dumps(sub_old, ensure_ascii=False)}", "remove"
+                        ))
                 else:
                     output.append(self._format_output(
                         f"{p}: {json.dumps(old_val, ensure_ascii=False)}", "remove"
@@ -281,6 +337,113 @@ class SchemaComparator:
                 output.append("")
         return "\n".join(output).rstrip()
 
+    def _combine_type_format_changes(
+        self, differences: List[Tuple[List[str], Any, Any]]
+    ) -> List[Tuple[List[str], Any, Any]]:
+        """
+        Combine type and format changes into a single entry when they change together.
+        
+        Args:
+            differences: List of differences as (path, old_value, new_value).
+            
+        Returns:
+            List of processed differences with combined type/format changes.
+        """
+        # Group differences by their base path (without type/format)
+        grouped: Dict[str, Dict[str, Tuple[List[str], Any, Any]]] = {}
+        result: List[Tuple[List[str], Any, Any]] = []
+        
+        for path, old_val, new_val in differences:
+            if len(path) >= 1 and path[-1] in ("type", "format"):
+                # This is a type or format change
+                base_path_str = self._format_path(path[:-1]) if len(path) > 1 else ""
+                param_type = path[-1]
+                
+                if base_path_str not in grouped:
+                    grouped[base_path_str] = {}
+                grouped[base_path_str][param_type] = (path, old_val, new_val)
+            else:
+                # Not a type/format change, add as-is
+                result.append((path, old_val, new_val))
+        
+        # Process grouped type/format changes
+        for base_path_str, params in grouped.items():
+            if "type" in params and "format" in params:
+                # Both type and format are present - determine how to handle them
+                type_path, type_old, type_new = params["type"]
+                format_path, format_old, format_new = params["format"]
+                
+                # Determine the operation types
+                type_operation = self._get_operation_type(type_old, type_new)
+                format_operation = self._get_operation_type(format_old, format_new)
+                
+                # Combine when both type and format are involved in a change
+                # This includes cases where one is added/removed and the other changes
+                should_combine = (
+                    # Both are changing (classic case)
+                    (type_operation == format_operation and type_operation == "change") or
+                    # Both are being added together
+                    (type_operation == format_operation and type_operation == "add") or
+                    # Both are being removed together
+                    (type_operation == format_operation and type_operation == "remove") or
+                    # Type changes and format is removed (e.g., string/uuid -> integer)
+                    (type_operation == "change" and format_operation == "remove") or
+                    # Type changes and format is added (e.g., integer -> string/uuid)
+                    (type_operation == "change" and format_operation == "add") or
+                    # Format changes and type is removed (rare case)
+                    (format_operation == "change" and type_operation == "remove") or
+                    # Format changes and type is added (rare case)
+                    (format_operation == "change" and type_operation == "add")
+                )
+                
+                if should_combine:
+                    if type_operation == "add" and format_operation == "add":
+                        combined_new = f"{type_new}/{format_new}"
+                        result.append((type_path, None, combined_new))
+                    elif type_operation == "remove" and format_operation == "remove":
+                        combined_old = f"{type_old}/{format_old}"
+                        result.append((type_path, combined_old, None))
+                    elif type_operation == "change" and format_operation == "change":
+                        combined_old = f"{type_old}/{format_old}"
+                        combined_new = f"{type_new}/{format_new}"
+                        result.append((type_path, combined_old, combined_new))
+                    elif type_operation == "change" and format_operation == "remove":
+                        # e.g., string/uuid -> integer
+                        combined_old = f"{type_old}/{format_old}"
+                        result.append((type_path, combined_old, type_new))
+                    elif type_operation == "change" and format_operation == "add":
+                        # e.g., integer -> string/uuid
+                        combined_new = f"{type_new}/{format_new}"
+                        result.append((type_path, type_old, combined_new))
+                    elif format_operation == "change" and type_operation == "remove":
+                        # e.g., string/uuid -> /email (rare, type removed)
+                        combined_old = f"{type_old}/{format_old}"
+                        result.append((type_path, combined_old, format_new))
+                    elif format_operation == "change" and type_operation == "add":
+                        # e.g., /email -> string/uuid (rare, type added)
+                        combined_new = f"{type_new}/{format_new}"
+                        result.append((type_path, format_old, combined_new))
+                else:
+                    # Different operation types or missing values - add separately
+                    result.append(params["type"])
+                    result.append(params["format"])
+            else:
+                # Only type or only format changed - add separately
+                for param_type, (path, old_val, new_val) in params.items():
+                    result.append((path, old_val, new_val))
+        
+        return result
+    
+    def _get_operation_type(self, old_val: Any, new_val: Any) -> str:
+        """Get the type of operation: add, remove, or change."""
+        if old_val is None and new_val is not None:
+            return "add"
+        elif old_val is not None and new_val is None:
+            return "remove"
+        elif old_val is not None and new_val is not None:
+            return "change"
+        else:
+            return "none"
 
 def compare_schemas(old_schema: Dict[str, Any], new_schema: Dict[str, Any]) -> str:
     """

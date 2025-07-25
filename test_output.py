@@ -150,3 +150,40 @@ complex_new = {
 
 print("\n=== ТЕСТ 3: Сложная вложенная схема ===")
 print(compare_schemas(complex_old, complex_new))
+
+# ТЕСТ 4: Проверка различных комбинаций type/format
+print("\n=== ТЕСТ 4: Комбинации type/format ===")
+
+test_type_format_old = {
+    "type": "object",
+    "properties": {
+        # Случай 1: И type и format меняются вместе
+        "field1": {"type": "string", "format": "date-time"},
+        # Случай 2: type и format удаляются вместе (заменяется на integer без format)
+        "field2": {"type": "string", "format": "uuid"},
+        # Случай 3: Только format удаляется
+        "field3": {"type": "string", "format": "email"},
+        # Случай 4: Только type меняется
+        "field4": {"type": "integer"},
+        # Случай 5: Есть format, type не меняется
+        "field5": {"type": "string", "format": "date"}
+    }
+}
+
+test_type_format_new = {
+    "type": "object", 
+    "properties": {
+        # Случай 1: И type и format меняются вместе
+        "field1": {"type": "number", "format": "float"},
+        # Случай 2: type и format удаляются вместе (заменяется на integer без format)
+        "field2": {"type": "integer"},
+        # Случай 3: Только format удаляется
+        "field3": {"type": "string"},
+        # Случай 4: Только type меняется
+        "field4": {"type": "number"},
+        # Случай 5: Есть format, type не меняется, но format меняется
+        "field5": {"type": "string", "format": "time"}
+    }
+}
+
+print(compare_schemas(test_type_format_old, test_type_format_new))
