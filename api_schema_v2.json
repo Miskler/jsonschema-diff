@@ -1,0 +1,304 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Product API Response - Version 2",
+  "type": "object",
+  "properties": {
+    "data": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{24}$"
+            },
+            "sku": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]{6,12}$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 250
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "shortDescription": {
+              "type": "string",
+              "maxLength": 300
+            },
+            "price": {
+              "type": "object",
+              "properties": {
+                "amount": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "currency": {
+                  "type": "string",
+                  "enum": ["USD", "EUR", "GBP", "CAD", "AUD"]
+                },
+                "discountPrice": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "taxRate": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": ["amount", "currency"]
+            },
+            "category": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "slug": {
+                  "type": "string"
+                },
+                "parentId": {
+                  "type": "string"
+                },
+                "path": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["id", "name", "slug"]
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true,
+              "maxItems": 20
+            },
+            "attributes": {
+              "type": "object",
+              "properties": {
+                "color": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "string",
+                  "enum": ["XS", "S", "M", "L", "XL", "XXL"]
+                },
+                "material": {
+                  "type": "string"
+                },
+                "weight": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "dimensions": {
+                  "type": "object",
+                  "properties": {
+                    "length": {
+                      "type": "number"
+                    },
+                    "width": {
+                      "type": "number"
+                    },
+                    "height": {
+                      "type": "number"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": ["cm", "inch"]
+                    }
+                  }
+                }
+              }
+            },
+            "availability": {
+              "type": "object",
+              "properties": {
+                "inStock": {
+                  "type": "boolean"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "reservedQuantity": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "backorderAllowed": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "expectedRestockDate": {
+                  "type": "string",
+                  "format": "date"
+                }
+              },
+              "required": ["inStock", "quantity"]
+            },
+            "images": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string",
+                    "format": "uri"
+                  },
+                  "alt": {
+                    "type": "string"
+                  },
+                  "width": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "size": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "format": {
+                    "type": "string",
+                    "enum": ["jpg", "jpeg", "png", "webp", "svg"]
+                  },
+                  "isPrimary": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": ["id", "url", "format"]
+              },
+              "minItems": 1
+            },
+            "reviews": {
+              "type": "object",
+              "properties": {
+                "averageRating": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 5
+                },
+                "totalReviews": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "ratingDistribution": {
+                  "type": "object",
+                  "properties": {
+                    "5": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "4": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "3": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "2": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "1": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            },
+            "vendor": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                }
+              },
+              "required": ["id", "name"]
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updatedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "publishedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          "required": ["id", "sku", "name", "price", "category", "availability", "images", "createdAt", "updatedAt"]
+        }
+      ]
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "enum": ["2.0", "2.1"]
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "requestId": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+        },
+        "deprecationWarnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["version", "timestamp", "requestId"]
+    },
+    "links": {
+      "type": "object",
+      "properties": {
+        "self": {
+          "type": "string",
+          "format": "uri"
+        },
+        "related": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    }
+  },
+  "required": ["data", "meta"],
+  "additionalProperties": true
+}
