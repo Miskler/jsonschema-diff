@@ -8,7 +8,7 @@ and generating formatted difference reports with colored output.
 from typing import Any, Dict, List, Tuple, Optional
 import json
 import click
-from .config import modes
+from .config import modes, context_config, combination_config, context_config
 
 
 class SchemaComparator:
@@ -262,7 +262,7 @@ class SchemaComparator:
             str: Formatted differences string.
         """
         # Pre-process all differences to combine type/format changes
-        processed_differences = self._combine_type_format_changes(differences, self.old_schema, self.new_schema)
+        processed_differences = self._combine_type_format_changes(differences)
         
         output: List[str] = []
         for path, old_val, new_val in processed_differences:
@@ -278,7 +278,7 @@ class SchemaComparator:
                     # Recursively expand dictionary additions
                     sub_diffs = self._find_differences({}, new_val, path)
                     # Apply type/format combination to the expanded differences
-                    processed_sub_diffs = self._combine_type_format_changes(sub_diffs, self.old_schema, self.new_schema)
+                    processed_sub_diffs = self._combine_type_format_changes(sub_diffs)
                     for sub_path, sub_old, sub_new in processed_sub_diffs:
                         sub_p = self._format_path(sub_path)
                         # Skip only properties that are themselves objects (like 'properties')
@@ -288,7 +288,7 @@ class SchemaComparator:
                         # If this is a dict value, expand it recursively too
                         if isinstance(sub_new, dict):
                             nested_diffs = self._find_differences({}, sub_new, sub_path)
-                            nested_processed = self._combine_type_format_changes(nested_diffs, self.old_schema, self.new_schema)
+                            nested_processed = self._combine_type_format_changes(nested_diffs)
                             for nested_path, nested_old, nested_new in nested_processed:
                                 nested_p = self._format_path(nested_path)
                                 if len(nested_path) > 0 and nested_path[-1] == "properties":
@@ -343,34 +343,42 @@ class SchemaComparator:
                 for line in new_json.splitlines():
                     output.append(self._format_output(f"  {line}", "append"))
 
-            if len(output) == 0 or len(output[-1]) != 0: 
+            # Add empty line only if this is not a context line (no_diff) and not following another context line
+            should_add_empty_line = (
+                len(output) > 0 and 
+                len(output[-1]) != 0 and 
+                not (old_val == new_val and old_val is not None) and
+                # Check if previous line was also a context line
+                (len(output) == 1 or not output[-2].strip().startswith(" "))
+            )
+            if should_add_empty_line:
                 output.append("")
         return "\n".join(output).rstrip()
 
     def _combine_type_format_changes(
-        self, differences: List[Tuple[List[str], Any, Any]], 
-        old_schema: Optional[Dict[str, Any]] = None, 
-        new_schema: Optional[Dict[str, Any]] = None
+        self, differences: List[Tuple[List[str], Any, Any]]
     ) -> List[Tuple[List[str], Any, Any]]:
         """
-        Combine type and format changes into a single entry when they change together.
-        Also adds context information for standalone format changes.
+        Combine related schema changes and add context information based on configuration.
         
         Args:
             differences: List of differences as (path, old_value, new_value).
-            old_schema: Original schema for context lookup.
-            new_schema: New schema for context lookup.
             
         Returns:
-            List of processed differences with combined type/format changes.
+            List of processed differences with combined changes and context.
         """
-        # Group differences by their base path (without type/format)
+        # Group differences by their base path (without the last segment)
         grouped: Dict[str, Dict[str, Tuple[List[str], Any, Any]]] = {}
         result: List[Tuple[List[str], Any, Any]] = []
         
+        # Collect all schema parameter changes
+        all_schema_params = set(context_config.keys()) | set(combination_config.keys())
+        for combo_list in combination_config.values():
+            all_schema_params.update(combo_list)
+        
         for path, old_val, new_val in differences:
-            if len(path) >= 1 and path[-1] in ("type", "format"):
-                # This is a type or format change
+            if len(path) >= 1 and path[-1] in all_schema_params:
+                # This is a schema parameter change
                 base_path_str = self._format_path(path[:-1]) if len(path) > 1 else ""
                 param_type = path[-1]
                 
@@ -378,104 +386,161 @@ class SchemaComparator:
                     grouped[base_path_str] = {}
                 grouped[base_path_str][param_type] = (path, old_val, new_val)
             else:
-                # Not a type/format change, add as-is
+                # Not a schema parameter change, add as-is
                 result.append((path, old_val, new_val))
         
-        # Process grouped type/format changes
+        # Process grouped schema parameter changes
         for base_path_str, params in grouped.items():
-            if "type" in params and "format" in params:
-                # Both type and format are present in differences - determine how to handle them
-                type_path, type_old, type_new = params["type"]
-                format_path, format_old, format_new = params["format"]
-                
-                # Determine the operation types
-                type_operation = self._get_operation_type(type_old, type_new)
-                format_operation = self._get_operation_type(format_old, format_new)
-                
-                # Combine when both type and format are involved in a change
-                # This includes cases where one is added/removed and the other changes
-                should_combine = (
-                    # Both are changing (classic case)
-                    (type_operation == format_operation and type_operation == "change") or
-                    # Both are being added together
-                    (type_operation == format_operation and type_operation == "add") or
-                    # Both are being removed together
-                    (type_operation == format_operation and type_operation == "remove") or
-                    # Type changes and format is removed (e.g., string/uuid -> integer)
-                    (type_operation == "change" and format_operation == "remove") or
-                    # Type changes and format is added (e.g., integer -> string/uuid)
-                    (type_operation == "change" and format_operation == "add") or
-                    # Format changes and type is removed (rare case)
-                    (format_operation == "change" and type_operation == "remove") or
-                    # Format changes and type is added (rare case)
-                    (format_operation == "change" and type_operation == "add")
-                )
-                
-                if should_combine:
-                    if type_operation == "add" and format_operation == "add":
-                        combined_new = f"{type_new}/{format_new}"
-                        result.append((type_path, None, combined_new))
-                    elif type_operation == "remove" and format_operation == "remove":
-                        combined_old = f"{type_old}/{format_old}"
-                        result.append((type_path, combined_old, None))
-                    elif type_operation == "change" and format_operation == "change":
-                        combined_old = f"{type_old}/{format_old}"
-                        combined_new = f"{type_new}/{format_new}"
-                        result.append((type_path, combined_old, combined_new))
-                    elif type_operation == "change" and format_operation == "remove":
-                        # e.g., string/uuid -> integer
-                        combined_old = f"{type_old}/{format_old}"
-                        result.append((type_path, combined_old, type_new))
-                    elif type_operation == "change" and format_operation == "add":
-                        # e.g., integer -> string/uuid
-                        combined_new = f"{type_new}/{format_new}"
-                        result.append((type_path, type_old, combined_new))
-                    elif format_operation == "change" and type_operation == "remove":
-                        # e.g., string/uuid -> /email (rare, type removed)
-                        combined_old = f"{type_old}/{format_old}"
-                        result.append((type_path, combined_old, format_new))
-                    elif format_operation == "change" and type_operation == "add":
-                        # e.g., /email -> string/uuid (rare, type added)
-                        combined_new = f"{type_new}/{format_new}"
-                        result.append((type_path, format_old, combined_new))
-                else:
-                    # When only format changes and type doesn't change, show type for context
-                    if format_operation in ("change", "add", "remove") and type_operation == "none":
-                        # Type didn't change, show it for context
-                        result.append((type_path, type_old, type_old))  # no_diff for type
-                        result.append(params["format"])
-                    # When only type changes, no need for format context in most cases
-                    elif type_operation in ("change", "add", "remove") and format_operation == "none":
-                        result.append(params["type"])
-                        # Don't show format context for type-only changes to keep it clean
-                    else:
-                        # Different operation types - add separately
-                        result.append(params["type"])
-                        result.append(params["format"])
-            elif "format" in params and "type" not in params:
-                # Only format changes, but we need to find type for context
-                format_path, format_old, format_new = params["format"]
-                format_operation = self._get_operation_type(format_old, format_new)
-                
-                if format_operation in ("change", "add", "remove"):
-                    # Try to find type value for context
-                    type_path = format_path[:-1] + ["type"]
-                    type_value = self._find_type_for_context(type_path, format_old, format_new, old_schema, new_schema)
+            processed_params = set()
+            
+            # Handle combination rules first
+            for primary_key, secondary_keys in combination_config.items():
+                if primary_key in params and primary_key not in processed_params:
+                    # Check if any secondary keys are also present
+                    available_secondary = [key for key in secondary_keys if key in params]
                     
-                    if type_value:
-                        # Add context type line (no_diff)
-                        result.append((type_path, type_value, type_value))
+                    if available_secondary:
+                        # Try to combine with each available secondary key
+                        for secondary_key in available_secondary:
+                            if secondary_key not in processed_params:
+                                combined_result = self._try_combine_parameters(
+                                    params[primary_key], params[secondary_key]
+                                )
+                                if combined_result:
+                                    result.append(combined_result)
+                                    processed_params.add(primary_key)
+                                    processed_params.add(secondary_key)
+                                    break
                     
-                    # Add the format change
-                    result.append(params["format"])
+                    # If no combination was possible, handle individually
+                    if primary_key not in processed_params:
+                        result.append(params[primary_key])
+                        processed_params.add(primary_key)
+            
+            # Handle context relationships for non-combined parameters
+            for param_name, param_data in params.items():
+                if param_name in processed_params:
+                    continue
+                    
+                path, old_val, new_val = param_data
+                operation = self._get_operation_type(old_val, new_val)
+                
+                # Check if this parameter should have context
+                if param_name in context_config and operation in ("change", "add", "remove"):
+                    context_keys = context_config[param_name]
+                    
+                    # Add context for each dependent key
+                    for context_key in context_keys:
+                        if context_key in params:
+                            # Context key is also changing - already handled above or will be handled
+                            continue
+                        else:
+                            # Context key is not changing - find its value for context
+                            context_path = path[:-1] + [context_key]
+                            context_value = self._find_context_value(context_path)
+                            if context_value:
+                                result.append((context_path, context_value, context_value))
+                    
+                    # Add the actual change
+                    result.append(param_data)
+                    processed_params.add(param_name)
                 else:
-                    result.append(params["format"])
-            else:
-                # Only type or only format changed - add separately
-                for param_type, (path, old_val, new_val) in params.items():
-                    result.append((path, old_val, new_val))
+                    # No special handling needed
+                    result.append(param_data)
+                    processed_params.add(param_name)
         
         return result
+    
+    def _try_combine_parameters(
+        self, primary_param: Tuple[List[str], Any, Any], secondary_param: Tuple[List[str], Any, Any]
+    ) -> Optional[Tuple[List[str], Any, Any]]:
+        """
+        Try to combine two parameters (e.g., type and format) into a single change.
+        
+        Args:
+            primary_param: Primary parameter data (path, old_val, new_val)
+            secondary_param: Secondary parameter data (path, old_val, new_val)
+            
+        Returns:
+            Combined parameter if successful, None otherwise
+        """
+        primary_path, primary_old, primary_new = primary_param
+        secondary_path, secondary_old, secondary_new = secondary_param
+        
+        primary_operation = self._get_operation_type(primary_old, primary_new)
+        secondary_operation = self._get_operation_type(secondary_old, secondary_new)
+        
+        # Combine when both parameters are involved in compatible changes
+        should_combine = (
+            # Both are changing (classic case)
+            (primary_operation == secondary_operation and primary_operation == "change") or
+            # Both are being added together
+            (primary_operation == secondary_operation and primary_operation == "add") or
+            # Both are being removed together
+            (primary_operation == secondary_operation and primary_operation == "remove") or
+            # One changes and the other is removed/added
+            (primary_operation == "change" and secondary_operation in ("remove", "add")) or
+            (secondary_operation == "change" and primary_operation in ("remove", "add"))
+        )
+        
+        if not should_combine:
+            return None
+            
+        # Create combined values
+        if primary_operation == "add" and secondary_operation == "add":
+            combined_new = f"{primary_new}/{secondary_new}"
+            return (primary_path, None, combined_new)
+        elif primary_operation == "remove" and secondary_operation == "remove":
+            combined_old = f"{primary_old}/{secondary_old}"
+            return (primary_path, combined_old, None)
+        elif primary_operation == "change" and secondary_operation == "change":
+            combined_old = f"{primary_old}/{secondary_old}"
+            combined_new = f"{primary_new}/{secondary_new}"
+            return (primary_path, combined_old, combined_new)
+        elif primary_operation == "change" and secondary_operation == "remove":
+            # e.g., string/uuid -> integer
+            combined_old = f"{primary_old}/{secondary_old}"
+            return (primary_path, combined_old, primary_new)
+        elif primary_operation == "change" and secondary_operation == "add":
+            # e.g., integer -> string/uuid
+            combined_new = f"{primary_new}/{secondary_new}"
+            return (primary_path, primary_old, combined_new)
+        elif secondary_operation == "change" and primary_operation == "remove":
+            # e.g., string/uuid -> /email (rare, primary removed)
+            combined_old = f"{primary_old}/{secondary_old}"
+            return (primary_path, combined_old, secondary_new)
+        elif secondary_operation == "change" and primary_operation == "add":
+            # e.g., /email -> string/uuid (rare, primary added)
+            combined_new = f"{primary_new}/{secondary_new}"
+            return (primary_path, secondary_old, combined_new)
+            
+        return None
+
+    def _find_context_value(self, context_path: List[str]) -> Optional[str]:
+        """
+        Find the context value for a given path in the original schemas.
+        
+        Args:
+            context_path: Path to the context field
+            
+        Returns:
+            Context value if found, None otherwise
+        """
+        # Try to find in old schema first
+        if self.old_schema:
+            wrapped_old = {"properties": self.old_schema.get("properties", {})}
+            value = self._get_value_at_path(wrapped_old, context_path)
+            if value:
+                return value
+                
+        # Try to find in new schema
+        if self.new_schema:
+            wrapped_new = {"properties": self.new_schema.get("properties", {})}
+            value = self._get_value_at_path(wrapped_new, context_path)
+            if value:
+                return value
+                
+        return None
     
     def _find_type_for_context(
         self, 

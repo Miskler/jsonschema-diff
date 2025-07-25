@@ -38,3 +38,22 @@ modes: Dict[str, Dict[str, str]] = {
         "symbol": " ",
     }
 }
+
+# Context configuration: keys that should show context when changed
+# Format: {context_key: [dependent_keys]}
+context_config: Dict[str, list[str]] = {
+    # When format changes, show type for context
+    "format": ["type"],
+    # When minimum/maximum changes, show pair for context
+    "minimum": ["maximum"],
+    "maximum": ["minimum"],
+    # When additionalProperties changes, show type for context  
+    "additionalProperties": ["type"],
+}
+
+# Special combination rules: keys that should be combined when changed together
+# Format: {primary_key: [secondary_keys]}
+combination_config: Dict[str, list[str]] = {
+    # Combine type and format when both change
+    "type": ["format"],
+}
