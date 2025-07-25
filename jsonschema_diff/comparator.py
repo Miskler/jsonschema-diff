@@ -89,30 +89,35 @@ class SchemaComparator:
             return diffs
 
         # Compare dictionaries
-        all_keys = set(old.keys()) | set(new.keys())
-        for key in all_keys:
-            current_path = path + [key]
-            if key not in old:
-                diffs.append((current_path, None, new[key]))
-            elif key not in new:
-                diffs.append((current_path, old[key], None))
-            else:
-                ov = old[key]
-                nv = new[key]
-                if isinstance(ov, dict) and isinstance(nv, dict):
-                    diffs.extend(self._find_differences(ov, nv, current_path))
-                elif isinstance(ov, list) and isinstance(nv, list):
-                    if ov != nv:
+        if isinstance(old, dict) and isinstance(new, dict):
+            all_keys = set(old.keys()) | set(new.keys())
+            for key in all_keys:
+                current_path = path + [key]
+                if key not in old:
+                    diffs.append((current_path, None, new[key]))
+                elif key not in new:
+                    diffs.append((current_path, old[key], None))
+                else:
+                    ov = old[key]
+                    nv = new[key]
+                    if isinstance(ov, dict) and isinstance(nv, dict):
+                        diffs.extend(self._find_differences(ov, nv, current_path))
+                    elif isinstance(ov, list) and isinstance(nv, list):
+                        if ov != nv:
+                            diffs.append((current_path, ov, nv))
+                    elif ov != nv:
                         diffs.append((current_path, ov, nv))
-                elif ov != nv:
-                    diffs.append((current_path, ov, nv))
+        # Different types or simple values
+        elif old != new:
+            diffs.append((path, old, new))
+            
         return diffs
 
     @staticmethod
     def _format_path(path: List[str]) -> str:
         """
-        Format a path to a change, skipping 'properties' and 'items', 
-        shortening .type and .required.
+        Format a path to a change, understanding JSON Schema structure.
+        Completely skips 'properties' keywords and determines schema parameters based on context.
         
         Args:
             path (List[str]): The path components.
@@ -121,16 +126,51 @@ class SchemaComparator:
             str: Formatted path string.
         """
         segments: List[str] = []
-        for i, p in enumerate(path):
-            if p in ("properties", "items"):
+        i = 0
+        
+        while i < len(path):
+            segment = path[i]
+            
+            # Always skip "properties" completely
+            if segment == "properties":
+                i += 1
                 continue
-            # Same condition for type and required
-            if p in ("type", "required", "format", "additionalProperties", "anyOf") and (i == 0 or path[i-1] != "properties"):
-                segments.append(f".{p}")
+                
+            elif segment == "items":
+                # Skip "items", but mark that we're in array items context
+                i += 1
+                continue
+                
+            elif segment in ("additionalProperties", "patternProperties"):
+                # Skip these completely
+                i += 1
+                continue
+            
+            # Look ahead to see if next segment is "properties"
+            # If so, this is a field name, not a schema parameter
+            is_field_name = False
+            if i + 1 < len(path) and path[i + 1] == "properties":
+                is_field_name = True
+            
+            # Also check if we just came from "properties" (which was skipped)
+            came_from_properties = False
+            if i > 0 and path[i - 1] == "properties":
+                came_from_properties = True
+            
+            # Determine formatting based on context
+            if came_from_properties or is_field_name:
+                # This is a field name - use brackets
+                segments.append(f"[{json.dumps(segment, ensure_ascii=False)}]")
+            elif segment.isdigit():
+                # Array index - use brackets  
+                segments.append(f"[{segment}]")
             else:
-                segments.append(f"[{json.dumps(p, ensure_ascii=False)}]")
+                # This is a schema parameter - use dot notation
+                segments.append(f".{segment}")
+            
+            i += 1
+                
         return ''.join(segments)
-
     def _format_list_diff(
         self, path: str, old_list: Optional[List[Any]], new_list: Optional[List[Any]]
     ) -> List[str]:
@@ -158,15 +198,16 @@ class SchemaComparator:
 
         # Collect all unique elements without hashing
         unique_items: List[Any] = []
-        for item in new_list + old_list:
+        # Now old_list and new_list are guaranteed to be lists, not None
+        for item in (new_list or []) + (old_list or []):
             if not any(item == existing for existing in unique_items):
                 unique_items.append(item)
 
         have_changes = False
         for item in unique_items:
             item_str = json.dumps(item, ensure_ascii=False)
-            in_old = any(item == old for old in old_list)
-            in_new = any(item == new for new in new_list)
+            in_old = any(item == old for old in (old_list or []))
+            in_new = any(item == new for new in (new_list or []))
 
             if in_old and not in_new:
                 result.append(self._format_output(f"  {item_str},", "remove"))
