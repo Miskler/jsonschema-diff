@@ -7,8 +7,10 @@ and generating formatted difference reports with colored output.
 
 from typing import Any, Dict
 from .diff_finder import DiffFinder
+from .diff_processor import DiffProcessor
+from .combiner import ParameterCombiner
+from .render_processor import RenderProcessor
 from .formatter import Formatter
-from .context_manager import ContextManager
 
 
 class SchemaComparator:
@@ -33,7 +35,8 @@ class SchemaComparator:
         """
         self.old_schema = old_schema
         self.new_schema = new_schema
-        self.context_manager = ContextManager(old_schema, new_schema)
+        self.combiner = ParameterCombiner(old_schema, new_schema)
+        self.render_processor = RenderProcessor(old_schema, new_schema)
 
     def compare(self) -> str:
         """
@@ -42,16 +45,23 @@ class SchemaComparator:
         Returns:
             str: A formatted string showing the differences between schemas.
         """
+        # Step 1: Find raw differences
         differences = DiffFinder.find_differences(
             {"properties": self.old_schema.get("properties", {})},
             {"properties": self.new_schema.get("properties", {})}
         )
         
-        # Pre-process all differences to combine type/format changes
-        processed_differences = self.context_manager.combine_type_format_changes(differences)
+        # Step 2: Process differences (convert add/remove pairs to changes)
+        processed_differences = DiffProcessor.process_differences(differences)
         
-        # Format the differences using the formatter
-        return Formatter.format_differences(processed_differences)
+        # Step 3: Combine related parameters (e.g., type + format)
+        combined_differences = self.combiner.combine_parameters(processed_differences)
+        
+        # Step 4: Process for rendering (add context and decide what to show)
+        render_ready_differences = self.render_processor.process_for_render(combined_differences)
+        
+        # Step 5: Format the differences
+        return Formatter.format_differences(render_ready_differences)
 
 def compare_schemas(old_schema: Dict[str, Any], new_schema: Dict[str, Any]) -> str:
     """

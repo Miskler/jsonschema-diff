@@ -112,3 +112,55 @@ class PathUtils:
             else:
                 return None
         return current if isinstance(current, str) else None
+
+    @staticmethod
+    def parse_path(path_str: str) -> List[str]:
+        """
+        Parse a formatted path string back into path components.
+        
+        Args:
+            path_str: Formatted path string like '["field1"].type' or '["field1"][0].format'
+            
+        Returns:
+            List of path components
+        """
+        if not path_str:
+            return []
+            
+        # Simple parsing - split by dots and extract bracketed content
+        path_components = []
+        i = 0
+        current_segment = ""
+        
+        while i < len(path_str):
+            char = path_str[i]
+            
+            if char == '[':
+                # Extract bracketed content
+                bracket_end = path_str.find(']', i)
+                if bracket_end != -1:
+                    bracket_content = path_str[i+1:bracket_end]
+                    # Remove quotes if present
+                    if bracket_content.startswith('"') and bracket_content.endswith('"'):
+                        bracket_content = bracket_content[1:-1]
+                    elif bracket_content.startswith("'") and bracket_content.endswith("'"):
+                        bracket_content = bracket_content[1:-1]
+                    path_components.append(bracket_content)
+                    i = bracket_end + 1
+                else:
+                    i += 1
+            elif char == '.':
+                # Start of dot notation segment
+                if current_segment:
+                    path_components.append(current_segment)
+                    current_segment = ""
+                i += 1
+            else:
+                current_segment += char
+                i += 1
+        
+        # Add final segment if any
+        if current_segment:
+            path_components.append(current_segment)
+            
+        return path_components

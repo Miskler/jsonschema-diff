@@ -1,22 +1,22 @@
 """
-Context manager for JSON Schema comparison.
+Render processor for JSON Schema comparison.
 
-This module provides functionality to add context information 
-to schema changes for better readability.
+This module provides functionality to add context information
+and decide what should be rendered in the final output.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Set
 from .config import context_config
 from .path_utils import PathUtils
 from .diff_finder import DiffFinder
 
 
-class ContextManager:
-    """Class for adding context information to schema changes."""
+class RenderProcessor:
+    """Class for processing differences for final rendering."""
     
     def __init__(self, old_schema: Dict[str, Any], new_schema: Dict[str, Any]):
         """
-        Initialize the ContextManager with schemas.
+        Initialize the RenderProcessor with schemas.
         
         Args:
             old_schema: The original schema
@@ -25,25 +25,26 @@ class ContextManager:
         self.old_schema = old_schema
         self.new_schema = new_schema
     
-    def add_context_information(
+    def process_for_render(
         self, differences: List[Tuple[List[str], Any, Any]]
     ) -> List[Tuple[List[str], Any, Any]]:
         """
-        Add context information to differences based on context_config.
+        Process differences for rendering, adding context and filtering.
         
         Args:
             differences: List of differences as (path, old_value, new_value)
             
         Returns:
-            List of differences with context information added
+            List of differences ready for rendering
         """
-        if not differences or not context_config:
+        if not differences:
             return differences
             
         result: List[Tuple[List[str], Any, Any]] = []
+        added_context_paths: Set[str] = set()
         
         for path, old_val, new_val in differences:
-            # Add the original difference
+            # Add the main difference
             result.append((path, old_val, new_val))
             
             # Check if this parameter needs context
@@ -59,14 +60,19 @@ class ContextManager:
                         
                         for context_key in context_keys:
                             context_path = base_path + [context_key]
-                            context_value = self._find_context_value(context_path)
+                            context_path_str = ".".join(context_path)
                             
-                            if context_value is not None:
-                                # Add context as a no-change entry (old == new)
-                                result.append((context_path, context_value, context_value))
+                            # Avoid duplicate context entries
+                            if context_path_str not in added_context_paths:
+                                context_value = self._find_context_value(context_path)
+                                
+                                if context_value is not None:
+                                    # Add context as a no-change entry (old == new)
+                                    result.append((context_path, context_value, context_value))
+                                    added_context_paths.add(context_path_str)
         
         return result
-
+    
     def _find_context_value(self, context_path: List[str]) -> Optional[str]:
         """
         Find the context value for a given path in the original schemas.
