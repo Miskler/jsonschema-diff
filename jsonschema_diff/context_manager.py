@@ -6,7 +6,7 @@ to schema changes for better readability.
 """
 
 from typing import Any, Dict, List, Optional, Tuple
-from .config import context_config
+from .config import Config
 from .path_utils import PathUtils
 from .diff_finder import DiffFinder
 
@@ -29,7 +29,7 @@ class ContextManager:
         self, differences: List[Tuple[List[str], Any, Any]]
     ) -> List[Tuple[List[str], Any, Any]]:
         """
-        Add context information to differences based on context_config.
+        Add context information to differences based on Config.CONTEXT_RULES.
         
         Args:
             differences: List of differences as (path, old_value, new_value)
@@ -37,7 +37,7 @@ class ContextManager:
         Returns:
             List of differences with context information added
         """
-        if not differences or not context_config:
+        if not differences:
             return differences
             
         result: List[Tuple[List[str], Any, Any]] = []
@@ -49,15 +49,16 @@ class ContextManager:
             # Check if this parameter needs context
             if len(path) >= 1:
                 param_name = path[-1]
-                if param_name in context_config:
+                context_params = Config.get_context_params(param_name)
+                
+                if context_params:
                     operation = DiffFinder.get_operation_type(old_val, new_val)
                     
                     # Add context only for meaningful operations
                     if operation in ("change", "add", "remove"):
-                        context_keys = context_config[param_name]
                         base_path = path[:-1]
                         
-                        for context_key in context_keys:
+                        for context_key in context_params:
                             context_path = base_path + [context_key]
                             context_value = self._find_context_value(context_path)
                             
