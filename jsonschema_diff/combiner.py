@@ -123,7 +123,18 @@ class ParameterCombiner:
         self, differences: List[Tuple[List[str], Any, Any]], 
         sub_path: List[str], rule: Dict[str, Any], triggered_by: str
     ) -> Optional[Tuple[List[str], Any, Any]]:
-        """Find sub parameter in differences or create virtual one from schema."""
+        """
+        Find sub parameter in differences or create virtual one from schema.
+        
+        Args:
+            differences: List of all differences
+            sub_path: Path to the sub parameter
+            rule: Combination rule configuration
+            triggered_by: What triggered this combination (unused but kept for consistency)
+            
+        Returns:
+            Sub parameter tuple or None if not found/creatable
+        """
         # First try to find in existing differences
         sub_path_str = ".".join(sub_path)
         for path, old_val, new_val in differences:
@@ -137,7 +148,18 @@ class ParameterCombiner:
         self, differences: List[Tuple[List[str], Any, Any]], 
         main_path: List[str], rule: Dict[str, Any], triggered_by: str
     ) -> Optional[Tuple[List[str], Any, Any]]:
-        """Find main parameter in differences or create virtual one from schema."""
+        """
+        Find main parameter in differences or create virtual one from schema.
+        
+        Args:
+            differences: List of all differences
+            main_path: Path to the main parameter
+            rule: Combination rule configuration
+            triggered_by: What triggered this combination (unused but kept for consistency)
+            
+        Returns:
+            Main parameter tuple or None if not found/creatable
+        """
         # First try to find in existing differences
         main_path_str = ".".join(main_path)
         for path, old_val, new_val in differences:

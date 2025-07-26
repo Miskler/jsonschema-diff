@@ -6,7 +6,6 @@ converting add/remove pairs into change operations.
 """
 
 from typing import Any, Dict, List, Tuple
-from .diff_finder import DiffFinder
 
 
 class DiffProcessor:

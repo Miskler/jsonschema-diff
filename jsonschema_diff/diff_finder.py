@@ -61,21 +61,7 @@ class DiffFinder:
             
         return diffs
     
-    @staticmethod
-    def preprocess_differences(differences: List[Tuple[List[str], Any, Any]]) -> List[Tuple[List[str], Any, Any]]:
-        """
-        Preprocess differences to combine related changes (e.g., type and format).
-        
-        Args:
-            differences: List of differences as (path, old_value, new_value).
-            
-        Returns:
-            List of processed differences with combined changes.
-        """
-        # For now, just return the differences as-is
-        # This method can be enhanced later to implement more sophisticated combining logic
-        return differences
-    
+
     @staticmethod
     def get_operation_type(old_val: Any, new_val: Any) -> str:
         """Get the type of operation: add, remove, change, or none."""

@@ -44,6 +44,7 @@ modes: Dict[str, Dict[str, str]] = {
 context_config: Dict[str, List[str]] = {
     # When format changes, show type for context
     #"format": ["type"],
+    "type": ["format"],
     # When minimum/maximum changes, show pair for context
     "minimum": ["maximum"],
     "maximum": ["minimum"],
