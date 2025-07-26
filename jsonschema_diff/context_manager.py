@@ -1,36 +1,22 @@
 """
-Render processor for JSON Schema comparison.
+Context manager for JSON Schema comparison.
 
-This module provides functionality to add context information
-and decide what should be rendered in the final output.
+This module provides functionality to add context information 
+to schema changes for better readability.
 """
 
-from typing import Any, Dict, List, Optional, Tuple, Set, NamedTuple
+from typing import Any, Dict, List, Optional, Tuple
 from .config import context_config
 from .path_utils import PathUtils
 from .diff_finder import DiffFinder
 
 
-class DiffLine(NamedTuple):
-    """Represents a single line in the diff output with metadata."""
-    path: List[str]
-    old_value: Any
-    new_value: Any
-    line_type: str  # "main" | "context"
-    
-
-class DiffGroup(NamedTuple):
-    """Represents a group of related diff lines."""
-    main_line: DiffLine
-    context_lines: List[DiffLine]
-
-
-class RenderProcessor:
-    """Class for processing differences for final rendering."""
+class ContextManager:
+    """Class for adding context information to schema changes."""
     
     def __init__(self, old_schema: Dict[str, Any], new_schema: Dict[str, Any]):
         """
-        Initialize the RenderProcessor with schemas.
+        Initialize the ContextManager with schemas.
         
         Args:
             old_schema: The original schema
@@ -39,30 +25,26 @@ class RenderProcessor:
         self.old_schema = old_schema
         self.new_schema = new_schema
     
-    def process_for_render(
+    def add_context_information(
         self, differences: List[Tuple[List[str], Any, Any]]
-    ) -> List[DiffGroup]:
+    ) -> List[Tuple[List[str], Any, Any]]:
         """
-        Process differences for rendering, grouping main changes with their context.
+        Add context information to differences based on context_config.
         
         Args:
             differences: List of differences as (path, old_value, new_value)
             
         Returns:
-            List of DiffGroup objects ready for rendering
+            List of differences with context information added
         """
-        if not differences:
-            return []
+        if not differences or not context_config:
+            return differences
             
-        groups: List[DiffGroup] = []
-        added_context_paths: Set[str] = set()
+        result: List[Tuple[List[str], Any, Any]] = []
         
         for path, old_val, new_val in differences:
-            # Create main diff line
-            main_line = DiffLine(path, old_val, new_val, "main")
-            
-            # Collect context lines for this main line
-            context_lines: List[DiffLine] = []
+            # Add the original difference
+            result.append((path, old_val, new_val))
             
             # Check if this parameter needs context
             if len(path) >= 1:
@@ -77,24 +59,14 @@ class RenderProcessor:
                         
                         for context_key in context_keys:
                             context_path = base_path + [context_key]
-                            context_path_str = ".".join(context_path)
+                            context_value = self._find_context_value(context_path)
                             
-                            # Avoid duplicate context entries
-                            if context_path_str not in added_context_paths:
-                                context_value = self._find_context_value(context_path)
-                                
-                                if context_value is not None:
-                                    # Create context line
-                                    context_line = DiffLine(context_path, context_value, context_value, "context")
-                                    context_lines.append(context_line)
-                                    added_context_paths.add(context_path_str)
-            
-            # Create group
-            group = DiffGroup(main_line, context_lines)
-            groups.append(group)
+                            if context_value is not None:
+                                # Add context as a no-change entry (old == new)
+                                result.append((context_path, context_value, context_value))
         
-        return groups
-    
+        return result
+
     def _find_context_value(self, context_path: List[str]) -> Optional[str]:
         """
         Find the context value for a given path in the original schemas.

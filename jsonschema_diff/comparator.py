@@ -57,11 +57,11 @@ class SchemaComparator:
         # Step 3: Combine related parameters (e.g., type + format)
         combined_differences = self.combiner.combine_parameters(processed_differences)
         
-        # Step 4: Process for rendering (add context and decide what to show)
-        render_ready_differences = self.render_processor.process_for_render(combined_differences)
+        # Step 4: Process for rendering (add context and group into structured format)
+        render_groups = self.render_processor.process_for_render(combined_differences)
         
-        # Step 5: Format the differences
-        return Formatter.format_differences(render_ready_differences)
+        # Step 5: Format the groups
+        return Formatter.format_groups(render_groups)
 
 def compare_schemas(old_schema: Dict[str, Any], new_schema: Dict[str, Any]) -> str:
     """

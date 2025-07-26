@@ -38,7 +38,11 @@ class DiffFinder:
 
         # Compare dictionaries
         if isinstance(old, dict) and isinstance(new, dict):
-            all_keys = set(old.keys()) | set(new.keys())
+            # Preserve order: first old keys, then new keys not in old
+            all_keys = list(old.keys())
+            for key in new.keys():
+                if key not in all_keys:
+                    all_keys.append(key)
             for key in all_keys:
                 current_path = path + [key]
                 if key not in old:
