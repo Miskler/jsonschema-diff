@@ -5,12 +5,15 @@ This module provides functionality to format differences between JSON schemas
 into human-readable output with colored formatting.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 import json
 import click
-from .config import modes
+from .config import Config
 from .path_utils import PathUtils
 from .diff_finder import DiffFinder
+
+if TYPE_CHECKING:
+    from .render_processor import DiffGroup, DiffLine
 
 
 class Formatter:
@@ -28,9 +31,10 @@ class Formatter:
         Returns:
             str: Formatted text with color and symbol.
         """
+        display_mode = Config.get_display_mode(mode)
         return click.style(
-            f'{modes[mode]["symbol"]} {text}', 
-            fg=modes[mode]["color"], 
+            f'{display_mode.symbol} {text}', 
+            fg=display_mode.color, 
             bold=True
         )
     

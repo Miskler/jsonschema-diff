@@ -6,7 +6,7 @@ This module provides functionality to combine related parameters
 """
 
 from typing import Any, Dict, List, Tuple, Optional, Set
-from .config import combination_rules
+from .config import Config, CombinationRule, CombineMode
 from .path_utils import PathUtils
 
 
@@ -36,7 +36,7 @@ class ParameterCombiner:
         Returns:
             List of differences with parameters combined
         """
-        if not differences or not combination_rules:
+        if not differences or not Config.get_combination_rules():
             return differences
             
         result: List[Tuple[List[str], Any, Any]] = []
@@ -50,9 +50,9 @@ class ParameterCombiner:
                 
             # Check if this parameter can be combined
             combined = False
-            for rule in combination_rules:
-                main_param = rule["main_param"]
-                sub_param = rule["sub_param"]
+            for rule in Config.get_combination_rules():
+                main_param = rule.main_param
+                sub_param = rule.sub_param
                 
                 if len(path) > 0 and path[-1] == main_param:
                     # This is a main parameter - try to combine with sub parameter
@@ -94,7 +94,7 @@ class ParameterCombiner:
         
         return result
     
-    def _can_combine(self, rule: Dict[str, Any], path: List[str], old_val: Any, new_val: Any, param_type: str) -> bool:
+    def _can_combine(self, rule: 'CombinationRule', path: List[str], old_val: Any, new_val: Any, param_type: str) -> bool:
         """
         Check if parameter can be combined based on rules.
         
@@ -111,17 +111,29 @@ class ParameterCombiner:
         operation = self._get_operation_type(old_val, new_val)
         
         if operation == "add":
-            return rule["rules"]["addition"][param_type]
+            combine_mode = rule.rules.addition
         elif operation == "remove":
-            return rule["rules"]["removal"][param_type]
+            combine_mode = rule.rules.removal
         elif operation == "change":
-            return rule["rules"]["change"][param_type]
+            combine_mode = rule.rules.change
+        else:
+            return False
+        
+        # Check if this parameter type should be combined based on the mode
+        if combine_mode == CombineMode.ALL:
+            return True
+        elif combine_mode == CombineMode.MAIN_ONLY:
+            return param_type == "main"
+        elif combine_mode == CombineMode.SUB_ONLY:
+            return param_type == "sub"
+        elif combine_mode == CombineMode.NONE:
+            return False
         
         return False
     
     def _find_or_create_sub_param(
         self, differences: List[Tuple[List[str], Any, Any]], 
-        sub_path: List[str], rule: Dict[str, Any], triggered_by: str
+        sub_path: List[str], rule: CombinationRule, triggered_by: str
     ) -> Optional[Tuple[List[str], Any, Any]]:
         """
         Find sub parameter in differences or create virtual one from schema.
@@ -146,7 +158,7 @@ class ParameterCombiner:
     
     def _find_or_create_main_param(
         self, differences: List[Tuple[List[str], Any, Any]], 
-        main_path: List[str], rule: Dict[str, Any], triggered_by: str
+        main_path: List[str], rule: CombinationRule, triggered_by: str
     ) -> Optional[Tuple[List[str], Any, Any]]:
         """
         Find main parameter in differences or create virtual one from schema.
@@ -170,7 +182,7 @@ class ParameterCombiner:
         return self._create_virtual_param(main_path, rule, "main")
     
     def _create_virtual_param(
-        self, param_path: List[str], rule: Dict[str, Any], param_type: str
+        self, param_path: List[str], rule: CombinationRule, param_type: str
     ) -> Optional[Tuple[List[str], Any, Any]]:
         """
         Create virtual parameter from schema context.
@@ -205,7 +217,7 @@ class ParameterCombiner:
         return PathUtils.get_value_at_path(wrapped_schema, param_path)
     
     def _combine_params(
-        self, rule: Dict[str, Any], 
+        self, rule: CombinationRule, 
         main_diff: Tuple[List[str], Any, Any], 
         sub_diff: Tuple[List[str], Any, Any]
     ) -> Tuple[List[str], Any, Any]:
@@ -224,7 +236,7 @@ class ParameterCombiner:
         sub_path, sub_old, sub_new = sub_diff
         
         # Use main parameter path but with display name from rule
-        display_path = main_path[:-1] + [rule.get("display_name", rule["main_param"])]
+        display_path = main_path[:-1] + [rule.display_name]
         
         # Build combined old value
         combined_old = self._build_combined_value(rule, main_old, sub_old)
@@ -234,12 +246,12 @@ class ParameterCombiner:
         
         return (display_path, combined_old, combined_new)
     
-    def _build_combined_value(self, rule: Dict[str, Any], main_val: Any, sub_val: Any) -> Optional[str]:
+    def _build_combined_value(self, rule: CombinationRule, main_val: Any, sub_val: Any) -> Optional[str]:
         """Build combined value using rule template."""
         if main_val is None and sub_val is None:
             return None
             
-        template = rule.get("format_template", "{main}/{sub}")
+        template = rule.format_template
         
         # Handle cases where one value is None
         if main_val is None:

@@ -10,6 +10,6 @@ __author__ = "Your Name"
 __email__ = "your.email@example.com"
 
 from .comparator import SchemaComparator, compare_schemas
-from .config import type_map, modes
+from .config import TYPE_MAP, Config
 
-__all__ = ["SchemaComparator", "compare_schemas", "type_map", "modes"]
+__all__ = ["SchemaComparator", "compare_schemas", "TYPE_MAP", "Config"]

@@ -5,10 +5,21 @@ This module contains type mappings and display modes configuration
 used throughout the JSON schema comparison library.
 """
 
-from typing import Dict, Any, Type, List
+from typing import Dict, Type, List
+from dataclasses import dataclass
+from enum import Enum
+
+
+class CombineMode(Enum):
+    """Enum for combination modes."""
+    MAIN_ONLY = "main_only"      # Только главный параметр
+    SUB_ONLY = "sub_only"        # Только второстепенный параметр
+    ALL = "all"                  # Оба параметра
+    NONE = "none"                # Никого
+
 
 # Type mapping for Python types to JSON schema types
-type_map: Dict[Type, str] = {
+TYPE_MAP: Dict[Type, str] = {
     type(None): 'null',
     bool: 'boolean',
     int: 'integer',
@@ -19,62 +30,98 @@ type_map: Dict[Type, str] = {
     dict: 'object'
 }
 
-# Display modes configuration for different types of changes
-modes: Dict[str, Dict[str, str]] = {
-    'append': {
-        "color": "green",
-        "symbol": "+",
-    },
-    'remove': {
-        "color": "red",
-        "symbol": "-",
-    },
-    'replace': {
-        "color": "cyan",
-        "symbol": "r",
-    },
-    'no_diff': {
-        "color": "reset",
-        "symbol": " ",
-    }
-}
 
-# Context configuration: keys that should show context when changed
-# Format: {changed_key: [context_keys_to_show]}
-context_config: Dict[str, List[str]] = {
-    # When format changes, show type for context
-    #"format": ["type"],
-    "type": ["format"],
-    # When minimum/maximum changes, show pair for context
-    "minimum": ["maximum"],
-    "maximum": ["minimum"],
-    # When additionalProperties changes, show type for context  
-    "additionalProperties": ["type"],
-}
+@dataclass(frozen=True)
+class DisplayMode:
+    """Configuration for a display mode (append, remove, replace, etc.)."""
+    color: str
+    symbol: str
 
-# Combination rules for parameters - combines related parameters into single display
-combination_rules: List[Dict[str, Any]] = [
-    {
-        "main_param": "type",           # Main parameter name
-        "sub_param": "format",          # Secondary parameter name  
-        "display_name": "type",         # Name to use in display (default: main_param)
-        "format_template": "{main}/{sub}",  # How to combine values (default: "{main}/{sub}")
-        "rules": {
-            # When to apply combination for different operation types
-            "removal": {"main": True, "sub": True},      # Combine when either is removed
-            "addition": {"main": True, "sub": True},     # Combine when either is added  
-            "change": {"main": True, "sub": True}        # Combine when either changes
-        }
-    },
-    {
-        "main_param": "minimum",
-        "sub_param": "maximum",
-        "display_name": "range",
-        "format_template": "{main}-{sub}",
-        "rules": {
-            "removal": {"main": False, "sub": False},    # Don't combine removals
-            "addition": {"main": False, "sub": False},   # Don't combine additions
-            "change": {"main": True, "sub": True}        # Only combine changes
-        }
+
+@dataclass(frozen=True)
+class ContextRule:
+    """Configuration for a context rule."""
+    trigger_param: str
+    context_params: List[str]
+
+
+@dataclass(frozen=True)
+class CombinationRules:
+    """Rules for when to apply combination for different operation types."""
+    removal: CombineMode
+    addition: CombineMode
+    change: CombineMode
+
+
+@dataclass(frozen=True)
+class CombinationRule:
+    """Configuration for a parameter combination rule."""
+    main_param: str
+    sub_param: str
+    display_name: str
+    format_template: str
+    rules: CombinationRules
+
+
+class Config:
+    """Main configuration class containing all schema comparison settings."""
+    
+    # Display modes for different types of changes
+    MODES = {
+        'append': DisplayMode(color="green", symbol="+"),
+        'remove': DisplayMode(color="red", symbol="-"),
+        'replace': DisplayMode(color="cyan", symbol="r"),
+        'no_diff': DisplayMode(color="reset", symbol=" "),
     }
-]
+    
+    # Context rules: when a parameter changes, show these related parameters for context
+    CONTEXT_RULES = [
+        ContextRule(trigger_param="type", context_params=["format"]),
+        ContextRule(trigger_param="minimum", context_params=["maximum"]),
+        ContextRule(trigger_param="maximum", context_params=["minimum"]),
+        ContextRule(trigger_param="additionalProperties", context_params=["type"]),
+    ]
+    
+    # Combination rules: combine related parameters into single display
+    COMBINATION_RULES = [
+        CombinationRule(
+            main_param="type",
+            sub_param="format",
+            display_name="type",
+            format_template="{main}/{sub}",
+            rules=CombinationRules(
+                removal=CombineMode.ALL,
+                addition=CombineMode.ALL,
+                change=CombineMode.ALL
+            )
+        ),
+        CombinationRule(
+            main_param="minimum",
+            sub_param="maximum",
+            display_name="range",
+            format_template="{main}-{sub}",
+            rules=CombinationRules(
+                removal=CombineMode.NONE,
+                addition=CombineMode.NONE,
+                change=CombineMode.ALL
+            )
+        ),
+    ]
+    
+    @classmethod
+    def get_context_params(cls, trigger_param: str) -> List[str]:
+        """Get context parameters for a given trigger parameter."""
+        for rule in cls.CONTEXT_RULES:
+            if rule.trigger_param == trigger_param:
+                return rule.context_params
+        return []
+    
+    @classmethod
+    def get_display_mode(cls, mode_name: str) -> DisplayMode:
+        """Get display mode configuration by name."""
+        return cls.MODES[mode_name]
+    
+    @classmethod
+    def get_combination_rules(cls) -> List[CombinationRule]:
+        """Get all combination rules."""
+        return cls.COMBINATION_RULES

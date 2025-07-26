@@ -6,7 +6,7 @@ and decide what should be rendered in the final output.
 """
 
 from typing import Any, Dict, List, Optional, Tuple, Set, NamedTuple
-from .config import context_config
+from .config import Config
 from .path_utils import PathUtils
 from .diff_finder import DiffFinder
 
@@ -67,12 +67,12 @@ class RenderProcessor:
             # Check if this parameter needs context
             if len(path) >= 1:
                 param_name = path[-1]
-                if param_name in context_config:
+                context_keys = Config.get_context_params(param_name)
+                if context_keys:
                     operation = DiffFinder.get_operation_type(old_val, new_val)
                     
                     # Add context only for meaningful operations
                     if operation in ("change", "add", "remove"):
-                        context_keys = context_config[param_name]
                         base_path = path[:-1]
                         
                         for context_key in context_keys:
