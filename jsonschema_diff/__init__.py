@@ -1,7 +1,7 @@
 """
 JSONSchema Diff - A library for comparing JSON schemas and displaying differences.
 
-This package provides utilities for comparing JSON schemas and formatting 
+This package provides utilities for comparing JSON schemas and formatting
 the differences in a human-readable way with colored output.
 """
 

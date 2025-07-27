@@ -2,20 +2,18 @@
 Tests for the Formatter module.
 """
 
-import pytest
-import json
-from unittest.mock import Mock, patch
 from jsonschema_diff.formatter import Formatter
-from jsonschema_diff.render_processor import DiffLine, DiffGroup
+from jsonschema_diff.render_processor import DiffGroup, DiffLine
 
 
 class TestFormatter:
     """Test cases for the Formatter class."""
-    
+
     def test_format_output_append(self):
         """Test format_output with append mode."""
         result = Formatter.format_output("test text", "append")
-        # Can't easily test color codes, but we can test that it contains the expected text
+        # Can't easily test color codes, but we can test that it contains
+        # the expected text
         assert "test text" in result
         assert "+" in result  # Default symbol for append
 
@@ -42,9 +40,9 @@ class TestFormatter:
         path = "properties.items"
         old_list = None
         new_list = ["string", "number"]
-        
+
         result = Formatter.format_list_diff(path, old_list, new_list)
-        
+
         assert len(result) > 0
         assert path in result[0]
         assert "string" in "\n".join(result)
@@ -55,9 +53,9 @@ class TestFormatter:
         path = "properties.items"
         old_list = ["string", "number"]
         new_list = None
-        
+
         result = Formatter.format_list_diff(path, old_list, new_list)
-        
+
         assert len(result) > 0
         assert path in result[0]
         assert "string" in "\n".join(result)
@@ -68,9 +66,9 @@ class TestFormatter:
         path = "properties.items"
         old_list = ["string", "number"]
         new_list = ["string", "boolean"]
-        
+
         result = Formatter.format_list_diff(path, old_list, new_list)
-        
+
         assert len(result) > 0
         assert path in result[0]
         assert "string" in "\n".join(result)  # unchanged
@@ -82,9 +80,9 @@ class TestFormatter:
         path = "properties.items"
         old_list = ["string", "number"]
         new_list = ["string", "number"]
-        
+
         result = Formatter.format_list_diff(path, old_list, new_list)
-        
+
         # Should return empty list if no changes
         assert result == []
 
@@ -93,9 +91,9 @@ class TestFormatter:
         path = "properties.items"
         old_list = [{"type": "string"}, {"type": "number"}]
         new_list = [{"type": "string"}, {"type": "boolean"}]
-        
+
         result = Formatter.format_list_diff(path, old_list, new_list)
-        
+
         assert len(result) > 0
         result_text = "\n".join(result)
         assert "string" in result_text
@@ -107,9 +105,9 @@ class TestFormatter:
         path = "properties.items"
         old_list = []
         new_list = []
-        
+
         result = Formatter.format_list_diff(path, old_list, new_list)
-        
+
         # Should return empty list if both are empty
         assert result == []
 
@@ -118,20 +116,18 @@ class TestFormatter:
         path = "properties.items"
         old_list = None
         new_list = ["string"]
-        
+
         result = Formatter.format_list_diff(path, old_list, new_list)
-        
+
         # Last line should not end with comma
-        assert not result[-1].endswith(',')
+        assert not result[-1].endswith(",")
 
     def test_format_differences_deprecated(self):
         """Test the deprecated format_differences method."""
-        differences = [
-            (["properties", "name", "type"], "integer", "string")
-        ]
-        
+        differences = [(["properties", "name", "type"], "integer", "string")]
+
         result = Formatter.format_differences(differences)
-        
+
         assert isinstance(result, str)
         assert '["name"].type' in result  # Actual format from PathUtils.format_path
         assert "integer" in result
@@ -143,12 +139,12 @@ class TestFormatter:
             path=["properties", "name", "type"],
             old_value="integer",
             new_value="string",
-            line_type="main"
+            line_type="main",
         )
         group = DiffGroup(main_line=main_line, context_lines=[])
-        
+
         result = Formatter.format_groups([group])
-        
+
         assert '["name"].type' in result  # Actual format from PathUtils.format_path
         assert "integer" in result
         assert "string" in result
@@ -159,26 +155,26 @@ class TestFormatter:
             path=["properties", "name", "type"],
             old_value="integer",
             new_value="string",
-            line_type="main"
+            line_type="main",
         )
         main_line2 = DiffLine(
             path=["properties", "age", "minimum"],
             old_value=0,
             new_value=1,
-            line_type="main"
+            line_type="main",
         )
-        
+
         group1 = DiffGroup(main_line=main_line1, context_lines=[])
         group2 = DiffGroup(main_line=main_line2, context_lines=[])
-        
+
         result = Formatter.format_groups([group1, group2])
-        
+
         # Should contain both changes
         assert '["name"].type' in result  # Actual format from PathUtils.format_path
         assert '["age"].minimum' in result  # Actual format from PathUtils.format_path
-        
+
         # Should have empty line between groups
-        lines = result.split('\n')
+        lines = result.split("\n")
         assert len(lines) >= 3  # At least 2 lines + 1 empty line
         assert any(line == "" for line in lines)
 
@@ -188,25 +184,25 @@ class TestFormatter:
             path=["properties", "name", "type"],
             old_value="integer",
             new_value="string",
-            line_type="main"
+            line_type="main",
         )
         context_line = DiffLine(
             path=["properties", "name", "format"],
             old_value="email",
             new_value="email",
-            line_type="context"
+            line_type="context",
         )
-        
+
         group = DiffGroup(main_line=main_line, context_lines=[context_line])
-        
+
         result = Formatter.format_groups([group])
-        
+
         # Should contain both main and context
         assert '["name"].type' in result  # Actual format from PathUtils.format_path
         assert '["name"].format' in result  # Actual format from PathUtils.format_path
-        
+
         # Context should immediately follow main (no empty line)
-        lines = result.split('\n')
+        lines = result.split("\n")
         main_idx = next(i for i, line in enumerate(lines) if "type" in line)
         context_idx = next(i for i, line in enumerate(lines) if "format" in line)
         assert context_idx == main_idx + 1
@@ -217,11 +213,11 @@ class TestFormatter:
             path=["properties", "name", "format"],
             old_value="email",
             new_value="email",
-            line_type="context"
+            line_type="context",
         )
-        
+
         result = Formatter._format_single_line(line)
-        
+
         assert '["name"].format' in result  # Actual format from PathUtils.format_path
         assert "email" in result
         # Context lines should not show changes (no arrow)
@@ -233,11 +229,11 @@ class TestFormatter:
             path=["properties", "name", "type"],
             old_value=None,
             new_value="string",
-            line_type="main"
+            line_type="main",
         )
-        
+
         result = Formatter._format_single_line(line)
-        
+
         assert '["name"].type' in result  # Actual format from PathUtils.format_path
         assert "string" in result
         assert "->" not in result  # No arrow for append
@@ -248,11 +244,11 @@ class TestFormatter:
             path=["properties", "name", "type"],
             old_value="string",
             new_value=None,
-            line_type="main"
+            line_type="main",
         )
-        
+
         result = Formatter._format_single_line(line)
-        
+
         assert '["name"].type' in result  # Actual format from PathUtils.format_path
         assert "string" in result
         assert "->" not in result  # No arrow for remove
@@ -263,11 +259,11 @@ class TestFormatter:
             path=["properties", "name", "type"],
             old_value="integer",
             new_value="string",
-            line_type="main"
+            line_type="main",
         )
-        
+
         result = Formatter._format_single_line(line)
-        
+
         assert '["name"].type' in result  # Actual format from PathUtils.format_path
         assert "integer" in result
         assert "string" in result
@@ -279,11 +275,11 @@ class TestFormatter:
             path=["properties", "name", "items"],
             old_value={"type": "string"},
             new_value={"type": "number"},
-            line_type="main"
+            line_type="main",
         )
-        
+
         result = Formatter._format_single_line(line)
-        
+
         assert '["name"].items' in result  # Actual format from PathUtils.format_path
         assert "string" in result
         assert "number" in result
@@ -298,27 +294,27 @@ class TestFormatter:
         path = "properties.items"
         old_list = ["string", "string", "number"]
         new_list = ["string", "boolean", "boolean"]
-        
+
         result = Formatter.format_list_diff(path, old_list, new_list)
-        
+
         # Should handle duplicates correctly - each unique item appears once
         result_text = "\n".join(result)
         assert "string" in result_text
         assert "number" in result_text
         assert "boolean" in result_text
-        
+
         # Count occurrences - each should appear only once in the diff
         string_count = result_text.count('"string"')
         assert string_count == 1  # Should deduplicate
 
     def test_format_list_diff_with_none_values(self):
         """Test format_list_diff properly handles None values in lists."""
-        path = "properties.items" 
+        path = "properties.items"
         old_list = [None, "string"]
         new_list = ["string", None]
-        
+
         result = Formatter.format_list_diff(path, old_list, new_list)
-        
+
         # No changes, so should return empty list
         if not result:  # Empty list if no changes
             assert len(result) == 0
@@ -332,17 +328,14 @@ class TestFormatter:
         # This test ensures the TYPE_CHECKING import on line 16 is executed
         # by importing the module and accessing type-hinted methods
         from jsonschema_diff.formatter import Formatter
-        from jsonschema_diff.render_processor import DiffLine, DiffGroup
-        
+        from jsonschema_diff.render_processor import DiffGroup, DiffLine
+
         # Create objects that use the TYPE_CHECKING imports
         line = DiffLine(
-            path=["test"],
-            old_value="old",
-            new_value="new", 
-            line_type="main"
+            path=["test"], old_value="old", new_value="new", line_type="main"
         )
         group = DiffGroup(main_line=line, context_lines=[])
-        
+
         # Call method that uses these types in annotations
         result = Formatter.format_groups([group])
         assert isinstance(result, str)

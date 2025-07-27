@@ -59,7 +59,6 @@ include = ["jsonschema_diff*"]
 line-length = 88
 target-version = ['py38']
 include = '\.pyi?$'
-extend-ignore = ['E203']
 
 [tool.isort]
 profile = "black"
@@ -67,7 +66,7 @@ multi_line_output = 3
 line_length = 88
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

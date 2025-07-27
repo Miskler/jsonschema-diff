@@ -28,22 +28,22 @@ install-dev:
 	pip install -r requirements-dev.txt
 
 test:
-	pytest --cov=jsoncrack_for_sphinx --cov-report=xml --cov-report=html --cov-report=term-missing
+	pytest --cov=jsonschema_diff --cov-report=xml --cov-report=html --cov-report=term-missing
 
 test-quick:
 	pytest --tb=short
 
 lint:
-	flake8 src/ tests/
-	black --check src/ tests/
-	isort --check-only src/ tests/
+	flake8 jsonschema_diff/ tests/
+	black --check jsonschema_diff/ tests/
+	isort --check-only jsonschema_diff/ tests/
 
 format:
-	black src/ tests/
-	isort src/ tests/
+	black jsonschema_diff/ tests/
+	isort jsonschema_diff/ tests/
 
 type-check:
-	mypy src/jsoncrack_for_sphinx/
+	mypy jsonschema_diff/
 
 clean:
 	rm -rf build/ dist/ *.egg-info/

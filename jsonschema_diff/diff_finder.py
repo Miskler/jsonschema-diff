@@ -5,26 +5,27 @@ This module provides functionality to find differences between JSON schemas
 and classify operation types.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 
 class DiffFinder:
     """Class for finding differences between JSON structures."""
-    
+
     @staticmethod
     def find_differences(
         old: Any, new: Any, path: Optional[List[str]] = None
     ) -> List[Tuple[List[str], Any, Any]]:
         """
         Recursively find differences between two data structures.
-        
+
         Args:
             old (Any): The old data structure.
             new (Any): The new data structure.
             path (Optional[List[str]]): Current path in the structure.
-            
+
         Returns:
-            List[Tuple[List[str], Any, Any]]: List of differences as (path, old_value, new_value).
+            List[Tuple[List[str], Any, Any]]: List of differences as
+                (path, old_value, new_value).
         """
         if path is None:
             path = []
@@ -62,9 +63,8 @@ class DiffFinder:
         # Different types or simple values
         elif old != new:
             diffs.append((path, old, new))
-            
+
         return diffs
-    
 
     @staticmethod
     def get_operation_type(old_val: Any, new_val: Any) -> str:
