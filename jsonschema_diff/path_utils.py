@@ -117,7 +117,7 @@ class PathUtils:
         return "".join(segments)
 
     @staticmethod
-    def get_value_at_path(schema: Dict[str, Any], path: List[str]) -> Optional[str]:
+    def get_value_at_path(schema: Dict[str, Any], path: List[str]) -> Optional[Any]:
         """
         Navigate through schema to find value at given path.
 
@@ -134,7 +134,7 @@ class PathUtils:
                 current = current[segment]
             else:
                 return None
-        return str(current) if current is not None else None
+        return current
 
     @staticmethod
     def parse_path(path_str: str) -> List[str]:

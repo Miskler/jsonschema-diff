@@ -103,7 +103,7 @@ class RenderProcessor:
 
         return groups
 
-    def _find_context_value(self, context_path: List[str]) -> Optional[str]:
+    def _find_context_value(self, context_path: List[str]) -> Optional[Any]:
         """
         Find the context value for a given path in the original schemas.
 
@@ -118,13 +118,13 @@ class RenderProcessor:
             wrapped_old = {"properties": self.old_schema.get("properties", {})}
             value = PathUtils.get_value_at_path(wrapped_old, context_path)
             if value is not None:
-                return str(value)
+                return value
 
         # Try to find in new schema
         if self.new_schema:
             wrapped_new = {"properties": self.new_schema.get("properties", {})}
             value = PathUtils.get_value_at_path(wrapped_new, context_path)
             if value is not None:
-                return str(value)
+                return value
 
         return None

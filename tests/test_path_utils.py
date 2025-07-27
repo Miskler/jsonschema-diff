@@ -125,16 +125,16 @@ class TestPathUtils(unittest.TestCase):
         schema = {"properties": {"field": {"type": "string"}}}
         path = ["properties", "field"]
         result = PathUtils.get_value_at_path(schema, path)
-        # Should return None because result is not a string
-        self.assertIsNone(result)
+        # Should return the field schema object
+        self.assertEqual(result, {"type": "string"})
 
     def test_get_value_at_path_empty_path(self):
         """Test getting value with empty path."""
         schema = {"type": "object"}
         path = []
         result = PathUtils.get_value_at_path(schema, path)
-        # Should return None because root is not a string
-        self.assertIsNone(result)
+        # Should return the root schema object
+        self.assertEqual(result, {"type": "object"})
 
     def test_get_value_at_path_string_value(self):
         """Test getting string value at path."""
@@ -144,11 +144,11 @@ class TestPathUtils(unittest.TestCase):
         self.assertEqual(result, "email")
 
     def test_get_value_at_path_non_string_value(self):
-        """Test getting non-string value at path returns None."""
+        """Test getting non-string value at path."""
         schema = {"properties": {"field": {"maxLength": 50}}}
         path = ["properties", "field", "maxLength"]
         result = PathUtils.get_value_at_path(schema, path)
-        self.assertIsNone(result)
+        self.assertEqual(result, 50)
 
     def test_parse_path_simple(self):
         """Test parsing simple path string."""
