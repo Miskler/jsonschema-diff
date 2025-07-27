@@ -1,33 +1,60 @@
 # Quick Start Guide
 
-This guide will get you up and running with JSON Schema Diff in minutes.
+Get up and running with JSON Schema Diff in less than 5 minutes! 🚀
 
-## Installation
+## 📦 Installation
 
-Install from PyPI:
+### Standard Installation
 
 ```bash
 pip install jsonschema-diff
 ```
 
-Or install from source:
+### With CLI Colors (Recommended)
 
 ```bash
-git clone https://github.com/your-username/jsonschema-diff.git
-cd jsonschema-diff
-pip install -e .
+pip install "jsonschema-diff[cli]"
+# Or separately: pip install jsonschema-diff click
 ```
 
-## Basic Usage
+### From Source (Development)
 
-### Comparing Schemas in Python
+```bash
+git clone https://github.com/your-org/jsonschema-diff.git
+cd jsonschema-diff  
+pip install -e ".[dev]"
+```
 
-The simplest way to compare schemas is using the `compare_schemas` function:
+## 🎯 30-Second Example
 
 ```python
 from jsonschema_diff import compare_schemas
 
-# Define your schemas
+# Your schemas
+old = {"type": "string", "format": "email"}
+new = {"type": "integer", "minimum": 0}
+
+# Compare them
+diff = compare_schemas(old, new)
+print(diff)
+```
+
+**Output:**
+```
+r type: "string/email" -> "integer"
++ minimum: 0
+```
+
+✨ **Notice**: `type` and `format` were automatically combined for cleaner output!
+
+## 🐍 Python API
+
+### Basic Comparison
+
+```python
+from jsonschema_diff import compare_schemas
+
+# Simple schemas
 old_schema = {
     "type": "object",
     "properties": {
@@ -41,20 +68,111 @@ new_schema = {
     "type": "object",
     "properties": {
         "name": {"type": "string", "format": "email"},  # format added
-        "age": {"type": "integer", "minimum": 18},      # minimum changed
+        "age": {"type": "integer", "minimum": 18},      # minimum changed  
         "city": {"type": "string"}                      # new property
     },
     "required": ["name", "city"]  # city now required
 }
 
-# Compare and get formatted output
+# Get formatted differences
 result = compare_schemas(old_schema, new_schema)
 print(result)
 ```
 
-### Using the SchemaComparator Class
+**Output:**
+```
++ ["name"].format: "email"
+r ["age"].minimum: 0 -> 18  
++ ["city"]: {"type": "string"}
++ ["required"][1]: "city"
+```
 
-For more control, use the `SchemaComparator` class directly:
+### Understanding the Output
+
+| Symbol | Meaning | Color |
+|--------|---------|--------|
+| `+` | Added | 🟢 Green |
+| `-` | Removed | 🔴 Red |  
+| `r` | Changed | 🔵 Cyan |
+| ` ` | Context | ⚪ None |
+
+### Advanced Usage
+
+```python
+from jsonschema_diff import compare_schemas
+from jsonschema_diff.config import Config
+
+# Disable colors for logs/files
+Config.set_use_colors(False)
+result = compare_schemas(old_schema, new_schema)
+
+# Get raw differences (before formatting)
+from jsonschema_diff.comparator import Comparator
+comparator = Comparator()
+raw_diffs = comparator.compare(old_schema, new_schema)
+print("Raw differences:", raw_diffs)
+```
+## 💻 Command Line Interface
+
+### Basic CLI Usage
+
+```bash
+# Compare two schema files
+jsonschema-diff schema_v1.json schema_v2.json
+
+# Disable colors (useful for logs)
+jsonschema-diff --no-color schema_v1.json schema_v2.json
+
+# Show help
+jsonschema-diff --help
+```
+
+### Example Files
+
+Create test files to try the CLI:
+
+**schema_v1.json:**
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": {"type": "string"},
+    "age": {"type": "integer", "minimum": 0}
+  }
+}
+```
+
+**schema_v2.json:**
+```json
+{
+  "type": "object", 
+  "properties": {
+    "name": {"type": "string", "format": "email"},
+    "age": {"type": "integer", "minimum": 18},
+    "city": {"type": "string"}
+  }
+}
+```
+
+**Run comparison:**
+```bash
+jsonschema-diff schema_v1.json schema_v2.json
+```
+
+**Output:**
+```
++ ["name"].format: "email"
+r ["age"].minimum: 0 -> 18
++ ["city"]: {"type": "string"}
+```
+
+### CLI Options
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `--no-color` | Disable colored output | `jsonschema-diff --no-color file1.json file2.json` |
+| `--help` | Show help message | `jsonschema-diff --help` |
+| `--version` | Show version info | `jsonschema-diff --version` |
 
 ```python
 from jsonschema_diff import SchemaComparator

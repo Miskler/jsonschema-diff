@@ -1,54 +1,57 @@
-# Changelog
+# 📋 Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to JSON Schema Diff are documented here.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
 ## [2.0.0] - 2025-01-27
 
 ### 🎉 Major Release - Complete Architecture Refactor
 
-This is a complete rewrite of JSON Schema Diff with a modular architecture, comprehensive testing, and powerful new features.
+This release represents a complete rewrite with modern architecture, comprehensive testing, and powerful new features for production use.
 
 ### ✨ Added
 
-#### New Modular Architecture
-- **5-stage pipeline**: `DiffFinder` → `DiffProcessor` → `Combiner` → `RenderProcessor` → `Formatter`
-- **Separation of concerns**: Each module has a single, well-defined responsibility
-- **Clean interfaces**: Clear APIs between modules for maintainability
+#### 🏗️ Modular Pipeline Architecture
+- **5-stage processing pipeline** for clean separation of concerns:
+  ```
+  DiffFinder → DiffProcessor → Combiner → RenderProcessor → Formatter
+  ```
+- **Type-safe interfaces** between all modules
+- **Extensible design** for custom processors and formatters
+- **Dependency injection** patterns for testability
 
-#### Parameter Combination System
-- **Configurable combination rules**: Combine related parameters like `type` + `format`
-- **Operation-specific control**: Different combination behavior for add/remove/change operations
-- **Virtual parameter creation**: Create combined parameters from schema context
-- **Template-based formatting**: Flexible display templates like `"{main}/{sub}"`
+#### 🔗 Smart Parameter Combination
+- **Configurable combination rules** via `CombinationRule` dataclass
+- **Operation-aware combining**: Different behavior for add/remove/change
+- **Template-based formatting**: `"{main}/{sub}"` style templates
+- **Built-in combinations**:
+  - `type` + `format` → `"string/email"` 
+  - `minimum` + `maximum` → `"0-100"` (range format)
 
-#### Context Visualization
-- **Intelligent context display**: Show related fields when important parameters change
-- **Metadata-driven approach**: Uses structured metadata instead of string parsing
-- **Configurable context rules**: Define what context to show for each parameter type
-- **Proper grouping**: Context appears immediately after main changes with correct spacing
+#### 📍 Context-Aware Display  
+- **Intelligent context addition**: Shows related fields when important parameters change
+- **Metadata-driven approach**: No more brittle string parsing
+- **Configurable context rules**: Define what context to show per parameter
+- **Proper grouping**: Context appears with correct spacing and indentation
 
-#### Type-Safe Configuration
-- **Dataclass-based config**: Replaced `Dict[str, Any]` with strongly-typed classes
-- **Immutable configuration**: Frozen dataclasses prevent accidental modification
-- **Comprehensive type hints**: Full type safety throughout the codebase
-- **Enum-based modes**: Type-safe operation modes and combination strategies
+#### 🎨 Enhanced Output Formatting
+- **Beautiful colored output** with optional Click dependency
+- **Graceful fallback** when Click not available  
+- **Consistent spacing**: No extra blank lines, proper group separation
+- **Symbol-based indicators**: `+` (add), `-` (remove), `r` (change), ` ` (context)
 
-#### Advanced Output Formatting  
-- **Proper line spacing**: Correct empty lines between groups, no gaps within groups
-- **Order preservation**: Maintains field order from original schemas
-- **DiffGroup metadata**: Structured approach to grouping related changes
-- **Enhanced path formatting**: Improved readability of schema paths
+#### ⚡ Performance & Reliability
+- **99%+ test coverage** across all modules
+- **Type-safe codebase** with comprehensive type hints
+- **Memory efficient** processing for large schemas
+- **Robust error handling** with meaningful messages
 
-#### Comprehensive Testing
-- **99% test coverage**: Extensive unit tests covering all modules and edge cases
-- **Integration tests**: Full pipeline testing with real-world scenarios
-- **Property-based testing**: Robust validation of core functionality
-- **Mock-based testing**: Isolated testing of individual components
-
-#### Enhanced CLI
+#### 🛠️ Developer Experience
+- **Comprehensive documentation** with examples and API reference
+- **Modern tooling**: Black, isort, mypy, pytest with coverage
+- **CI/CD ready**: Makefile with all common development tasks
+- **Troubleshooting guide** for common issues
 - **Improved error handling**: Better error messages and exit codes
 - **Click integration**: Modern CLI framework with proper help and validation
 - **File validation**: Robust input validation and error reporting

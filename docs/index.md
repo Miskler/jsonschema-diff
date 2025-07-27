@@ -67,6 +67,14 @@ differences = compare_schemas(old_schema, new_schema)
 print(differences)
 ```
 
+**Output:**
+```
+- ["name"].format: "email"
+r ["age"].minimum: 0 -> 18
++ ["email"]: {"format": "email", "type": "string"}
+```
+```
+
 ### CLI Usage
 
 ```bash
@@ -123,6 +131,7 @@ context_params = Config.get_context_params("type")
 quickstart
 examples/index
 configuration
+troubleshooting
 ```
 
 ```{toctree}
@@ -150,11 +159,29 @@ changelog
 
 ## 📊 Project Stats
 
-- **Test Coverage**: 99%
-- **Python Support**: 3.8+
-- **Dependencies**: Minimal (only `click` for CLI)
+- **Test Coverage**: 99%+ 
+- **Python Support**: 3.9+
+- **Dependencies**: Minimal (optional `click` for colored CLI output)
 - **License**: MIT
+- **Architecture**: Modular, extensible pipeline
+
+## 🛠️ Advanced Features
+
+### Error Handling
+- Graceful handling of malformed schemas
+- Detailed error messages with context
+- Validation warnings and suggestions
+
+### Performance
+- Efficient diff algorithms for large schemas
+- Memory-optimized processing
+- Lazy evaluation where possible
+
+### Extensibility  
+- Plugin architecture for custom formatters
+- Configurable combination rules
+- Custom context providers
 
 ---
 
-*Built with ❤️ for the JSON Schema community*
+*Built with ❤️ for developers working with evolving JSON schemas*

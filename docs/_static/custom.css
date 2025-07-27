@@ -1,53 +1,289 @@
 /* Custom CSS for JSON Schema Diff documentation */
 
-/* Code block improvements */
-.highlight {
-    border-radius: 8px;
-    border: 1px solid var(--color-foreground-border);
+/* ===== BRAND STYLING ===== */
+:root {
+    --brand-primary: #2563eb;
+    --brand-secondary: #60a5fa;
+    --success-color: #059669;
+    --warning-color: #d97706;
+    --error-color: #dc2626;
+    --code-bg: #f8fafc;
+    --border-radius: 8px;
 }
 
-/* Custom admonitions */
+/* Dark mode overrides */
+[data-theme="dark"] {
+    --code-bg: #1e293b;
+}
+
+/* ===== ENHANCED CODE BLOCKS ===== */
+.highlight {
+    border-radius: var(--border-radius);
+    border: 1px solid var(--color-foreground-border);
+    overflow: hidden;
+}
+
+.highlight pre {
+    margin: 0;
+    padding: 1rem;
+    background: var(--code-bg);
+}
+
+/* Language labels for code blocks */
+.highlight::before {
+    content: attr(data-language);
+    display: block;
+    background: var(--color-background-secondary);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-foreground-muted);
+    border-bottom: 1px solid var(--color-foreground-border);
+}
+
+/* Copy button styling */
+.copybtn {
+    background: var(--brand-primary);
+    border: none;
+    color: white;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.copybtn:hover {
+    opacity: 1;
+}
+
+/* ===== ENHANCED ADMONITIONS ===== */
+.admonition {
+    border-radius: var(--border-radius);
+    border-left-width: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 .admonition.tip {
-    border-left-color: #28a745;
+    border-left-color: var(--success-color);
+    background: rgba(5, 150, 105, 0.05);
 }
 
 .admonition.warning {
-    border-left-color: #ffc107;
+    border-left-color: var(--warning-color);
+    background: rgba(217, 119, 6, 0.05);
+}
+
+.admonition.danger {
+    border-left-color: var(--error-color);
+    background: rgba(220, 38, 38, 0.05);
 }
 
 .admonition.note {
-    border-left-color: #17a2b8;
+    border-left-color: var(--brand-primary);
+    background: rgba(37, 99, 235, 0.05);
 }
 
-/* Example boxes */
-.example-box {
+/* ===== CUSTOM COMPONENTS ===== */
+
+/* Feature showcase boxes */
+.feature-box {
     background: var(--color-background-secondary);
     border: 1px solid var(--color-foreground-border);
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 1rem 0;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    position: relative;
 }
 
-.example-title {
+.feature-box::before {
+    content: "✨";
+    position: absolute;
+    top: -10px;
+    left: 15px;
+    background: var(--color-background-primary);
+    padding: 0 5px;
+    font-size: 1.2rem;
+}
+
+.feature-title {
     font-weight: bold;
-    color: var(--color-brand-primary);
-    margin-bottom: 0.5rem;
+    color: var(--brand-primary);
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
 }
 
-/* Architecture diagrams */
+/* Architecture flow diagrams */
 .architecture-flow {
     text-align: center;
-    font-family: monospace;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
     background: var(--color-background-secondary);
-    padding: 1rem;
-    border-radius: 8px;
-    margin: 1rem 0;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    margin: 2rem 0;
+    border: 1px solid var(--color-foreground-border);
+    line-height: 1.8;
 }
 
-/* API reference improvements */
+.architecture-flow .step {
+    display: inline-block;
+    background: var(--brand-primary);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    margin: 0 0.5rem;
+    font-weight: 600;
+}
+
+.architecture-flow .arrow {
+    color: var(--color-foreground-muted);
+    font-size: 1.2rem;
+    margin: 0 0.5rem;
+}
+
+/* ===== TABLES ===== */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+th {
+    background: var(--color-background-secondary);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.75rem;
+    border-bottom: 2px solid var(--color-foreground-border);
+}
+
+td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--color-foreground-border);
+}
+
+tr:hover {
+    background: var(--color-background-hover);
+}
+
+/* ===== API REFERENCE ===== */
 .sig-name {
     font-weight: bold;
+    color: var(--brand-primary);
 }
+
+.sig-param {
+    font-style: italic;
+}
+
+.field-list th {
+    background: none;
+    font-weight: 600;
+    color: var(--color-foreground-muted);
+    border: none;
+    padding: 0.5rem 0;
+    min-width: 100px;
+}
+
+.field-list td {
+    border: none;
+    padding: 0.5rem 0;
+}
+
+/* ===== NAVIGATION ===== */
+.toctree-l1 > a {
+    font-weight: 600;
+}
+
+.toctree-l2 > a {
+    color: var(--color-foreground-muted);
+}
+
+/* ===== BADGES ===== */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 4px;
+    margin: 0 0.25rem 0.25rem 0;
+}
+
+.badge-success {
+    color: white;
+    background-color: var(--success-color);
+}
+
+.badge-primary {
+    color: white;
+    background-color: var(--brand-primary);
+}
+
+.badge-warning {
+    color: white;
+    background-color: var(--warning-color);
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+    .architecture-flow {
+        font-size: 0.9rem;
+        padding: 1rem;
+    }
+    
+    .architecture-flow .step {
+        display: block;
+        margin: 0.5rem 0;
+    }
+    
+    .architecture-flow .arrow {
+        display: block;
+        transform: rotate(90deg);
+    }
+    
+    .feature-box {
+        padding: 1rem;
+    }
+}
+
+/* ===== UTILITY CLASSES ===== */
+.text-center { text-align: center; }
+.text-muted { color: var(--color-foreground-muted); }
+.text-primary { color: var(--brand-primary); }
+.text-success { color: var(--success-color); }
+.text-warning { color: var(--warning-color); }
+.text-danger { color: var(--error-color); }
+
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mt-2 { margin-top: 1rem; }
+
+.fw-bold { font-weight: bold; }
+.fw-normal { font-weight: normal; }
+
+/* ===== SPECIAL FORMATTING ===== */
+/* Output examples */
+.output-example {
+    background: #1a1a1a;
+    color: #f8f8f2;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    font-family: monospace;
+    margin: 1rem 0;
+    border-left: 4px solid var(--brand-primary);
+}
+
+.output-example .added { color: #50fa7b; }
+.output-example .removed { color: #ff5555; }
+.output-example .changed { color: #8be9fd; }
+.output-example .context { color: #6272a4; }
 
 .sig-param {
     font-style: italic;
