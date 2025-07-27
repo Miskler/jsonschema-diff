@@ -1,0 +1,242 @@
+/* Custom CSS for JSON Schema Diff documentation */
+
+/* Code block improvements */
+.highlight {
+    border-radius: 8px;
+    border: 1px solid var(--color-foreground-border);
+}
+
+/* Custom admonitions */
+.admonition.tip {
+    border-left-color: #28a745;
+}
+
+.admonition.warning {
+    border-left-color: #ffc107;
+}
+
+.admonition.note {
+    border-left-color: #17a2b8;
+}
+
+/* Example boxes */
+.example-box {
+    background: var(--color-background-secondary);
+    border: 1px solid var(--color-foreground-border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.example-title {
+    font-weight: bold;
+    color: var(--color-brand-primary);
+    margin-bottom: 0.5rem;
+}
+
+/* Architecture diagrams */
+.architecture-flow {
+    text-align: center;
+    font-family: monospace;
+    background: var(--color-background-secondary);
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+/* API reference improvements */
+.sig-name {
+    font-weight: bold;
+}
+
+.sig-param {
+    font-style: italic;
+}
+
+/* Table improvements */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+table th, 
+table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-foreground-border);
+}
+
+table th {
+    background: var(--color-background-secondary);
+    font-weight: bold;
+}
+
+/* Syntax highlighting improvements */
+.highlight .c1 { color: #6a737d; } /* Comments */
+.highlight .s2 { color: #032f62; } /* Strings */
+.highlight .k { color: #d73a49; }  /* Keywords */
+.highlight .nb { color: #005cc5; } /* Built-ins */
+
+/* Dark mode adjustments */
+[data-theme="dark"] .highlight .c1 { color: #8b949e; }
+[data-theme="dark"] .highlight .s2 { color: #a5d6ff; }
+[data-theme="dark"] .highlight .k { color: #ff7b72; }
+[data-theme="dark"] .highlight .nb { color: #79c0ff; }
+
+/* Navigation improvements */
+.toctree-wrapper ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.toctree-wrapper li {
+    margin: 0.25rem 0;
+}
+
+.toctree-wrapper a {
+    text-decoration: none;
+    color: var(--color-foreground-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: block;
+    transition: background-color 0.2s;
+}
+
+.toctree-wrapper a:hover {
+    background: var(--color-background-hover);
+}
+
+/* Badge styles */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-align: center;
+    white-space: nowrap;
+    border-radius: 4px;
+    margin: 0.125rem;
+}
+
+.badge-primary {
+    color: white;
+    background-color: var(--color-brand-primary);
+}
+
+.badge-success {
+    color: white;
+    background-color: #28a745;
+}
+
+.badge-info {
+    color: white;
+    background-color: #17a2b8;
+}
+
+.badge-warning {
+    color: #212529;
+    background-color: #ffc107;
+}
+
+/* Feature grid */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin: 2rem 0;
+}
+
+.feature-card {
+    background: var(--color-background-secondary);
+    border: 1px solid var(--color-foreground-border);
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+.feature-card h3 {
+    margin-top: 0;
+    color: var(--color-brand-primary);
+}
+
+/* Quick links */
+.quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.quick-link {
+    flex: 1;
+    min-width: 200px;
+    background: var(--color-background-secondary);
+    border: 1px solid var(--color-foreground-border);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    text-decoration: none;
+    color: var(--color-foreground-primary);
+    transition: all 0.2s;
+}
+
+.quick-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-color: var(--color-brand-primary);
+}
+
+/* Stats display */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.stat-item {
+    text-align: center;
+    background: var(--color-background-secondary);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--color-brand-primary);
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--color-foreground-muted);
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .feature-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .quick-links {
+        flex-direction: column;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Print styles */
+@media print {
+    .sidebar,
+    .mobile-header,
+    .theme-toggle {
+        display: none !important;
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+    }
+}
