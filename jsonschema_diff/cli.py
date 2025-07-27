@@ -9,6 +9,7 @@ import sys
 from typing import Dict, Any
 import click
 from .comparator import compare_schemas
+from .config import Config
 
 
 @click.command()
@@ -31,15 +32,12 @@ def main(old_schema_file: str, new_schema_file: str, output: str, no_color: bool
         with open(new_schema_file, 'r', encoding='utf-8') as f:
             new_schema = json.load(f)
         
-        # Compare schemas
-        result = compare_schemas(old_schema, new_schema)
-        
         # Handle no-color option
         if no_color:
-            # Strip ANSI color codes
-            import re
-            ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-            result = ansi_escape.sub('', result)
+            Config.set_use_colors(False)
+        
+        # Compare schemas
+        result = compare_schemas(old_schema, new_schema)
         
         # Output result
         if output:

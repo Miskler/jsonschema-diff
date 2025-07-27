@@ -2,15 +2,22 @@
 Formatter for JSON Schema comparison output.
 
 This module provides functionality to format differences between JSON schemas
-into human-readable output with colored formatting.
+into human-readable output with optional colored formatting.
 """
 
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 import json
-import click
 from .config import Config
 from .path_utils import PathUtils
 from .diff_finder import DiffFinder
+
+# Optional click import for colored output
+try:
+    import click
+    CLICK_AVAILABLE = True
+except ImportError:
+    CLICK_AVAILABLE = False
+    click = None
 
 if TYPE_CHECKING:
     from .render_processor import DiffGroup, DiffLine
@@ -19,24 +26,62 @@ if TYPE_CHECKING:
 class Formatter:
     """Class for formatting schema comparison output."""
     
-    @staticmethod
-    def format_output(text: str, mode: str = "no_diff") -> str:
+    # Class variable to control whether warning was shown
+    _warning_shown = False
+    
+    # Class variable to control colored output at formatter level
+    _use_colors = True
+    
+    @classmethod
+    def _show_click_warning(cls) -> None:
+        """Show warning about Click not being available (only once)."""
+        if not cls._warning_shown:
+            import warnings
+            warnings.warn(
+                "Colored output is enabled but Click library is not installed. "
+                "Install Click for colored output or set Config.USE_COLORS = False to disable this warning.",
+                UserWarning,
+                stacklevel=3
+            )
+            cls._warning_shown = True
+    
+    @classmethod
+    def set_use_colors(cls, use_colors: bool) -> None:
         """
-        Format output text with Click styling.
+        Enable or disable colored output.
+        
+        Args:
+            use_colors (bool): Whether to use colored output.
+        """
+        cls._use_colors = use_colors
+    
+    @classmethod
+    def format_output(cls, text: str, mode: str = "no_diff") -> str:
+        """
+        Format output text with optional Click styling.
         
         Args:
             text (str): The text to format.
             mode (str): The formatting mode ('append', 'remove', 'replace', 'no_diff').
             
         Returns:
-            str: Formatted text with color and symbol.
+            str: Formatted text with color and symbol (if colors enabled).
         """
         display_mode = Config.get_display_mode(mode)
-        return click.style(
-            f'{display_mode.symbol} {text}', 
-            fg=display_mode.color, 
-            bold=True
-        )
+        formatted_text = f'{display_mode.symbol} {text}'
+        
+        # Check configuration setting
+        should_use_colors = Config.get_use_colors() and cls._use_colors
+        
+        if should_use_colors:
+            if CLICK_AVAILABLE and click is not None:
+                return click.style(formatted_text, fg=display_mode.color, bold=True)
+            else:
+                # Show warning if colors are requested but Click is not available
+                cls._show_click_warning()
+                return formatted_text
+        else:
+            return formatted_text
     
     @staticmethod
     def format_list_diff(

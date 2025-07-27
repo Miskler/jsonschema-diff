@@ -66,6 +66,10 @@ class CombinationRule:
 class Config:
     """Main configuration class containing all schema comparison settings."""
     
+    # Enable colored output using Click library
+    # If True but Click is not available, shows warning and uses plain text
+    USE_COLORS = True
+    
     # Display modes for different types of changes
     MODES = {
         'append': DisplayMode(color="green", symbol="+"),
@@ -125,3 +129,13 @@ class Config:
     def get_combination_rules(cls) -> List[CombinationRule]:
         """Get all combination rules."""
         return cls.COMBINATION_RULES
+    
+    @classmethod
+    def set_use_colors(cls, use_colors: bool) -> None:
+        """Enable or disable colored output."""
+        cls.USE_COLORS = use_colors
+    
+    @classmethod
+    def get_use_colors(cls) -> bool:
+        """Check if colored output is enabled."""
+        return cls.USE_COLORS

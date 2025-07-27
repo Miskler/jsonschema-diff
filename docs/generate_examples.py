@@ -16,6 +16,7 @@ from typing import Dict, Any, List, Tuple
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from jsonschema_diff import compare_schemas, SchemaComparator
+from jsonschema_diff.config import Config
 
 
 class ExampleGenerator:
@@ -53,6 +54,9 @@ class ExampleGenerator:
         """Generate a single example file."""
         name = example['name']
         safe_name = name.lower().replace(' ', '_').replace('-', '_')
+        
+        # Disable colors for documentation
+        Config.set_use_colors(False)
         
         # Run the actual comparison
         try:
