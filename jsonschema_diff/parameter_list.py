@@ -1,12 +1,12 @@
 from typing import Any
 from .abstraction import Statuses
-from jsonschema_diff.compare.parameter_base import Compare
+from .parameter_base import Compare
 from dataclasses import dataclass
 from typing import Any, TYPE_CHECKING
 import difflib
 
 if TYPE_CHECKING:
-    from ..config import Config
+    from .config import Config
 
 
 @dataclass

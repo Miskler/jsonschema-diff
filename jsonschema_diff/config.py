@@ -2,8 +2,8 @@ from typing import Any
 from types import NoneType
 from typing import TYPE_CHECKING
 
-from .compare.parameter_base import Compare
-from .compare.parameter_list import CompareList
+from .parameter_base import Compare
+from .parameter_list import CompareList
 
 class CompareRules:
     def __init__(self, rules: dict[type | tuple[type, type], type[Compare]] = {}, default: type[Compare] = Compare):
@@ -28,11 +28,15 @@ class CompareRules:
 
 
 class Config:
-    def __init__(self, tab: str = "  ", compare_rules: CompareRules | None = None):
+    def __init__(self,
+                 tab: str = "  ",
+                 compare_rules: CompareRules | None = None,
+                 path_maker_ignore: list[str] = ["properties", "items"]):
         self.TAB = tab
         if compare_rules is None:
             self.COMPARE_RULES = CompareRules()
         self.COMPARE_RULES = compare_rules
+        self.PATH_MAKER_IGNORE = path_maker_ignore
 
 
 config = Config(compare_rules=CompareRules({list: CompareList}))

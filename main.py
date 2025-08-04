@@ -1,4 +1,4 @@
-from jsonschema_diff.compare import property
+from jsonschema_diff import property
 from jsonschema_diff.config import config
 from json import loads
 from pprint import pprint

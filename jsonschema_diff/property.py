@@ -2,7 +2,7 @@ from .abstraction import Statuses
 from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..config import Config
+    from .config import Config
     from .parameter_base import Compare
 
 
@@ -10,15 +10,15 @@ class Property:
     def __init__(
             self,
             config: "Config",
-            name: str,
-            schema_path: list[str],
-            json_path: list[str],
+            schema_path: list[str | int],
+            json_path: list[str | int],
+            name: str | int,
             old_schema: dict | None,
             new_schema: dict | None
         ):
         self.status: Statuses = Statuses.UNKNOWN
         self.parameters: dict[str, "Compare"] = {}
-        self.propertys: dict[str, "Property"] = {}
+        self.propertys: dict[str | int, "Property"] = {}
         
         self.config = config
         self.name = name
@@ -57,17 +57,38 @@ class Property:
 
                     prop = Property(
                         config=self.config,
-                        name=prop_key,
-                        schema_path=self.schema_path+[key, self.name],
+                        schema_path=self.schema_path+[self.name, key],
                         json_path=self.json_path+[self.name],
+                        name=prop_key,
                         old_schema=old_to_prop,
                         new_schema=new_to_prop
                     )
                     prop.compare()
                     self.propertys[prop_key] = prop
+            elif key in ["prefixItems", "items"]:
+                if not isinstance(old_value, list):
+                    old_value = [old_value]
+                if not isinstance(new_value, list):
+                    new_value = [new_value]
+
+                for i in range(max(len(new_value), len(old_value))):
+                    old_to_prop = None if old_value is None else old_value[i]
+                    new_to_prop = None if new_value is None else new_value[i]
+
+                    prop = Property(
+                        config=self.config,
+                        schema_path=self.schema_path+[self.name, key],
+                        json_path=self.json_path+[self.name],
+                        name=i,
+                        old_schema=old_to_prop,
+                        new_schema=new_to_prop
+                    )
+                    prop.compare()
+                    self.propertys[i] = prop
+
             else:
                 comparator = self.config.COMPARE_RULES.get_comparator_from_values(old_value, new_value)
-                comparator = comparator(self.config, self.json_path, old_key, old_value, new_key, new_value)
+                comparator = comparator(self.config, self.schema_path, self.json_path, old_key, old_value, new_key, new_value)
                 comparator.compare()
 
                 if comparator.is_for_rendering() and self.status == Statuses.UNKNOWN:
