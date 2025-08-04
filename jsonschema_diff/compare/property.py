@@ -80,7 +80,7 @@ class Property:
         for param in self.parameters.values():
             if param.is_for_rendering():
                 my_to_render.append(param.render(tab_level))
-        to_render = "\n\n".join(my_to_render)
+        to_render = "\n".join(my_to_render)
         
         to_return = [to_render]
         for prop in self.propertys.values():

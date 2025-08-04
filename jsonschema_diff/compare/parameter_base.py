@@ -44,7 +44,14 @@ class Compare:
     def _render_start_line(self, tab_level: int = 0, with_path: bool = True, with_key: bool = True) -> str:
         to_return = f"{self.status.value} {self.config.TAB * tab_level}"
         if with_path:
-            to_return += ''.join(f'[{x}]' for x in self.json_path)
+            to_join = []
+            for x in self.json_path:
+                if x.isnumeric():
+                    to_join.append(f'[{x}]')
+                else:
+                    to_join.append(f'["{x}"]')
+            
+            to_return += ''.join(to_join)
         if with_key:
             to_return += f".{self.new_key}"
         return to_return+":"
