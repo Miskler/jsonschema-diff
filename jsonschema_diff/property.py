@@ -106,7 +106,9 @@ class Property:
                 self.parameters[key] = comparator
 
     def render(self, tab_level: int = 0) -> list[str]:
-        my_to_render = []
+        my_to_render = [
+            f"{RT.make_prefix(self.status)} {RT.make_tab(self.config, tab_level)}{RT.make_path(self.schema_path+[self.name], self.json_path+[self.name], ignore=self.config.PATH_MAKER_IGNORE)}"
+        ]
         #if self.status not in [Statuses.DELETED]:
         for param in self.parameters.values():
             if param.is_for_rendering():
