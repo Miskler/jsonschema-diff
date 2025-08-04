@@ -15,4 +15,4 @@ prop.compare()
 
 result = prop.render()
 
-print("\n\n\n".join(result))
+print("\n\n".join(result))

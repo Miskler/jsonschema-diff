@@ -26,6 +26,8 @@ class CompareList(Compare):
         self.changed_elements: list[CompareListElement] = []
 
     def compare(self) -> Statuses:
+        super().compare()
+
         if self.old_key is None and self.new_key is not None: # add
             self.status = Statuses.ADDED
 
@@ -81,6 +83,7 @@ class CompareList(Compare):
     
     def render(self, tab_level: int = 0) -> str:
         to_return = self._render_start_line(tab_level)
+        
         for i in self.elements:
             to_return += f"\n{i.render(tab_level + 1)}"
         return to_return

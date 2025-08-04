@@ -1,5 +1,6 @@
 from .abstraction import Statuses
 from typing import Any, TYPE_CHECKING
+from .tool_render import RenderTool as RT
 
 if TYPE_CHECKING:
     from .config import Config
@@ -49,8 +50,8 @@ class Property:
             new_key = key if key in self.new_schema else None
             new_value = self.new_schema.get(key, None)
 
-            if key in ["properties", "$defs"]:#, "items"]:
-                prop_keys = self._get_keys(old_value, new_value) # list(old_value.keys() | new_value.keys())
+            if key in ["properties", "$defs"]:
+                prop_keys = self._get_keys(old_value, new_value)
                 for prop_key in prop_keys:
                     old_to_prop = None if old_value is None else old_value.get(prop_key, None)
                     new_to_prop = None if new_value is None else new_value.get(prop_key, None)
@@ -68,12 +69,14 @@ class Property:
             elif key in ["prefixItems", "items"]:
                 if not isinstance(old_value, list):
                     old_value = [old_value]
+                old_len = len(old_value)
                 if not isinstance(new_value, list):
                     new_value = [new_value]
+                new_len = len(new_value)
 
-                for i in range(max(len(new_value), len(old_value))):
-                    old_to_prop = None if old_value is None else old_value[i]
-                    new_to_prop = None if new_value is None else new_value[i]
+                for i in range(max(new_len, old_len)):
+                    old_to_prop = None if i >= old_len else old_value[i]
+                    new_to_prop = None if i >= new_len else new_value[i]
 
                     prop = Property(
                         config=self.config,
@@ -88,7 +91,13 @@ class Property:
 
             else:
                 comparator = self.config.COMPARE_RULES.get_comparator_from_values(old_value, new_value)
-                comparator = comparator(self.config, self.schema_path, self.json_path, old_key, old_value, new_key, new_value)
+                comparator = comparator(self.config,
+                                        self.schema_path+[self.name],
+                                        self.json_path+[self.name],
+                                        old_key,
+                                        old_value,
+                                        new_key,
+                                        new_value)
                 comparator.compare()
 
                 if comparator.is_for_rendering() and self.status == Statuses.UNKNOWN:
@@ -98,12 +107,16 @@ class Property:
 
     def render(self, tab_level: int = 0) -> list[str]:
         my_to_render = []
+        #if self.status not in [Statuses.DELETED]:
         for param in self.parameters.values():
             if param.is_for_rendering():
                 my_to_render.append(param.render(tab_level))
         to_render = "\n".join(my_to_render)
+        #else:
+        #    to_render = f"{RT.make_prefix(self.status)} {RT.make_tab(self.config, tab_level)}{RT.make_path(self.schema_path+[self.name], self.json_path+[self.name])}"
         
         to_return = [to_render]
+        #if self.status not in [Statuses.DELETED, Statuses.NO_DIFF]:
         for prop in self.propertys.values():
             to_return += prop.render(tab_level)
         return to_return
