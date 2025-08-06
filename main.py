@@ -2,10 +2,11 @@ from jsonschema_diff import property
 from jsonschema_diff.config import config
 from json import loads
 from pprint import pprint
+from jsonschema_diff.color.mono import MonoHighlighter
 
 prop = property.Property(
     config=config,
-    name="name",
+    name=None,
     schema_path=[],
     json_path=[],
     old_schema=loads(open("old.schema.json").read()),
@@ -15,4 +16,7 @@ prop.compare()
 
 result = prop.render()
 
-print("\n\n".join(result))
+colored = MonoHighlighter().colorize_lines("\n\n".join(result))
+
+print(colored)
+

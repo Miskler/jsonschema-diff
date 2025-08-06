@@ -1,12 +1,12 @@
 from typing import Any
-from .abstraction import Statuses
-from .parameter_base import Compare
+from ..abstraction import Statuses
+from ..parameter_base import Compare
 from dataclasses import dataclass
 from typing import Any, TYPE_CHECKING
 import difflib
 
 if TYPE_CHECKING:
-    from .config import Config
+    from ..config import Config
 
 
 @dataclass
@@ -81,8 +81,8 @@ class CompareList(Compare):
     def is_for_rendering(self) -> bool:
         return super().is_for_rendering() or len(self.changed_elements) > 0
     
-    def render(self, tab_level: int = 0) -> str:
-        to_return = self._render_start_line(tab_level)
+    def render(self, tab_level: int = 0, with_path: bool = True) -> str:
+        to_return = self._render_start_line(tab_level=tab_level, with_path=with_path)
         
         for i in self.elements:
             to_return += f"\n{i.render(tab_level + 1)}"

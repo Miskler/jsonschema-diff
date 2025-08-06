@@ -13,7 +13,7 @@ class Property:
             config: "Config",
             schema_path: list[str | int],
             json_path: list[str | int],
-            name: str | int,
+            name: str | int | None,
             old_schema: dict | None,
             new_schema: dict | None
         ):
@@ -29,6 +29,22 @@ class Property:
         self.old_schema = {} if old_schema is None else old_schema
         self.new_schema = {} if new_schema is None else new_schema
     
+    @property
+    def json_path_with_name(self):
+        json_path_with_name = self.json_path
+        if self.name is not None:
+            json_path_with_name = self.json_path+[self.name]
+
+        return json_path_with_name
+
+    @property
+    def schema_path_with_name(self):
+        schema_path_with_name = self.schema_path
+        if self.name is not None:
+            schema_path_with_name = self.schema_path+[self.name]
+
+        return schema_path_with_name
+
     def _get_keys(self, old, new):
         if not isinstance(old, dict):
             old = {}
@@ -58,8 +74,8 @@ class Property:
 
                     prop = Property(
                         config=self.config,
-                        schema_path=self.schema_path+[self.name, key],
-                        json_path=self.json_path+[self.name],
+                        schema_path=self.schema_path_with_name+[key],
+                        json_path=self.json_path_with_name,
                         name=prop_key,
                         old_schema=old_to_prop,
                         new_schema=new_to_prop
@@ -80,8 +96,8 @@ class Property:
 
                     prop = Property(
                         config=self.config,
-                        schema_path=self.schema_path+[self.name, key],
-                        json_path=self.json_path+[self.name],
+                        schema_path=self.schema_path_with_name+[key],
+                        json_path=self.json_path_with_name,
                         name=i,
                         old_schema=old_to_prop,
                         new_schema=new_to_prop
@@ -92,8 +108,8 @@ class Property:
             else:
                 comparator = self.config.COMPARE_RULES.get_comparator_from_values(old_value, new_value)
                 comparator = comparator(self.config,
-                                        self.schema_path+[self.name],
-                                        self.json_path+[self.name],
+                                        self.schema_path_with_name,
+                                        self.json_path_with_name,
                                         old_key,
                                         old_value,
                                         new_key,
@@ -106,14 +122,23 @@ class Property:
                 self.parameters[key] = comparator
 
     def render(self, tab_level: int = 0) -> list[str]:
-        my_to_render = [
-            f"{RT.make_prefix(self.status)} {RT.make_tab(self.config, tab_level)}{RT.make_path(self.schema_path+[self.name], self.json_path+[self.name], ignore=self.config.PATH_MAKER_IGNORE)}"
-        ]
-        #if self.status not in [Statuses.DELETED]:
+        to_render_count = []
         for param in self.parameters.values():
             if param.is_for_rendering():
-                my_to_render.append(param.render(tab_level))
+                to_render_count.append(param)
+
+        my_to_render = []
+        property_line_render = self.name is not None and (self.status != Statuses.MODIFIED or len(to_render_count) > 1)
+        params_tab_level = tab_level
+        if property_line_render:
+            my_to_render.append(f"{RT.make_prefix(self.status)} {RT.make_tab(self.config, tab_level)}{RT.make_path(self.schema_path+[self.name], self.json_path+[self.name], ignore=self.config.PATH_MAKER_IGNORE)}:")
+            params_tab_level += 1
+
+        for param in to_render_count:
+            my_to_render.append(param.render(params_tab_level, not property_line_render))
+
         to_render = "\n".join(my_to_render)
+
         #else:
         #    to_render = f"{RT.make_prefix(self.status)} {RT.make_tab(self.config, tab_level)}{RT.make_path(self.schema_path+[self.name], self.json_path+[self.name])}"
         
