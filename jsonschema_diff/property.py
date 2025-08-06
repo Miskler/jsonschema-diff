@@ -117,6 +117,7 @@ class Property:
                 }
         
         result_combine = self.config.COMBINER.combine(parameters_subset)
+
         for keys, values in result_combine.items():
             comparator = values["comparator"]
             comparator = comparator(self.config,
