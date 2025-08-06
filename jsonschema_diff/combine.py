@@ -63,8 +63,8 @@ class Combiner:
             Iterable[Tuple[Hashable, Hashable]],
         ],
         *,
-        inner_key_field: str = "key",
-        inner_value_field: str = "value",
+        inner_key_field: str = "comparator",
+        inner_value_field: str = "to_compare",
     ):
         self.inner_key_field = inner_key_field
         self.inner_value_field = inner_value_field
@@ -138,26 +138,34 @@ class Combiner:
 
     def combine(self, items):
         """
-        Разбивает items на группы по DSU и для каждой группы возвращает
-        {tuple(комбо_ключей_в_порядке_входа): {inner_key: [values...]}}
+        Разбивает items на группы по DSU и для каждой группы возвращает:
+        { tuple(ключей_в_порядке_входа): {inner_key_field: <ik>, inner_value_field: [values...] } }
         Ключи, отсутствующие в rules, считаются синглтонами.
         """
         if not items:
             return {}
 
-        # 1) Разбить по компонентам
-        groups = {}  # root -> [keys in input order]
+        # 1) разбить по компонентам (в порядке входа)
+        groups = {}  # root -> [keys]
         for k in items:
-            r = self._root(k)  # добавит незнакомый k как синглтон
+            r = self._root(k)  # незнакомые ключи станут синглтонами
             groups.setdefault(r, []).append(k)
 
-        # 2) Собрать результат по каждой группе + валидация inner_key
+        # 2) собрать результат по каждой группе + валидация inner_key
         out = {}
-        for _, keys in groups.items():
-            try:
-                inner_keys = {items[k][self.inner_key_field] for k in keys}
-            except KeyError as e:
-                raise KeyError(f"В записи для '{k}' отсутствует поле {e!s}") from e
+        for keys in groups.values():
+            inner_keys = set()
+            values = []
+            for k in keys:
+                payload = items[k]
+                try:
+                    ik = payload[self.inner_key_field]
+                    val = payload[self.inner_value_field]
+                except KeyError as e:
+                    missing = e.args[0]
+                    raise KeyError(f"В записи для '{k}' отсутствует поле '{missing}'") from e
+                inner_keys.add(ik)
+                values.append(val)
 
             if len(inner_keys) != 1:
                 raise ValueError(
@@ -166,8 +174,10 @@ class Combiner:
 
             ik = next(iter(inner_keys))
             out[tuple(keys)] = {
-                ik: [items[k][self.inner_value_field] for k in keys]
+                self.inner_key_field: ik,
+                self.inner_value_field: values,
             }
 
         return out
+
 

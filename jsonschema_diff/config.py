@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from .parameter_base import Compare
 from .custom_compare.list import CompareList
+from .combine import Combiner
 
 class CompareRules:
     def __init__(self, rules: dict[type | tuple[type, type], type[Compare]] = {}, default: type[Compare] = Compare):
@@ -35,21 +36,23 @@ class CompareRules:
             else:
                 return self.default
 
-class CombineRules:
-    def __init__(self, rules: dict[type | tuple[type, type], type[Compare]] = {}, default: type[Compare] = Compare):
-        self.compare_rules = rules
-        self.default = default
-
 
 class Config:
     def __init__(self,
                  tab: str = "  ",
                  compare_rules: CompareRules | None = None,
+                 combiner: Combiner | None = None,
                  path_maker_ignore: list[str] = ["properties", "items"]):
         self.TAB = tab
+        
         if compare_rules is None:
-            self.COMPARE_RULES = CompareRules()
+            compare_rules = CompareRules()
         self.COMPARE_RULES = compare_rules
+        
+        if combiner is None:
+            combiner = Combiner(rules=[])
+        self.COMBINER = combiner
+
         self.PATH_MAKER_IGNORE = path_maker_ignore
 
 

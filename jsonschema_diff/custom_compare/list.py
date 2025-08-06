@@ -28,51 +28,37 @@ class CompareList(Compare):
     def compare(self) -> Statuses:
         super().compare()
 
-        if self.old_key is None and self.new_key is not None: # add
-            self.status = Statuses.ADDED
-
-            for new_value in self.new_value:
-                element = CompareListElement(self.config, new_value, Statuses.ADDED)
+        if self.status == Statuses.NO_DIFF:
+            return self.status
+        elif self.status in [Statuses.ADDED, Statuses.DELETED]: # add
+            for v in self.value:
+                element = CompareListElement(self.config, v, self.status)
                 self.elements.append(element)
                 self.changed_elements.append(element)
-        elif self.old_key is not None and self.new_key is None: # remove
-            self.status = Statuses.DELETED
-
-            for old_value in self.old_value:
-                element = CompareListElement(self.config, old_value, Statuses.DELETED)
-                self.elements.append(element)
-                self.changed_elements.append(element)
-        elif self.old_key is not None and self.new_key is not None: # replace or no-diff
+        elif self.status == Statuses.REPLACED: # replace or no-diff
             sm = difflib.SequenceMatcher(a=self.old_value, b=self.new_value, autojunk=False)
             for tag, i1, i2, j1, j2 in sm.get_opcodes():
+                def add_element(status: Statuses, from_index: int, to_index: int):
+                    is_change = status != Statuses.NO_DIFF
+                    for v in self.old_value[from_index:to_index]:
+                        element = CompareListElement(self.config, v, status)
+                        self.elements.append(element)
+                        if is_change:
+                            self.changed_elements.append(element)
+
                 match tag:
                     case "equal":
-                        for v in self.old_value[i1:i2]:
-                            element = CompareListElement(self.config, v, Statuses.NO_DIFF)
-                            self.elements.append(element)
+                        add_element(Statuses.NO_DIFF, i1, i2)
+                        self.status = Statuses.MODIFIED
                     case "delete":
-                        for v in self.old_value[i1:i2]:
-                            element = CompareListElement(self.config, v, Statuses.DELETED)
-                            self.elements.append(element)
-                            self.changed_elements.append(element)
+                        add_element(Statuses.DELETED, i1, i2)
                     case "insert":
-                        for v in self.new_value[j1:j2]:
-                            element = CompareListElement(self.config, v, Statuses.ADDED)
-                            self.elements.append(element)
-                            self.changed_elements.append(element)
+                        add_element(Statuses.ADDED, j1, j2)
                     case "replace":
-                        for v in self.old_value[i1:i2]:
-                            element = CompareListElement(self.config, v, Statuses.DELETED)
-                            self.elements.append(element)
-                            self.changed_elements.append(element)
-                        for v in self.new_value[j1:j2]:
-                            element = CompareListElement(self.config, v, Statuses.ADDED)
-                            self.elements.append(element)
-                            self.changed_elements.append(element)
+                        add_element(Statuses.DELETED, i1, i2)
+                        add_element(Statuses.ADDED, j1, j2)
                     case _:
                         ValueError(f"Unknown tag: {tag}")
-            
-            self.status = Statuses.MODIFIED if len(self.changed_elements) > 0 else Statuses.NO_DIFF
         else:
             raise ValueError(f"Unsupported keys combination")
 

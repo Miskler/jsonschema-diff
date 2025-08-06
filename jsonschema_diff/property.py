@@ -1,4 +1,4 @@
-from .abstraction import Statuses
+from .abstraction import Statuses, ToCompare
 from typing import Any, TYPE_CHECKING
 from .tool_render import RenderTool as RT
 
@@ -58,6 +58,7 @@ class Property:
         elif len(self.new_schema) <= 0:
             self.status = Statuses.DELETED
 
+        parameters_subset = {}
         keys = self._get_keys(self.old_schema, self.new_schema)
         for key in keys:
             old_key = key if key in self.old_schema else None
@@ -104,22 +105,31 @@ class Property:
                     )
                     prop.compare()
                     self.propertys[i] = prop
-
             else:
-                comparator = self.config.COMPARE_RULES.get_comparator_from_values(old_value, new_value)
-                comparator = comparator(self.config,
-                                        self.schema_path_with_name,
-                                        self.json_path_with_name,
-                                        old_key,
-                                        old_value,
-                                        new_key,
-                                        new_value)
-                comparator.compare()
+                parameters_subset[key] = {
+                    "comparator": self.config.COMPARE_RULES.get_comparator_from_values(key,
+                                                                                       old_value,
+                                                                                       new_value),
+                    "to_compare": ToCompare(old_key=old_key,
+                                            old_value=old_value,
+                                            new_key=new_key,
+                                            new_value=new_value)
+                }
+        
+        result_combine = self.config.COMBINER.combine(parameters_subset)
+        for keys, values in result_combine.items():
+            comparator = values["comparator"]
+            comparator = comparator(self.config,
+                                    self.schema_path_with_name,
+                                    self.json_path_with_name,
+                                    values["to_compare"])
 
-                if comparator.is_for_rendering() and self.status == Statuses.UNKNOWN:
-                    self.status = Statuses.MODIFIED
+            comparator.compare()
 
-                self.parameters[key] = comparator
+            if comparator.is_for_rendering() and self.status == Statuses.UNKNOWN:
+                self.status = Statuses.MODIFIED
+
+            self.parameters[keys] = comparator
 
     def render(self, tab_level: int = 0) -> list[str]:
         to_render_count = []
