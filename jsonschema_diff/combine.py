@@ -1,70 +1,86 @@
 from collections import OrderedDict
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 class Combiner:
-    def __init__(self, 
-                 rules: List[List[str]], 
-                 inner_key_field: str | None = None, 
-                 inner_value_field: str | None = None):
+    def __init__(
+        self,
+        rules: List[List[str]],
+        inner_key_field: str | None = "comparator",
+        inner_value_field: str | None = "to_compare",
+    ):
         self.rules = rules
         self.inner_key_field = inner_key_field
         self.inner_value_field = inner_value_field
 
-    def _combine_group(self, items: List[str], subset: Dict[str, Any]) -> Tuple[Tuple[str, ...], Any]:
-        """Собирает одну группу по списку ключей items, присутствующих в subset."""
-        group_keys = tuple(k for k in items if k in subset)
-        if not group_keys:
-            return (), None
+    def _require_inner_fields(self) -> None:
+        if not self.inner_key_field or not self.inner_value_field:
+            raise ValueError("inner_key_field и inner_value_field должны быть заданы.")
 
-        # Если указаны поля для «склейки» вида {"field": ..., "val": ...}
-        if self.inner_key_field and self.inner_value_field:
-            # Берём «field» из первого, проверяем一致ность (жёстко; если не надо — смягчи)
-            first = subset[group_keys[0]]
-            base_field = first[self.inner_key_field]
-            for k in group_keys[1:]:
-                if subset[k][self.inner_key_field] != base_field:
-                    raise ValueError(
-                        f"Inconsistent '{self.inner_key_field}' in group {group_keys}: "
-                        f"{base_field!r} vs {subset[k][self.inner_key_field]!r}"
-                    )
-            combined_vals = [subset[k][self.inner_value_field] for k in group_keys]
-            result = {
-                self.inner_key_field: base_field,
-                self.inner_value_field: combined_vals,
-            }
-            return group_keys, result
-
-        # Без специальных полей — просто собрать значения в список в порядке группы
-        return group_keys, [subset[k] for k in group_keys]
-
-    def combine(self, subset: Dict[str, Any]) -> Dict[Tuple[str, ...], Any]:
+    def _extract(self, item: Any, key_name: str) -> Tuple[Any, Any]:
         """
-        - Каждый список из rules даёт отдельную группу (возможны перекрытия по ключам).
-        - Ключи, не попавшие ни в одно правило, идут одиночками.
+        Возвращает (field, val) из элемента subset[key_name].
+        Бросает TypeError, если структура не соответствует ожиданиям.
         """
-        out: "OrderedDict[Tuple[str, ...], Any]" = OrderedDict()
+        if not isinstance(item, dict):
+            raise TypeError(f"Ожидался dict для '{key_name}', получено {type(item).__name__}")
+        if self.inner_key_field not in item or self.inner_value_field not in item:
+            raise TypeError(
+                f"Элемент '{key_name}' должен содержать поля "
+                f"'{self.inner_key_field}' и '{self.inner_value_field}'"
+            )
+        return item[self.inner_key_field], item[self.inner_value_field]
+
+    def combine(self, subset: Dict[str, Any]) -> Dict[Tuple[str, ...], Dict[str, Any]]:
+        """
+        Возвращает OrderedDict:
+          (k1, k2, ...) -> {
+              inner_key_field: <общее значение ключа внутри группы>,
+              inner_value_field: [v1, v2, ...]  # в порядке определения в правиле
+          }
+        Каждый список из rules образует свою группу (перекрытия допускаются).
+        Ключи, не попавшие ни в одно правило, возвращаются одиночками.
+        """
+        self._require_inner_fields()
+        out: "OrderedDict[Tuple[str, ...], Dict[str, Any]]" = OrderedDict()
         seen_in_rules: set[str] = set()
 
-        # 1) Группы по правилам
+        # 1) группы по правилам
         for rule in self.rules:
-            group_keys, payload = self._combine_group(rule, subset)
-            if group_keys:
-                out[group_keys] = payload
-                seen_in_rules.update(group_keys)
+            present = [k for k in rule if k in subset]
+            if not present:
+                continue
 
-        # 2) Одиночки: те, кто не встречался ни в одном правиле
-        for k in subset:  # сохраняем порядок появления во входном словаре
-            if k not in seen_in_rules:
-                if self.inner_key_field and self.inner_value_field and isinstance(subset[k], dict):
-                    # Привести к унифицированному виду {"field": ..., "val": [ ... ]}
-                    single = subset[k]
-                    single_field = single.get(self.inner_key_field, None)
-                    single_val = single.get(self.inner_value_field, None)
-                    out[(k,)] = {
-                        self.inner_key_field: single_field,
-                        self.inner_value_field: [single_val],
-                    }
-                else:
-                    out[(k,)] = [subset[k]]
+            # извлекаем значения в порядке правила
+            fields: List[Any] = []
+            vals: List[Any] = []
+            for k in present:
+                f, v = self._extract(subset[k], k)
+                fields.append(f)
+                vals.append(v)
+
+            # проверяем一致ность inner_key внутри группы
+            base_field = fields[0]
+            for f in fields[1:]:
+                if f != base_field:
+                    raise ValueError(
+                        f"Несовпадающий '{self.inner_key_field}' в группе {tuple(present)}: "
+                        f"{base_field!r} vs {f!r}"
+                    )
+
+            out[tuple(present)] = {
+                self.inner_key_field: base_field,
+                self.inner_value_field: vals,
+            }
+            seen_in_rules.update(present)
+
+        # 2) одиночки — в порядке появления во входном словаре
+        for k, item in subset.items():
+            if k in seen_in_rules:
+                continue
+            f, v = self._extract(item, k)
+            out[(k,)] = {
+                self.inner_key_field: f,
+                self.inner_value_field: [v],
+            }
 
         return out
