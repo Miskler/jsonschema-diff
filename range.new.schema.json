@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:demo:range-new",
+  "type": "object",
+  "additionalProperties": false,
+
+  "properties": {
+    "price": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "maximum": 1000,
+      "multipleOf": 0.25
+    },
+
+    "temperature": {
+      "type": "number",
+      "exclusiveMinimum": -50,
+      "exclusiveMaximum": 200
+    },
+
+    "name": {
+      "type": "string",
+      "minLength": 2
+    },
+
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 32 },
+      "minItems": 0,
+      "maxItems": 8,
+      "uniqueItems": true
+    },
+
+    "ratings": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 5
+      },
+      "minItems": 1
+    },
+
+    "settings": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "retries": { "type": "integer", "minimum": 0, "maximum": 5 },
+        "timeoutSec": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+
+    "items": {
+      "type": "array",
+      "minItems": 5,
+      "items": { "$ref": "#/$defs/item" }
+    },
+
+    "badRange": {
+      "type": "number",
+      "exclusiveMinimum": 6,
+      "maximum": 9
+    }
+  },
+
+  "required": ["price", "name"],
+
+  "$defs": {
+    "url": { "type": "string", "format": "uri" },
+
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "integer", "exclusiveMinimum": 0 },
+        "title": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "sort": { "type": "integer" },
+        "pageUrls": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/url" },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "blocks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": { "type": "integer", "minimum": 1 },
+              "type": { "type": "string", "minLength": 1, "maxLength": 64 },
+              "sort": { "type": "integer", "minimum": 0 },
+              "payload": {
+                "type": "object",
+                "minProperties": 1
+              }
+            },
+            "required": ["id", "type", "payload"]
+          }
+        }
+      },
+      "required": ["id", "title", "blocks"]
+    }
+  }
+}

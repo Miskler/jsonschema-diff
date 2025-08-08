@@ -131,8 +131,14 @@ class Property:
                 self.status = Statuses.MODIFIED
 
             self.parameters[keys] = comparator
+        
+        if self.status == Statuses.UNKNOWN:
+            self.status = Statuses.NO_DIFF
 
-    def render(self, tab_level: int = 0) -> list[str]:
+    def is_for_rendering(self) -> bool:
+        return self.status in [Statuses.ADDED, Statuses.DELETED, Statuses.REPLACED, Statuses.MODIFIED]
+
+    def self_render(self, tab_level: int = 0) -> str:
         to_render_count = []
         for param in self.parameters.values():
             if param.is_for_rendering():
@@ -150,11 +156,14 @@ class Property:
 
         to_render = "\n".join(my_to_render)
 
-        #else:
-        #    to_render = f"{RT.make_prefix(self.status)} {RT.make_tab(self.config, tab_level)}{RT.make_path(self.schema_path+[self.name], self.json_path+[self.name])}"
+        return to_render
+
+    def render(self, tab_level: int = 0) -> list[str]:
+        to_return = []
+
+        if self.is_for_rendering():
+            to_return.append(self.self_render(tab_level=tab_level))
         
-        to_return = [to_render]
-        #if self.status not in [Statuses.DELETED, Statuses.NO_DIFF]:
         for prop in self.propertys.values():
             to_return += prop.render(tab_level)
         return to_return

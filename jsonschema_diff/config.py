@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from .parameter_base import Compare
 from .custom_compare.list import CompareList
-from .custom_compare.typed_format import CompareTypedFormat
+from .custom_compare.range import CompareRange
 from .combine import Combiner
 
 class CompareRules:
@@ -62,10 +62,26 @@ class Config:
 config = Config(
     compare_rules=CompareRules({
         list: CompareList,
-        "type": CompareTypedFormat,
-        "format": CompareTypedFormat
+        
+        # ЧИСЛА
+        "minimum":          CompareRange,
+        "maximum":          CompareRange,
+        "exclusiveMinimum": CompareRange,
+        "exclusiveMaximum": CompareRange,
+        # СТРОКИ (длины)
+        "minLength": CompareRange,
+        "maxLength": CompareRange,
+        # МАССИВЫ (число элементов)
+        "minItems": CompareRange,
+        "maxItems": CompareRange,
+        # ОБЪЕКТЫ (число свойств)
+        "minProperties": CompareRange,
+        "maxProperties": CompareRange,
     }),
     combiner=Combiner([
-        ["type", "format"]
+        ["minimum", "exclusiveMinimum", "maximum", "exclusiveMaximum"],
+        ["minLength", "maxLength"],
+        ["minItems", "maxItems"],
+        ["minProperties", "maxProperties"],
     ])
 )
