@@ -63,20 +63,20 @@ config = Config(
     compare_rules=CompareRules({
         list: CompareList,
         
-        # ЧИСЛА
+        #  ЧИСЛА
         "minimum":          CompareRange,
         "maximum":          CompareRange,
         "exclusiveMinimum": CompareRange,
         "exclusiveMaximum": CompareRange,
-        # СТРОКИ (длины)
-        "minLength": CompareRange,
-        "maxLength": CompareRange,
-        # МАССИВЫ (число элементов)
-        "minItems": CompareRange,
-        "maxItems": CompareRange,
-        # ОБЪЕКТЫ (число свойств)
-        "minProperties": CompareRange,
-        "maxProperties": CompareRange,
+        #  СТРОКИ (длины)
+        "minLength":        CompareRange,
+        "maxLength":        CompareRange,
+        #  МАССИВЫ (число элементов)
+        "minItems":         CompareRange,
+        "maxItems":         CompareRange,
+        #  ОБЪЕКТЫ (число свойств)
+        "minProperties":    CompareRange,
+        "maxProperties":    CompareRange,
     }),
     combiner=Combiner([
         ["minimum", "exclusiveMinimum", "maximum", "exclusiveMaximum"],

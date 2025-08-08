@@ -1,10 +1,10 @@
 from jsonschema_diff.combine import Combiner
 
-
+from pprint import pprint
 
 rules = [
     ["A", "B", "C"],   # группа 1
-    ["X", "Y"]         # группа 2
+    ["A", "X", "Y"]         # группа 2
 ]
 
 c = Combiner(rules, inner_key_field="field", inner_value_field="val")
@@ -17,7 +17,7 @@ subset = {
     "Z": {"field": "color", "val": "yellow"},
 }
 
-print(c.combine(subset))
+pprint(c.combine(subset))
 # {'color': ['red', 'blue', 'green']}
 
 bad_subset = {
