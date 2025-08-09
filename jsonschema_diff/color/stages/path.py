@@ -1,9 +1,7 @@
 # jsonschema_diff/color/path_stage_rich.py
 from __future__ import annotations
 
-import re
-from typing import Optional
-
+from typing import Optional, List, Tuple
 from rich.console import Console
 from rich.text import Text
 from rich.style import Style
@@ -13,27 +11,19 @@ from ..abstraction import LineHighlighter
 
 class PathHighlighter(LineHighlighter):
     """
-    Подсветка компонент пути, например:
+    Подсветка компонент пути (учитывает ':' для определения финального проперти):
       .$defs["item"]["blocks"][0]["type"].rangeLength
       ["tags"][0].rangeLength
       .range
 
-    Правила:
-      • '.' и '['/']' — base_color
-      • "строки"/'строки' (включая кавычки) — string_color
-      • числа — number_color
-      • свойства после точки: все, кроме последнего — path_prop_color
-      • последнее свойство (после последней точки) — prop_color (точка остаётся base_color)
+    Цвета:
+      - base_color:     '.', '[', ']'
+      - string_color:   "..." / '...' (включая кавычки, внутри скобок)
+      - number_color:   числа (внутри скобок)
+      - path_prop_color:промежуточные свойства (.foo .bar)
+      - prop_color:     финальное свойство (.rangeLength) — имя прямо перед ':' (игнорируя пробелы)
+                        точка остаётся base_color
     """
-
-    # dot-свойства: .name  (JS-подобный идентификатор)
-    _RE_DOT_PROP = re.compile(r"\.([A-Za-z_$][A-Za-z0-9_$]*)")
-    # блоки в скобках: [ ... ] (без вложенности)
-    _RE_BRACKET = re.compile(r"\[[^\]]*?\]")
-    # строка в кавычках (простая версия, без экранирования)
-    _RE_QUOTED_FULL = re.compile(r'^(?:"[^"]*"|\'[^\']*\')$')
-    # число (возможен минус)
-    _RE_NUMBER = re.compile(r"-?\d+")
 
     def __init__(
         self,
@@ -41,96 +31,141 @@ class PathHighlighter(LineHighlighter):
         base_color: str = "grey50",
         string_color: str = "yellow",
         number_color: str = "magenta",
-        path_prop_color: str = "cyan",
-        prop_color: str = "bright_cyan",
+        path_prop_color: str = "#74609E",
+        prop_color: str = "#5C4197",
     ) -> None:
         self.base_style = Style(color=base_color)
         self.string_style = Style(color=string_color)
         self.number_style = Style(color=number_color)
         self.path_prop_style = Style(color=path_prop_color)
         self.prop_style = Style(color=prop_color)
-
         self._console = Console(force_terminal=True, color_system="truecolor", width=10_000)
 
-    # ---------- public API ----------
-
     def colorize_line(self, line: str) -> str:
-        # Разбираем ANSI → Text, чтобы наслаивать стили
-        t = Text.from_ansi(line)
-        plain = t.plain
+        text = Text.from_ansi(line)
+        s = text.plain
 
-        # Границы “пути”: от первого '.' или '[' до первого ':' (или конца строки)
-        first_dot = plain.find(".")
-        first_br = plain.find("[")
-        candidates = [i for i in (first_dot, first_br) if i != -1]
-        if not candidates:
+        # границы пути
+        first_dot = s.find(".")
+        first_br  = s.find("[")
+        starts = [i for i in (first_dot, first_br) if i != -1]
+        if not starts:
             return line
-
-        path_start = min(candidates)
-        colon = plain.find(":")
-        path_end = colon if colon != -1 else len(plain)
+        path_start = min(starts)
+        colon = s.find(":")
+        path_end = colon if colon != -1 else len(s)
         if path_start >= path_end:
             return line
 
-        # Локальный фрагмент plain для разбора
-        segment = plain[path_start:path_end]
+        # посимвольный скан: собираем имена после точки
+        i = path_start
+        dot_name_spans: List[Tuple[int, int]] = []  # абсолютные [start,end) для имён после '.'
 
-        # 1) Подсветка dot-свойств: найдём все, выделим последнее
-        dot_props = list(self._RE_DOT_PROP.finditer(segment))
-        last_prop_idx: Optional[int] = len(dot_props) - 1 if dot_props else None
+        def is_ident_start(ch: str) -> bool:
+            return ch.isalpha() or ch in "_$"
+        def is_ident_part(ch: str) -> bool:
+            return ch.isalnum() or ch in "_$"
 
-        for idx, m in enumerate(dot_props):
-            name_start_rel, name_end_rel = m.span(1)  # только имя
-            dot_pos_rel = m.start()                   # позиция точки
+        while i < path_end:
+            ch = s[i]
 
-            # точка — base
-            t.stylize(self.base_style, path_start + dot_pos_rel, path_start + dot_pos_rel + 1)
-
-            # имя свойства — либо промежуточное, либо финальное
-            style = self.prop_style if (last_prop_idx is not None and idx == last_prop_idx) else self.path_prop_style
-            t.stylize(style, path_start + name_start_rel, path_start + name_end_rel)
-
-        # 2) Подсветка скобок и их содержимого
-        for bm in self._RE_BRACKET.finditer(segment):
-            br_s_rel, br_e_rel = bm.span()
-            # '[' и ']' — base
-            t.stylize(self.base_style, path_start + br_s_rel, path_start + br_s_rel + 1)
-            t.stylize(self.base_style, path_start + br_e_rel - 1, path_start + br_e_rel)
-
-            inner_start = br_s_rel + 1
-            inner_end = br_e_rel - 1
-            if inner_start >= inner_end:
+            # .identifier
+            if ch == "." and i + 1 < path_end and is_ident_start(s[i + 1]):
+                # точка — базовым
+                text.stylize(self.base_style, i, i + 1)
+                j = i + 2
+                while j < path_end and is_ident_part(s[j]):
+                    j += 1
+                dot_name_spans.append((i + 1, j))  # имя без точки
+                i = j
                 continue
 
-            inner = segment[inner_start:inner_end].strip()
-            # если весь контент — "строка" или 'строка', красим весь (включая кавычки)
-            if self._RE_QUOTED_FULL.match(inner):
-                # включительно с кавычками и внутренними символами
-                t.stylize(self.string_style, path_start + inner_start, path_start + inner_end)
-            else:
-                # иначе — подсветим числа внутри
-                for nm in self._RE_NUMBER.finditer(segment, inner_start, inner_end):
-                    n_s_rel, n_e_rel = nm.span()
-                    t.stylize(self.number_style, path_start + n_s_rel, path_start + n_e_rel)
+            # [ ... ]
+            if ch == "[":
+                # '['
+                text.stylize(self.base_style, i, i + 1)
+                j = i + 1
+                while j < path_end and s[j] != "]":
+                    j += 1
+                inner_start = i + 1
+                inner_end = j
+                if inner_start < inner_end:
+                    inner = s[inner_start:inner_end]
+                    inner_stripped = inner.strip()
+                    # "..." / '...'
+                    if (inner_stripped.startswith('"') and inner_stripped.endswith('"')) or \
+                       (inner_stripped.startswith("'") and inner_stripped.endswith("'")):
+                        lead_ws = len(inner) - len(inner.lstrip())
+                        trail_ws = len(inner) - len(inner.rstrip())
+                        a = inner_start + lead_ws
+                        b = inner_end - trail_ws
+                        text.stylize(self.string_style, a, b)
+                    else:
+                        # числа
+                        k = inner_start
+                        while k < inner_end:
+                            if s[k].isspace():
+                                k += 1
+                                continue
+                            if s[k] == "-" or s[k].isdigit():
+                                t0 = k
+                                if s[k] == "-":
+                                    k += 1
+                                while k < inner_end and s[k].isdigit():
+                                    k += 1
+                                text.stylize(self.number_style, t0, k)
+                            else:
+                                k += 1
+                # ']'
+                if j < path_end and s[j] == "]":
+                    text.stylize(self.base_style, j, j + 1)
+                    i = j + 1
+                else:
+                    i = path_end
+                continue
 
-        # 3) Точки, которые не попали в dot-проперти (например, одиночная ".range" без первых regex-совпадений)
-        #    Уже покрыто _RE_DOT_PROP, но на всякий случай подсветим любые '.' в сегменте базовым цветом.
-        for i, ch in enumerate(segment):
-            if ch == ".":
-                # избегаем двойного стилизования — это безопасно (rich их сольёт)
-                t.stylize(self.base_style, path_start + i, path_start + i + 1)
+            i += 1
 
-        return self._render(t)
+        # --- выбор финального свойства с участием ':' ---
+        final_idx: Optional[int] = None
+        if dot_name_spans:
+            # позиция последнего непробельного символа перед ':' (или path_end)
+            k = path_end - 1
+            while k >= path_start and s[k].isspace():
+                k -= 1
+            # если этот символ попадает внутрь имени после точки — это финальный проп
+            for idx, (a, b) in enumerate(dot_name_spans):
+                if a <= k < b:
+                    final_idx = idx
+            # резерв: если перед ':' не имя, а ']' и т.п. — берём последнюю точку до ':'
+            if final_idx is None:
+                final_idx = len(dot_name_spans) - 1
 
-    def colorize_lines(self, text: str) -> str:
-        parts: list[str] = []
-        for chunk in text.splitlines(keepends=True):
-            body = chunk.rstrip("\r\n")
-            eol = chunk[len(body):]
-            parts.append(self.colorize_line(body) + eol)
-        return "".join(parts)
+            # покрасить имена
+            for idx, (a, b) in enumerate(dot_name_spans):
+                style = self.prop_style if idx == final_idx else self.path_prop_style
+                text.stylize(style, a, b)
 
-    # ---------- internal ----------
+        # дополнительно — окрасить любые точки и скобки базовым (на случай, если не поймали выше)
+        seg = s[path_start:path_end]
+        for off, ch in enumerate(seg):
+            if ch == "." or ch == "[" or ch == "]":
+                pos = path_start + off
+                text.stylize(self.base_style, pos, pos + 1)
+
+        # подсветить двоеточие базовым цветом
+        if colon != -1:
+            text.stylize(self.base_style, colon, colon + 1)
+
+        return self._render(text)
+
+    def colorize_lines(self, text_block: str) -> str:
+        out: list[str] = []
+        for chunk in text_block.splitlines(keepends=True):
+            line = chunk.rstrip("\r\n")
+            eol = chunk[len(line):]
+            out.append(self.colorize_line(line) + eol)
+        return "".join(out)
 
     def _render(self, t: Text) -> str:
         with self._console.capture() as cap:

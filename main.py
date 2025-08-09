@@ -25,13 +25,7 @@ colored = HighlighterPipeline([
         bg_color="grey30",
         underline_changes=False,
     ),
-    PathHighlighter(
-        base_color="grey50",
-        string_color="yellow",
-        number_color="magenta",
-        path_prop_color="#74609E",
-        prop_color="#5C4197",
-    ),
+    PathHighlighter(),
 ]).colorize_lines("\n\n".join(result)) 
 
 print(colored)
