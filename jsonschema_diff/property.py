@@ -124,9 +124,6 @@ class Property:
             inner_value_field="to_compare"
         )
 
-        from pprint import pprint
-        pprint(result_combine)
-
         for keys, values in result_combine.items():
             comparator = values["comparator"]
             comparator = comparator(self.config,
