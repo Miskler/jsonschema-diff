@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from .parameter_base import Compare
 from .custom_compare.list import CompareList
 from .custom_compare.range import CompareRange
-from .combine import Combiner
 
 class CompareRules:
     def __init__(self,
@@ -44,19 +43,22 @@ class Config:
     def __init__(self,
                  tab: str = "  ",
                  compare_rules: CompareRules | None = None,
-                 combiner: Combiner | None = None,
-                 path_maker_ignore: list[str] = ["properties", "items"]):
+                 combine_rules: list[list[str]] = [],
+                 path_maker_ignore: list[str] = ["properties", "items"],
+                 pair_context_rules: list = [],
+                 context_rules: dict = {}):
         self.TAB = tab
         
         if compare_rules is None:
             compare_rules = CompareRules()
         self.COMPARE_RULES = compare_rules
         
-        if combiner is None:
-            combiner = Combiner(rules=[])
-        self.COMBINER = combiner
+        self.COMBINE_RULES = combine_rules
 
         self.PATH_MAKER_IGNORE = path_maker_ignore
+
+        self.PAIR_CONTEXT_RULES = pair_context_rules
+        self.CONTEXT_RULES = context_rules
 
 
 config = Config(
@@ -78,10 +80,16 @@ config = Config(
         "minProperties":    CompareRange,
         "maxProperties":    CompareRange,
     }),
-    combiner=Combiner([
+    combine_rules=[
         ["minimum", "exclusiveMinimum", "maximum", "exclusiveMaximum"],
         ["minLength", "maxLength"],
         ["minItems", "maxItems"],
         ["minProperties", "maxProperties"],
-    ])
+    ],
+    pair_context_rules=[
+        ["one", "other"],
+    ],
+    context_rules={
+        "something": ["one", "other"],
+    }
 )

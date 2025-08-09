@@ -1,4 +1,5 @@
 from .abstraction import Statuses, ToCompare
+from .tools.combine import LogicCombinerHandler
 from typing import Any, TYPE_CHECKING
 from .tool_render import RenderTool as RT
 
@@ -116,7 +117,15 @@ class Property:
                                             new_value=new_value)
                 }
         
-        result_combine = self.config.COMBINER.combine(parameters_subset)
+        result_combine = LogicCombinerHandler.combine(
+            subset=parameters_subset,
+            rules=self.config.COMBINE_RULES,
+            inner_key_field="comparator",
+            inner_value_field="to_compare"
+        )
+
+        from pprint import pprint
+        pprint(result_combine)
 
         for keys, values in result_combine.items():
             comparator = values["comparator"]

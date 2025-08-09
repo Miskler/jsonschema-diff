@@ -1,4 +1,4 @@
-from jsonschema_diff.combine import Combiner
+from jsonschema_diff.tools.combine import Combiner
 
 from pprint import pprint
 
