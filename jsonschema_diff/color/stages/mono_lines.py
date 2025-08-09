@@ -16,7 +16,7 @@ class MonoLinesHighlighter(LineHighlighter):
     """
     def __init__(
         self,
-        bold: bool = False,
+        bold: bool = True,
         default_color: Optional[str] = None,
         case_sensitive: bool = False,
         rules: Mapping[str, str] = {

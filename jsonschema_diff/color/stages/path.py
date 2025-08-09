@@ -28,11 +28,11 @@ class PathHighlighter(LineHighlighter):
     def __init__(
         self,
         *,
-        base_color: str = "grey50",
+        base_color: str = "grey70",
         string_color: str = "yellow",
         number_color: str = "magenta",
-        path_prop_color: str = "#74609E",
-        prop_color: str = "#5C4197",
+        path_prop_color: str = "color(103)",
+        prop_color: str = "color(146)",
     ) -> None:
         self.base_style = Style(color=base_color)
         self.string_style = Style(color=string_color)
