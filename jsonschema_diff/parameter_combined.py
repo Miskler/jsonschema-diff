@@ -14,11 +14,14 @@ class CompareCombined(Compare):
             if self.status == Statuses.UNKNOWN:
                 self.status = c.status
             elif self.status != c.status:
-                return Statuses.REPLACED
+                self.status = Statuses.REPLACED
 
             self.dict_compare[c.key] = c
             self.dict_values[c.key] = c.value
         
+        from pprint import pprint
+        print(self.dict_compare, flush=True)
+
         return self.status
 
     def render(self, tab_level: int = 0, with_path: bool = True) -> str:

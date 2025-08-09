@@ -18,90 +18,83 @@ class Bounds:
     upper: Optional[Number]
     upper_inclusive: bool
 
+    def is_empty(self) -> bool:
+        return self.lower is None and self.upper is None
+
 
 class CompareRange(CompareCombined):
     """
-    Комбинированный компаратор «диапазонов»:
+    Диапазоны для JSON Schema:
+      - value:       minimum/maximum (+ exclusiveMinimum/Maximum: bool|number)
+      - length:      minLength/maxLength
+      - items:       minItems/maxItems
+      - properties:  minProperties/maxProperties
 
-      value       → minimum / maximum / exclusiveMinimum / exclusiveMaximum
-      length      → minLength / maxLength
-      items       → minItems / maxItems
-      properties  → minProperties / maxProperties
-
-    Нормализует ограничения в Bounds и печатает:
-      .range*: [a ... b), [a ... ∞), (-∞ ... b], ...
-
-    Статус определяется по Bounds (а не по агрегированию статусов детей):
-      - NO_DIFF   — Bounds равны
-      - ADDED     — old пуст, new непуст
-      - DELETED   — old непуст, new пуст
-      - REPLACED  — иначе
+    Примечания:
+      - bool не считаем числом (исключаем из isinstance(int))
+      - используем только dict_compare (ToCompare по ключам)
     """
 
     INFINITY = "∞"
 
-    # ------------------------------ Публичный API ------------------------------
+    # ---- Жизненный цикл ----
 
     def compare(self) -> Statuses:
-        """
-        ВАЖНО: сперва базовый compare() — наполняет dict_compare.
-        Затем вычисляем Bounds для old/new и переопределяем self.status.
-        """
         super().compare()
 
         dimension = self._detect_dimension()
         old_b = self._bounds_for_side("old", dimension)
         new_b = self._bounds_for_side("new", dimension)
 
-        def empty(b: Bounds) -> bool:
-            return b.lower is None and b.upper is None
-
-        if old_b == new_b:
+        if old_b.is_empty() and new_b.is_empty():
             self.status = Statuses.NO_DIFF
-        elif empty(old_b) and not empty(new_b):
+            return self.status
+        if old_b.is_empty() and not new_b.is_empty():
             self.status = Statuses.ADDED
-        elif not empty(old_b) and empty(new_b):
+            return self.status
+        if not old_b.is_empty() and new_b.is_empty():
             self.status = Statuses.DELETED
+            return self.status
+
+        if (
+            old_b.lower == new_b.lower
+            and old_b.upper == new_b.upper
+            and old_b.lower_inclusive == new_b.lower_inclusive
+            and old_b.upper_inclusive == new_b.upper_inclusive
+        ):
+            self.status = Statuses.NO_DIFF
         else:
             self.status = Statuses.REPLACED
 
         return self.status
 
     def render(self, tab_level: int = 0, with_path: bool = True) -> str:
-        """
-        Рендер строго по правилам:
-          - ADDED/NO_DIFF → печатаем NEW
-          - DELETED       → печатаем OLD
-          - REPLACED      → OLD -> NEW
-        """
         dimension = self._detect_dimension()
         self.key = self._key_for_dimension(dimension)
-
         header = self._render_start_line(tab_level=tab_level, with_path=with_path)
 
         if self.status in (Statuses.ADDED, Statuses.NO_DIFF):
             return f"{header} {self._format_bounds(self._bounds_for_side('new', dimension))}"
-        if self.status == Statuses.DELETED:
+        if self.status is Statuses.DELETED:
             return f"{header} {self._format_bounds(self._bounds_for_side('old', dimension))}"
-        if self.status == Statuses.REPLACED:
-            old_repr = self._format_bounds(self._bounds_for_side("old", dimension))
-            new_repr = self._format_bounds(self._bounds_for_side("new", dimension))
-            return f"{header} {old_repr} -> {new_repr}"
 
-        raise ValueError(f"CompareRange: unsupported status {self.status}")
+        old_repr = self._format_bounds(self._bounds_for_side("old", dimension))
+        new_repr = self._format_bounds(self._bounds_for_side("new", dimension))
+        return f"{header} {old_repr} -> {new_repr}"
 
-    # ------------------------------ Внутренняя логика ------------------------------
+    # ---- Определение измерения/ключа ----
 
     def _detect_dimension(self) -> Dimension:
-        """
-        Определяем измерение по ключам, попавшим в группу комбинатора.
-        """
         keys = set(self.dict_compare.keys())
-        if {"minLength", "maxLength"} & keys:
+
+        def has_any(*candidates: str) -> bool:
+            return bool(keys.intersection(candidates))
+
+        if has_any("minLength", "maxLength"):
             return "length"
-        if {"minItems", "maxItems"} & keys:
+        if has_any("minItems", "maxItems"):
             return "items"
-        if {"minProperties", "maxProperties"} & keys:
+        if has_any("minProperties", "maxProperties"):
             return "properties"
         return "value"
 
@@ -114,21 +107,15 @@ class CompareRange(CompareCombined):
             "properties": "rangeProperties",
         }[dimension]
 
-    # ---- Доступ к значениям нужной стороны (old/new) из ToCompare ----
+    # ---- Извлечение значений (только через ToCompare) ----
 
-    def _get_side_value(self, key: str, side: Literal["old", "new"]) -> Optional[object]:
-        """
-        Берём значение НУЖНОЙ стороны из ToCompare.
-        НЕ используем tc.value (при REPLACED это всегда new).
-        Фолбэков к self.old_value/self.new_value НЕТ — опираемся на dict_compare,
-        который у тебя уже «полноценный» (есть и NO_DIFF).
-        """
+    def _get_side_value(self, side: Literal["old", "new"], key: str):
         tc: ToCompare | None = self.dict_compare.get(key)
         if tc is None:
             return None
         return tc.old_value if side == "old" else tc.new_value
 
-    # ---- Построение границ для стороны ----
+    # ---- Построение границ ----
 
     def _bounds_for_side(self, side: Literal["old", "new"], dimension: Dimension) -> Bounds:
         if dimension == "value":
@@ -139,49 +126,59 @@ class CompareRange(CompareCombined):
             return self._bounds_inclusive_pair(side, "minItems", "maxItems")
         if dimension == "properties":
             return self._bounds_inclusive_pair(side, "minProperties", "maxProperties")
-        raise ValueError(f"Unknown dimension: {dimension}")
+        return self._bounds_numbers(side)
 
     def _bounds_inclusive_pair(self, side: Literal["old", "new"], low_key: str, high_key: str) -> Bounds:
-        lower = self._as_number(self._get_side_value(low_key, side))
-        upper = self._as_number(self._get_side_value(high_key, side))
+        lower = self._as_number(self._get_side_value(side, low_key))
+        upper = self._as_number(self._get_side_value(side, high_key))
         return Bounds(lower=lower, lower_inclusive=True, upper=upper, upper_inclusive=True)
 
     def _bounds_numbers(self, side: Literal["old", "new"]) -> Bounds:
         """
-        Числа: поддерживаем оба стиля exclusive*:
-          - draft-07: exclusiveMinimum/Maximum: bool + minimum/maximum
-          - 2019-09/2020-12: exclusiveMinimum/Maximum: number
-        Конфликт «оба заданы» — приоритет у exclusive* (число).
+        Поддержка двух форматов exclusive*:
+          - numeric (draft-06+): exclusiveMinimum/Maximum = number
+          - boolean (старый):    exclusiveMinimum/Maximum = true/false вместе с minimum/maximum
+        Приоритет у числового формата.
         """
-        minimum = self._as_number(self._get_side_value("minimum", side))
-        maximum = self._as_number(self._get_side_value("maximum", side))
-        ex_min = self._get_side_value("exclusiveMinimum", side)
-        ex_max = self._get_side_value("exclusiveMaximum", side)
+        minimum = self._as_number(self._get_side_value(side, "minimum"))
+        maximum = self._as_number(self._get_side_value(side, "maximum"))
 
-        # lower
-        if isinstance(ex_min, (int, float)):
-            lower, lower_inc = ex_min, False
-        elif ex_min is True and minimum is not None:
-            lower, lower_inc = minimum, False
+        ex_min_raw = self._get_side_value(side, "exclusiveMinimum")
+        ex_max_raw = self._get_side_value(side, "exclusiveMaximum")
+
+        ex_min_num = self._as_number(ex_min_raw)
+        ex_max_num = self._as_number(ex_max_raw)
+
+        # нижняя граница
+        if ex_min_num is not None:
+            lower = ex_min_num
+            lower_inc = False
+        elif isinstance(ex_min_raw, bool) and ex_min_raw and minimum is not None:
+            lower = minimum
+            lower_inc = False
         else:
-            lower, lower_inc = minimum, True
+            lower = minimum
+            lower_inc = minimum is not None
 
-        # upper
-        if isinstance(ex_max, (int, float)):
-            upper, upper_inc = ex_max, False
-        elif ex_max is True and maximum is not None:
-            upper, upper_inc = maximum, False
+        # верхняя граница
+        if ex_max_num is not None:
+            upper = ex_max_num
+            upper_inc = False
+        elif isinstance(ex_max_raw, bool) and ex_max_raw and maximum is not None:
+            upper = maximum
+            upper_inc = False
         else:
-            upper, upper_inc = maximum, True
+            upper = maximum
+            upper_inc = maximum is not None
 
-        return Bounds(lower=lower, lower_inclusive=lower_inc,
-                      upper=upper, upper_inclusive=upper_inc)
+        return Bounds(lower=lower, lower_inclusive=lower_inc, upper=upper, upper_inclusive=upper_inc)
 
-    def _is_number(self, x): 
-        return isinstance(x, (int, float)) and not isinstance(x, bool)
-
-    def _as_number(self, value) -> Optional[Number]:
-        return value if self._is_number(value) else None
+    @staticmethod
+    def _as_number(value: object | None) -> Optional[Number]:
+        # bool — подкласс int, исключаем
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return value
+        return None
 
     # ---- Форматирование ----
 
