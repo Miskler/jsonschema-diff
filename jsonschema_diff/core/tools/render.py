@@ -1,8 +1,8 @@
 from typing import Sequence, List, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .config import Config
-    from .abstraction import Statuses
+    from ..config import Config
+    from ..abstraction import Statuses
 
 class RenderTool:
     @staticmethod

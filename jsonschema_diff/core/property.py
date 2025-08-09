@@ -1,7 +1,7 @@
 from .abstraction import Statuses, ToCompare
 from .tools.combine import LogicCombinerHandler
 from typing import Any, TYPE_CHECKING
-from .tool_render import RenderTool as RT
+from .tools.render import RenderTool as RT
 
 if TYPE_CHECKING:
     from .config import Config

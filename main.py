@@ -1,8 +1,9 @@
-from jsonschema_diff import property
-from jsonschema_diff.config import config
+from jsonschema_diff.core import property
+from jsonschema_diff.core.config import config
 from json import loads
 from pprint import pprint
-from jsonschema_diff.color.mono import MonoHighlighter
+from jsonschema_diff.color.stages.mono_lines import MonoLinesHighlighter
+from jsonschema_diff.color.base import HighlighterPipeline
 
 prop = property.Property(
     config=config,
@@ -16,7 +17,7 @@ prop.compare()
 
 result = prop.render()
 
-colored = MonoHighlighter().colorize_lines("\n\n".join(result))
+colored = HighlighterPipeline([MonoLinesHighlighter()]).colorize_lines("\n\n".join(result)) 
 
 print(colored)
 

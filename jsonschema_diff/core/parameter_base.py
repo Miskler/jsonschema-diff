@@ -1,7 +1,7 @@
 from typing import Any
 from .abstraction import Statuses, ToCompare
 from typing import TYPE_CHECKING
-from .tool_render import RenderTool
+from .tools.render import RenderTool
 
 
 if TYPE_CHECKING:
