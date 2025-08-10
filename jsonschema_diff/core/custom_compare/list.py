@@ -49,7 +49,6 @@ class CompareList(Compare):
                 match tag:
                     case "equal":
                         add_element(Statuses.NO_DIFF, i1, i2)
-                        self.status = Statuses.MODIFIED
                     case "delete":
                         add_element(Statuses.DELETED, i1, i2)
                     case "insert":
@@ -59,6 +58,11 @@ class CompareList(Compare):
                         add_element(Statuses.ADDED, j1, j2)
                     case _:
                         ValueError(f"Unknown tag: {tag}")
+            
+            if len(self.changed_elements) > 0:
+                self.status = Statuses.MODIFIED
+            else:
+                self.status = Statuses.NO_DIFF
         else:
             raise ValueError(f"Unsupported keys combination")
 
