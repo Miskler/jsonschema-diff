@@ -45,8 +45,8 @@ class Config:
                  compare_rules: CompareRules | None = None,
                  combine_rules: list[list[str]] = [],
                  path_maker_ignore: list[str] = ["properties", "items"],
-                 pair_context_rules: list = [],
-                 context_rules: dict = {}):
+                 pair_context_rules: list[list[str | Compare]] = [],
+                 context_rules: dict[str | Compare, list[str | Compare]] = {}):
         self.TAB = tab
         
         if compare_rules is None:

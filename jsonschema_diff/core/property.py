@@ -147,13 +147,13 @@ class Property:
 
     def get_for_rendering(self) -> list["Compare"]:
         # Определение что рендерить
-        not_for_render = []
-        for_render = []
+        not_for_render = {}
+        for_render = {}
         for param_name, param in self.parameters.items():
             if param.is_for_rendering():
-                for_render.append(param_name)
+                for_render[param_name] = param
             else:
-                not_for_render.append(param_name)
+                not_for_render[param_name] = param
         
         with_context = RenderContextHandler.resolve(
             pair_context_rules=self.config.PAIR_CONTEXT_RULES,
@@ -162,12 +162,7 @@ class Property:
             not_for_render=not_for_render
         )
 
-        print()
-        print("not_for_render", not_for_render)
-        print("for_render", for_render)
-        print("with_context", with_context)
-
-        return [self.parameters[param_name] for param_name in with_context]
+        return with_context.values()
 
     def self_render(self, tab_level: int = 0) -> str:
         # Определение что рендерить

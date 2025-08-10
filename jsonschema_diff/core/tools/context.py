@@ -1,70 +1,108 @@
-from typing import Iterable, List, Dict, Sequence, DefaultDict
-from collections import defaultdict
+from __future__ import annotations
+from typing import Dict, List, Mapping, Sequence, Type, Union, Iterable, MutableMapping
+from jsonschema_diff.core.parameter_base import Compare
+
+# Тип ключа в правилах: имя параметра ИЛИ класс компаратора
+RuleKey = Union[str, Type["Compare"]]
+
 
 class RenderContextHandler:
     @staticmethod
     def resolve(
         *,
-        pair_context_rules: Sequence[Sequence[str]],
-        context_rules: Dict[str, Sequence[str]],
-        for_render: Iterable[str],
-        not_for_render: Iterable[str] = (),
-    ) -> List[str]:
+        pair_context_rules: Sequence[Sequence[RuleKey]],
+        context_rules: Mapping[RuleKey, Sequence[RuleKey]],
+        for_render: Mapping[str, Compare],
+        not_for_render: Mapping[str, Compare],
+    ) -> Dict[str, Compare]:
         """
-        Алгоритм:
-        1) Начинаем с копии for_render (это и триггер, и итоговый список).
-        2) Итерируемся по этому списку слева направо (индекс i).
-        3) Для текущего ключа k:
-           3.1) Находим все группы из pair_context_rules, где встречается k,
-                и по порядку элементов группы переносим недостающие ключи
-                из not_for_render в конец результата.
-           3.2) По context_rules[k] по порядку переносим недостающие ключи
-                из not_for_render в конец результата.
-        4) Когда i доходит до конца (с учётом новых хвостовых добавлений), завершаем.
-        Порядок полностью определяется:
-          - исходным порядком for_render,
-          - порядком элементов в самих правилах,
-          - порядком появления новых ключей при обходе.
+        pair_context_rules: список «неориентированных» групп — если текущий ключ
+            попал в группу, переносим остальных участников группы (по порядку записи группы).
+            Элементы группы — строки (имена параметров) или классы компараторов.
+        context_rules: ориентированные зависимости: source -> [targets...],
+            где source и targets — строки или классы компараторов.
+
+        for_render: {имя -> Compare} — триггер и базовый порядок вывода.
+        not_for_render: {имя -> Compare} — то, что можно подтянуть как контекст.
+
+        Возвращает упорядоченный dict {имя -> Compare} — тот же порядок, что на экране.
         """
 
-        # Итоговый список (сохраняем исходный порядок)
-        out: List[str] = list(for_render)
+        # Локальные копии, чтобы не мутировать вход
+        out: Dict[str, Compare] = dict(for_render)          # сохраняет порядок
+        pool_not: Dict[str, Compare] = dict(not_for_render) # сохраняет порядок вставки
 
-        # Быстрые проверки наличия, НЕ задающие порядок:
-        in_out = set(out)                      # что уже в out
-        in_not = {k: idx for idx, k in enumerate(not_for_render)}  # что можем переносить
+        # Порядок обхода: сканируем имена, новые кандидаты добавляем в хвост
+        seq: List[str] = list(out.keys())
 
-        # Предрасчёт: для каждого ключа — список групп (сохраняем порядок правил)
-        groups_by_key: DefaultDict[str, List[Sequence[str]]] = defaultdict(list)
-        for group in pair_context_rules:
-            for k in group:
-                groups_by_key[k].append(group)
+        in_out = set(seq)  # быстрые проверки наличия в out
+
+        def _matches(rule: RuleKey, name: str, cmp_obj: Compare) -> bool:
+            if isinstance(rule, str):
+                return rule == name
+            # rule — класс компаратора
+            try:
+                return isinstance(cmp_obj, rule)  # type: ignore[arg-type]
+            except TypeError:
+                return False
+
+        def _expand(rule: RuleKey, pool: Mapping[str, Compare]) -> Iterable[str]:
+            """
+            Преобразует элемент правила в список КЛЮЧЕЙ из pool (not_for_render),
+            сохраняя порядок pool.
+            - Если rule — строка: вернём [rule] если он есть в pool.
+            - Если rule — класс компаратора: вернём все ключи в pool,
+            чьи компараторы isinstance этого класса.
+            """
+            if isinstance(rule, str):
+                if rule in pool:
+                    # даже если pool потом мутируют — мы уже вернули конкретный ключ
+                    yield rule
+                return
+
+            # правило — класс компаратора: берём снэпшот, чтобы не падать
+            # при последующих del из pool_not во внешнем коде
+            for n, obj in list(pool.items()):  # <-- Снэпшот!
+                try:
+                    if isinstance(obj, rule):  # type: ignore[arg-type]
+                        yield n
+                except TypeError:
+                    continue
+
 
         i = 0
-        while i < len(out):
-            k = out[i]
+        while i < len(seq):
+            name = seq[i]
+            cmp_obj = out[name]
 
-            # 3.1 Пары (неориентированные группы), обрабатываем группы в порядке их записи
-            for group in groups_by_key.get(k, []):
-                for cand in group:
-                    if cand == k:
-                        continue
-                    if cand in in_not and cand not in in_out:
-                        out.append(cand)
-                        in_out.add(cand)
-                        del in_not[cand]
+            # 1) Пары (неориентированные группы): если текущий участвует в группе — переносим остальных
+            for group in pair_context_rules:
+                if any(_matches(entry, name, cmp_obj) for entry in group):
+                    for entry in group:
+                        # для каждого элемента группы разворачиваем в кандидатов из pool_not
+                        for cand in _expand(entry, pool_not):
+                            if cand in in_out:
+                                continue
+                            # переносим cand из not -> out (в конец)
+                            out[cand] = pool_not[cand]
+                            seq.append(cand)
+                            in_out.add(cand)
+                            del pool_not[cand]
 
-            # 3.2 Ориентированные зависимости
-            for cand in context_rules.get(k, ()):
-                if cand in in_not and cand not in in_out:
-                    out.append(cand)
-                    in_out.add(cand)
-                    del in_not[cand]
+            # 2) Ориентированные зависимости: source(name/type) -> targets(...)
+            for source, targets in context_rules.items():
+                if _matches(source, name, cmp_obj):
+                    for entry in targets:
+                        for cand in _expand(entry, pool_not):
+                            if cand in in_out:
+                                continue
+                            out[cand] = pool_not[cand]
+                            seq.append(cand)
+                            in_out.add(cand)
+                            del pool_not[cand]
 
             i += 1
 
-            # (никаких дополнительных проходов не нужно — новые элементы окажутся в хвосте
-            #  и будут обработаны, когда до них дойдёт индекс i)
+            # Новые элементы окажутся в хвосте seq и будут обработаны, когда до них дойдём.
 
         return out
-
