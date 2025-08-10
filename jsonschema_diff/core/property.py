@@ -1,5 +1,6 @@
 from .abstraction import Statuses, ToCompare
 from .tools.combine import LogicCombinerHandler
+from .tools.context import RenderContextHandler
 from typing import Any, TYPE_CHECKING
 from .tools.render import RenderTool as RT
 
@@ -136,7 +137,7 @@ class Property:
             if comparator.is_for_rendering() and self.status == Statuses.UNKNOWN:
                 self.status = Statuses.MODIFIED
 
-            self.parameters[keys] = comparator
+            self.parameters[comparator.get_name()] = comparator
         
         if self.status == Statuses.UNKNOWN:
             self.status = Statuses.NO_DIFF
@@ -144,12 +145,35 @@ class Property:
     def is_for_rendering(self) -> bool:
         return self.status in [Statuses.ADDED, Statuses.DELETED, Statuses.REPLACED, Statuses.MODIFIED]
 
-    def self_render(self, tab_level: int = 0) -> str:
-        to_render_count = []
-        for param in self.parameters.values():
+    def get_for_rendering(self) -> list["Compare"]:
+        # Определение что рендерить
+        not_for_render = []
+        for_render = []
+        for param_name, param in self.parameters.items():
             if param.is_for_rendering():
-                to_render_count.append(param)
+                for_render.append(param_name)
+            else:
+                not_for_render.append(param_name)
+        
+        with_context = RenderContextHandler.resolve(
+            pair_context_rules=self.config.PAIR_CONTEXT_RULES,
+            context_rules=self.config.CONTEXT_RULES,
+            for_render=for_render,
+            not_for_render=not_for_render
+        )
 
+        print()
+        print("not_for_render", not_for_render)
+        print("for_render", for_render)
+        print("with_context", with_context)
+
+        return [self.parameters[param_name] for param_name in with_context]
+
+    def self_render(self, tab_level: int = 0) -> str:
+        # Определение что рендерить
+        to_render_count = self.get_for_rendering()
+        
+        # Рендер заголовка / пути
         my_to_render = []
         property_line_render = self.name is not None and (self.status != Statuses.MODIFIED or len(to_render_count) > 1)
         params_tab_level = tab_level
@@ -157,6 +181,7 @@ class Property:
             my_to_render.append(f"{RT.make_prefix(self.status)} {RT.make_tab(self.config, tab_level)}{RT.make_path(self.schema_path+[self.name], self.json_path+[self.name], ignore=self.config.PATH_MAKER_IGNORE)}:")
             params_tab_level += 1
 
+        # Рендер пропертей
         for param in to_render_count:
             my_to_render.append(param.render(params_tab_level, not property_line_render))
 

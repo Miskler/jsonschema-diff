@@ -12,8 +12,8 @@ prop = property.Property(
     name=None,
     schema_path=[],
     json_path=[],
-    old_schema=loads(open("range.old.schema.json").read()),
-    new_schema=loads(open("range.new.schema.json").read()))
+    old_schema=loads(open("context.old.schema.json").read()),
+    new_schema=loads(open("context.new.schema.json").read()))
 
 prop.compare()
 
@@ -21,10 +21,7 @@ result = prop.render()
 
 colored = HighlighterPipeline([
     MonoLinesHighlighter(),
-    ReplaceGenericHighlighter(
-        bg_color="grey30",
-        underline_changes=False,
-    ),
+    ReplaceGenericHighlighter(),
     PathHighlighter(),
 ]).colorize_lines("\n\n".join(result)) 
 

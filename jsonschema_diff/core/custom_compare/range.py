@@ -67,12 +67,15 @@ class CompareRange(CompareCombined):
             self.status = Statuses.REPLACED
 
         return self.status
+    
+    def get_name(self) -> str:
+        dimension = self._detect_dimension()
+        return self._key_for_dimension(dimension)
 
     def render(self, tab_level: int = 0, with_path: bool = True) -> str:
-        dimension = self._detect_dimension()
-        self.key = self._key_for_dimension(dimension)
         header = self._render_start_line(tab_level=tab_level, with_path=with_path)
 
+        dimension = self._detect_dimension()
         if self.status in (Statuses.ADDED, Statuses.NO_DIFF):
             return f"{header} {self._format_bounds(self._bounds_for_side('new', dimension))}"
         if self.status is Statuses.DELETED:

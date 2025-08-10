@@ -87,9 +87,50 @@ config = Config(
         ["minProperties", "maxProperties"],
     ],
     pair_context_rules=[
-        ["one", "other"],
+        ["type", "format"],                          # строковые форматы
+        ["contentEncoding", "contentMediaType"],     # парные контент-атрибуты для строк
+        ["if", "then", "else"],                      # логический триплет показываем вместе
+        ["properties", "required"],                  # объект: список свойств и обязательность
+        ["items", "prefixItems"],                    # массив: позиционные/общие элементы
+        ["contains", "minContains", "maxContains"],  # массив: contains и его пороги
+        ["dependentRequired", "dependentSchemas"],   # объект: зависимости
+        ["readOnly", "writeOnly"],                   # метаданные доступа поля
+        ["$ref", "$defs"],                           # ссылка и её пространство имён
+        ["additionalProperties", "unevaluatedProperties"],  # политика для «прочих» свойств
+        ["propertyNames", "patternProperties"],      # правила по именам vs по паттернам
+        ["pattern", "format"],                       # для строк часто полезно показать оба
     ],
     context_rules={
-        "something": ["one", "other"],
+        # Строки
+        "pattern": ["type"],                          # есть паттерн — покажем, что это строка
+        "contentMediaType": ["type", "contentEncoding"],
+        "contentEncoding": ["type", "contentMediaType"],
+        "contentSchema": ["type", "contentMediaType"],
+
+        # Числа
+        "multipleOf": ["type"],                       # кратность имеет смысл для number/integer
+
+        # Массивы
+        "items": ["contains", "prefixItems", "uniqueItems", "unevaluatedItems"],
+        "prefixItems": ["items", "unevaluatedItems"],
+        "contains": ["minContains", "maxContains", "items"],
+        "uniqueItems": ["type", "items"],
+
+        # Объекты
+        "properties": ["required", "additionalProperties", "patternProperties"],
+        "required": ["properties"],                   # дублирует пару, но безвредно
+        "patternProperties": ["additionalProperties"],
+        "dependentSchemas": ["dependentRequired", "properties"],
+        "dependentRequired": ["properties"],
+        "propertyNames": ["type"],
+
+        # Комбинаторы
+        "oneOf": ["type"],
+        "anyOf": ["type"],
+        "allOf": ["type"],
+        "not": ["type"],
+
+        # Референсы/мета
+        "$ref": ["$defs"],
     }
 )

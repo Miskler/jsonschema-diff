@@ -21,5 +21,8 @@ class CompareCombined(Compare):
         
         return self.status
 
+    def get_name(self) -> str:
+        raise NotImplementedError("CompareCombined.get_name должен быть переопределен")
+    
     def render(self, tab_level: int = 0, with_path: bool = True) -> str:
         raise NotImplementedError("CompareCombined.render должен быть переопределен")

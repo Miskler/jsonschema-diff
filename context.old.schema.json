@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:test:profile:v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "integer", "minimum": 1 },
+    "email": { "type": "string", "format": "email", "minLength": 5, "maxLength": 320 },
+    "username": { "type": "string", "pattern": "^[a-z0-9_]+$", "minLength": 3, "maxLength": 16 },
+    "price": { "type": "number", "minimum": 0 },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 0,
+      "maxItems": 10,
+      "uniqueItems": true
+    },
+    "address": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "city": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "zip": { "type": "string", "pattern": "^[0-9]{5}$" }
+      },
+      "required": ["city"]
+    }
+  },
+  "required": ["id", "username"]
+}

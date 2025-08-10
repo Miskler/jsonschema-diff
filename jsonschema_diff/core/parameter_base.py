@@ -34,6 +34,9 @@ class Compare:
         self.new_value = self.to_compare[0].new_value
         return self.status
 
+    def get_name(self) -> str:
+        return self.to_compare[0].key
+    
     def is_for_rendering(self) -> bool:
         return self.status in [Statuses.ADDED, Statuses.DELETED, Statuses.REPLACED, Statuses.MODIFIED]
 
@@ -43,7 +46,7 @@ class Compare:
             to_return += RenderTool.make_path(self.schema_path, self.json_path, ignore=self.config.PATH_MAKER_IGNORE)
         
         if with_key:
-            to_return += f".{self.key}"
+            to_return += f".{self.get_name()}"
         return to_return+":"
 
     def render(self, tab_level: int = 0, with_path: bool = True) -> str:
