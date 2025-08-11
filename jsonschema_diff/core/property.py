@@ -48,11 +48,24 @@ class Property:
         return schema_path_with_name
 
     def _get_keys(self, old, new):
-        if not isinstance(old, dict):
-            old = {}
-        if not isinstance(new, dict):
-            new = {}
-        return list(old.keys() | new.keys())
+        """
+        Детерминированное объединение ключей:
+        1) все ключи из old в их исходном порядке;
+        2) затем ключи из new, которых не было в old, в их порядке.
+        """
+        old_keys = list(old.keys()) if isinstance(old, dict) else []
+        new_keys = list(new.keys()) if isinstance(new, dict) else []
+        seen = set()
+        merged = []
+        for k in old_keys:
+            if k not in seen:
+                merged.append(k)
+                seen.add(k)
+        for k in new_keys:
+            if k not in seen:
+                merged.append(k)
+                seen.add(k)
+        return merged
 
     def compare(self): 
         if len(self.old_schema) <= 0:
