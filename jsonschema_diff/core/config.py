@@ -61,7 +61,7 @@ class Config:
         self.CONTEXT_RULES = context_rules
 
 
-config = Config(
+default_config = Config(
     compare_rules=CompareRules({
         list: CompareList,
         
