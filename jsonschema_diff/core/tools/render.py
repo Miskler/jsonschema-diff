@@ -1,8 +1,10 @@
-from typing import Sequence, List, Any, TYPE_CHECKING
+from typing import Sequence, List, Any, TypeAlias, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ..config import Config
     from ..abstraction import Statuses
+
+PATH_MAKER_IGNORE_RULES_TYPE: TypeAlias = Sequence[str]
 
 class RenderTool:
     @staticmethod
@@ -17,7 +19,7 @@ class RenderTool:
     def make_path(
         schema_path: Sequence[Any],
         json_path: Sequence[Any],
-        ignore: Sequence[str] = ("properties",),
+        ignore: PATH_MAKER_IGNORE_RULES_TYPE = ("properties",),
     ) -> str:
         """Собирает «читаемый» путь по двум параллельным спискам:
 

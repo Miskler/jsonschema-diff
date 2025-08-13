@@ -1,19 +1,24 @@
 from __future__ import annotations
-from typing import Dict, List, Mapping, Sequence, Type, Union, Iterable, TYPE_CHECKING
+from typing import Dict, List, Mapping, Sequence, Type, Union, Iterable, TypeAlias, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jsonschema_diff.core.parameter_base import Compare
 
+
 # Тип ключа в правилах: имя параметра ИЛИ класс компаратора
-RuleKey = Union[str, Type["Compare"]]
+RULE_KEY: TypeAlias = Union[str, Type["Compare"]]
+
+
+CONTEXT_RULES_TYPE: TypeAlias = Mapping[RULE_KEY, Sequence[RULE_KEY]]
+PAIR_CONTEXT_RULES_TYPE: TypeAlias = Sequence[Sequence[RULE_KEY]]
 
 
 class RenderContextHandler:
     @staticmethod
     def resolve(
         *,
-        pair_context_rules: Sequence[Sequence[RuleKey]],
-        context_rules: Mapping[RuleKey, Sequence[RuleKey]],
+        pair_context_rules: PAIR_CONTEXT_RULES_TYPE,
+        context_rules: CONTEXT_RULES_TYPE,
         for_render: Mapping[str, "Compare"],
         not_for_render: Mapping[str, "Compare"],
     ) -> Dict[str, "Compare"]:

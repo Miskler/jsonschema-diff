@@ -80,9 +80,13 @@ class CompareList(Compare):
 
 
     @staticmethod
-    def legend() -> dict[str, str | list[str]]:
+    def legend() -> dict[str, Any]:
         return {
             "element": "Arrays / Lists",
             "description": "Arrays are always displayed fully, with statuses of all elements separately (left to them).",
-            "example": ".array:\n  one,\n  two"
+            "example": {
+                "key": "list",
+                "old_value": [1, 2, 3],
+                "new_value": [4, 1, 2]
+            }
         }

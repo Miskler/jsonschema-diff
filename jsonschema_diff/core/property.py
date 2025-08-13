@@ -1,11 +1,12 @@
 from .abstraction import Statuses, ToCompare
-from .tools import LogicCombinerHandler, RenderContextHandler
+from .tools import LogicCombinerHandler, RenderContextHandler, CompareRules
 from .tools import RenderTool as RT
+from .parameter_base import Compare
+
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .config import Config
-    from .parameter_base import Compare
 
 
 class Property:
@@ -121,9 +122,12 @@ class Property:
                     self.propertys[i] = prop
             else:
                 parameters_subset[key] = {
-                    "comparator": self.config.COMPARE_RULES.get_comparator_from_values(key,
-                                                                                       old_value,
-                                                                                       new_value),
+                    "comparator": CompareRules.get_comparator_from_values(
+                        rules=self.config.COMPARE_RULES,
+                        default=Compare,
+                        key=key,
+                        old=old_value,
+                        new=new_value),
                     "to_compare": ToCompare(old_key=old_key,
                                             old_value=old_value,
                                             new_key=new_key,

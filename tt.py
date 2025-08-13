@@ -1,4 +1,4 @@
-from jsonschema_diff.legend_redner import LegendRichTable
+from jsonschema_diff.legend.legend_render import LegendRichTable
 from rich import box
 from jsonschema_diff.core import Compare
 from jsonschema_diff.core.custom_compare.list import CompareList
@@ -9,9 +9,9 @@ LegendRichTable.render(
     required=("element", "description", "example"),
     extras=(),
     column_opts={
-        "element": {"ratio": 1, "max_width": 40, "overflow": "fold"},
-        "description": {"ratio": 2, "max_width": 40, "overflow": "fold"},  # ключевая строка
-        "example": {"ratio": 1, "max_width": 40, "overflow": "fold"},
+        "element": {"max_width": 40, "overflow": "fold"},
+        "description": {"max_width": 40, "overflow": "fold"},  # ключевая строка
+        "example": {"max_width": 40, "overflow": "fold"},
     },
     box_style=box.SQUARE_DOUBLE_HEAD,
     inner_mode="rules",          # ← ключевой пункт

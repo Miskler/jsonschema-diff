@@ -1,5 +1,9 @@
 from collections import OrderedDict
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, TypeAlias
+
+
+COMBINE_RULES_TYPE: TypeAlias = List[List[str]]
+
 
 class LogicCombinerHandler:
     @staticmethod
