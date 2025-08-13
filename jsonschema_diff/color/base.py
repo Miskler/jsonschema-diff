@@ -8,7 +8,7 @@ simple orchestrator that turns **raw strings → Text → styled Text** and—wh
 required—renders them back to ANSI for CLI output.
 """
 
-from typing import Iterable, List, Sequence, TYPE_CHECKING
+from typing import Iterable, TYPE_CHECKING
 from rich.text import Text
 from rich.console import Console
 

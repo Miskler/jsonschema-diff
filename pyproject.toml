@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0", "wheel", "rich"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,7 @@ name = "jsonschema-diff"
 dynamic = ["version"]
 description = "A library for comparing JSON schemas and displaying differences"
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "Miskler", email = "mail@miskler.ru"}
 ]
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -28,7 +28,7 @@ classifiers = [
 ]
 keywords = ["json", "schema", "diff", "comparison"]
 dependencies = [
-    "click>=8.0.0",
+    "rich",
 ]
 
 [project.optional-dependencies]
