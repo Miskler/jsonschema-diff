@@ -60,3 +60,11 @@ class Compare:
             raise ValueError(f"Unsupported for render status: {self.status}")
         
         return to_return
+
+    @staticmethod
+    def legend() -> dict[str, str | list[str]]:
+        return {
+            "element": [Statuses.ADDED.value, Statuses.DELETED.value, Statuses.REPLACED.value, Statuses.NO_DIFF.value, Statuses.UNKNOWN.value],
+            "description": [Statuses.ADDED.name, Statuses.DELETED.name, Statuses.REPLACED.name, Statuses.NO_DIFF.name, Statuses.UNKNOWN.name],
+            "example": ""
+        }

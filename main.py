@@ -15,7 +15,10 @@ prop = property.Property(
 
 prop.compare()
 
-result = prop.render()
+result, compares = prop.render()
+
+from pprint import pprint
+pprint(compares)
 
 colored = HighlighterPipeline([
     MonoLinesHighlighter(),

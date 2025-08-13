@@ -1,6 +1,8 @@
 from __future__ import annotations
-from typing import Dict, List, Mapping, Sequence, Type, Union, Iterable, MutableMapping
-from jsonschema_diff.core.parameter_base import Compare
+from typing import Dict, List, Mapping, Sequence, Type, Union, Iterable, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from jsonschema_diff.core.parameter_base import Compare
 
 # Тип ключа в правилах: имя параметра ИЛИ класс компаратора
 RuleKey = Union[str, Type["Compare"]]
@@ -12,9 +14,9 @@ class RenderContextHandler:
         *,
         pair_context_rules: Sequence[Sequence[RuleKey]],
         context_rules: Mapping[RuleKey, Sequence[RuleKey]],
-        for_render: Mapping[str, Compare],
-        not_for_render: Mapping[str, Compare],
-    ) -> Dict[str, Compare]:
+        for_render: Mapping[str, "Compare"],
+        not_for_render: Mapping[str, "Compare"],
+    ) -> Dict[str, "Compare"]:
         """
         pair_context_rules: список «неориентированных» групп — если текущий ключ
             попал в группу, переносим остальных участников группы (по порядку записи группы).
@@ -29,15 +31,15 @@ class RenderContextHandler:
         """
 
         # Локальные копии, чтобы не мутировать вход
-        out: Dict[str, Compare] = dict(for_render)          # сохраняет порядок
-        pool_not: Dict[str, Compare] = dict(not_for_render) # сохраняет порядок вставки
+        out: Dict[str, "Compare"] = dict(for_render)          # сохраняет порядок
+        pool_not: Dict[str, "Compare"] = dict(not_for_render) # сохраняет порядок вставки
 
         # Порядок обхода: сканируем имена, новые кандидаты добавляем в хвост
         seq: List[str] = list(out.keys())
 
         in_out = set(seq)  # быстрые проверки наличия в out
 
-        def _matches(rule: RuleKey, name: str, cmp_obj: Compare) -> bool:
+        def _matches(rule: RuleKey, name: str, cmp_obj: "Compare") -> bool:
             if isinstance(rule, str):
                 return rule == name
             # rule — класс компаратора
@@ -46,7 +48,7 @@ class RenderContextHandler:
             except TypeError:
                 return False
 
-        def _expand(rule: RuleKey, pool: Mapping[str, Compare]) -> Iterable[str]:
+        def _expand(rule: RuleKey, pool: Mapping[str, "Compare"]) -> Iterable[str]:
             """
             Преобразует элемент правила в список КЛЮЧЕЙ из pool (not_for_render),
             сохраняя порядок pool.

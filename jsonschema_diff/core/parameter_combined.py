@@ -26,3 +26,7 @@ class CompareCombined(Compare):
     
     def render(self, tab_level: int = 0, with_path: bool = True) -> str:
         raise NotImplementedError("CompareCombined.render должен быть переопределен")
+
+    @staticmethod
+    def legend() -> dict[str, str | list[str]]:
+        raise NotImplementedError("CompareCombined.legend должен быть переопределен")

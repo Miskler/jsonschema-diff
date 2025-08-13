@@ -176,7 +176,7 @@ class Property:
 
         return with_context.values()
 
-    def self_render(self, tab_level: int = 0) -> str:
+    def self_render(self, tab_level: int = 0) -> tuple[str, list["Compare"]]:
         # Определение что рендерить
         to_render_count = self.get_for_rendering()
         
@@ -188,22 +188,33 @@ class Property:
             my_to_render.append(f"{RT.make_prefix(self.status)} {RT.make_tab(self.config, tab_level)}{RT.make_path(self.schema_path+[self.name], self.json_path+[self.name], ignore=self.config.PATH_MAKER_IGNORE)}:")
             params_tab_level += 1
 
-        # Рендер пропертей
+        # Рендер параметров
         for param in to_render_count:
             my_to_render.append(param.render(params_tab_level, not property_line_render))
 
         to_render = "\n".join(my_to_render)
 
-        return to_render
+        compare_list = []
+        for compare in to_render_count:
+            compare_list.append(type(compare))
 
-    def render(self, tab_level: int = 0) -> list[str]:
+        return to_render, list(dict.fromkeys([*compare_list]))
+
+    def render(self, tab_level: int = 0) -> tuple[list[str], list["Compare"]]:
         to_return = []
+        compare_list = []
 
         if self.is_for_rendering():
-            to_return.append(self.self_render(tab_level=tab_level))
+            part_to_return, part_compare = self.self_render(tab_level=tab_level)
+            to_return.append(part_to_return)
+            compare_list = list(dict.fromkeys([*compare_list, *part_compare]))
+            
         
         for prop in self.propertys.values():
-            to_return += prop.render(tab_level)
-        return to_return
+            part_to_return, part_compare = prop.render(tab_level=tab_level)
+            to_return += part_to_return
+            compare_list = list(dict.fromkeys([*compare_list, *part_compare]))
+        
+        return to_return, compare_list
 
 

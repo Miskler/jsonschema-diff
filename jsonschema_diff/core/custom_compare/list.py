@@ -77,3 +77,12 @@ class CompareList(Compare):
         for i in self.elements:
             to_return += f"\n{i.render(tab_level + 1)}"
         return to_return
+
+
+    @staticmethod
+    def legend() -> dict[str, str | list[str]]:
+        return {
+            "element": "Arrays / Lists",
+            "description": "Arrays are always displayed fully, with statuses of all elements separately (left to them).",
+            "example": ".array:\n  one,\n  two"
+        }
