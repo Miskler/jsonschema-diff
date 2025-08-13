@@ -45,7 +45,7 @@ class ConfigMaker:
 
         ranger = CompareRange
         if range_digit_comparator:
-            add_rule(["min", "max", "exclusiveMinimum", "exclusiveMaximum"],
+            add_rule(["minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum"],
                      ranger)
         if range_length_comparator:
             add_rule(["minLength", "maxLength"], ranger)

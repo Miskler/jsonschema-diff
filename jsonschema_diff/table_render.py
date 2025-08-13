@@ -17,7 +17,7 @@ Changes v2
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable, Mapping, Sequence, Union, List, Dict
+from typing import Any, Callable, Iterable, Mapping, Sequence, Union
 
 from rich.console import Console, RenderableType
 from rich.padding import Padding
@@ -38,7 +38,7 @@ def _is_rich_renderable(obj: Any) -> bool:
 class ColumnConfig:
     name: str
     header: str | None = None
-    ratio: int | None = None
+    ratio: float | None = None
     justify: str = "left"
     no_wrap: bool = False
     wrap: bool = True              # add Padding around the cell
@@ -71,7 +71,7 @@ class LegendRenderer:
         box_style = box.SQUARE_DOUBLE_HEAD,
         header_style: str = "bold",
         table_width: int | None = None,
-        show_outer_lines: bool = False,
+        show_outer_lines: bool = True,
         default_overflow: str = "fold",
     ) -> None:
         self.columns = list(columns)
@@ -91,9 +91,19 @@ class LegendRenderer:
 
         rows: list[list[Cell]] = [self._build_row(legend) for legend in legends]
         table = self._build_table(rows)
-        console = Console(record=True, force_terminal=True, width=self.table_width)
-        console.print(table)
-        return console.export_text()
+
+
+        # Use a throw‑away Console so we don't affect the caller's Console config
+        console = Console(
+            force_terminal=True,  # ensure ANSI codes even when not attached to tty
+            color_system="truecolor",
+            width=self.table_width,  # avoid unwanted wrapping
+            legacy_windows=False,
+        )
+
+        with console.capture() as cap:
+            console.print(table, end="")  # prevent extra newline
+        return cap.get()
 
     # ------------------------------------------------------------------
     # Internals
@@ -113,7 +123,7 @@ class LegendRenderer:
         for col in self.columns:
             raw = legend.get(col.name, "")
             processed = self._apply_processor(raw, col.processor)
-            cell = self._make_cell(processed, pad=col.wrap)
+            cell = self._make_cell(processed, pad=col.wrap, justify=col.justify)
             row.append(cell)
         return row
 
@@ -125,10 +135,18 @@ class LegendRenderer:
         if isinstance(value, dict):
             return processor(**value)
         if isinstance(value, (list, tuple)):
-            return processor(*value)
+            processed: list[Any] = []
+            for item in value:
+                if isinstance(item, dict):
+                    processed.append(processor(**item))
+                elif isinstance(item, (list, tuple)):
+                    processed.append(processor(*item))
+                else:
+                    processed.append(processor(item))
+            return processed
         return processor(value)
 
-    def _make_cell(self, data: Any, *, pad: bool) -> Cell:
+    def _make_cell(self, data: Any, *, pad: bool, justify: str = "left") -> Cell:
         # Direct rich renderable
         if _is_rich_renderable(data):
             return Cell(data, pad=pad)
@@ -140,7 +158,7 @@ class LegendRenderer:
         # list / tuple – may mix str & renderables
         if isinstance(data, (list, tuple)):
             sub = Table.grid(expand=True, padding=(0, 0))
-            sub.add_column(ratio=1, justify="left", overflow="fold")
+            sub.add_column(ratio=1, justify=justify, overflow="fold")
             first = True
             for item in data:
                 if not first:
@@ -184,8 +202,8 @@ def make_standard_renderer(
     table_width: int | None = None,
 ) -> LegendRenderer:
     columns = [
-        ColumnConfig("element", ratio=2),
-        ColumnConfig("description", ratio=5),
-        ColumnConfig("example", ratio=3, processor=example_processor, wrap=False),
+        ColumnConfig("element", header="Element", justify="center", ratio=0.5),
+        ColumnConfig("description", header="Description", justify="center", ratio=2),
+        ColumnConfig("example", header="Diff Example", ratio=2.5, processor=example_processor, wrap=False),
     ]
     return LegendRenderer(columns, table_width=table_width)

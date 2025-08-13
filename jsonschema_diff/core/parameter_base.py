@@ -62,9 +62,30 @@ class Compare:
         return to_return
 
     @staticmethod
-    def legend() -> dict[str, str | list[str]]:
+    def legend() -> dict[str, str | list[str | dict]]:
         return {
-            "element": [Statuses.ADDED.value, Statuses.DELETED.value, Statuses.REPLACED.value, Statuses.NO_DIFF.value, Statuses.UNKNOWN.value],
-            "description": [Statuses.ADDED.name, Statuses.DELETED.name, Statuses.REPLACED.name, Statuses.NO_DIFF.name, Statuses.UNKNOWN.name],
-            "example": ""
+            "element": [Statuses.ADDED.value, Statuses.DELETED.value, Statuses.REPLACED.value, Statuses.MODIFIED.value, Statuses.NO_DIFF.value, Statuses.UNKNOWN.value],
+            "description": [Statuses.ADDED.name, Statuses.DELETED.name, Statuses.REPLACED.name, Statuses.MODIFIED.name, Statuses.NO_DIFF.name, Statuses.UNKNOWN.name],
+            "example": [
+                {
+                    "old_value": {},
+                    "new_value": {"added_key": "value"}
+                },
+                {
+                    "old_value": {"deleted_key": "value"},
+                    "new_value": {}
+                },
+                {
+                    "old_value": {"replaced_key": "old-value"},
+                    "new_value": {"replaced_key": "new-value"}
+                },
+                {
+                    "old_value": {"modified_key": []},
+                    "new_value": {"modified_key": ["value"]}
+                },
+                {
+                    "old_value": {"no_diff_key": "value"},
+                    "new_value": {"no_diff_key": "value"}
+                }
+            ],
         }

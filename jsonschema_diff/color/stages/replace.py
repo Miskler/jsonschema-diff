@@ -1,50 +1,58 @@
 from __future__ import annotations
 
+"""Rich‑native rewrite of ``ReplaceGenericHighlighter``.
+
+This variant works **directly** on an existing :class:`rich.text.Text` object:
+*No* ANSI round‑trip; styling is applied **in place** and the *same* instance is
+returned.  The diffing semantics are unchanged.
+"""
+
 import re
 import difflib
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Sequence
 
-from rich.console import Console
-from rich.style import Style
 from rich.text import Text
+from rich.style import Style
 
 from ..abstraction import LineHighlighter
 
 
 class ReplaceGenericHighlighter(LineHighlighter):
+    """Highlight token‑level differences in ``OLD -> NEW`` tails *in place*.
+
+    Expected line format (unchanged):
+        ``<anything>: OLD -> NEW``
+
+    Only the segment **after the first ':'** is parsed.  Differences are
+    detected via :pyclass:`difflib.SequenceMatcher` on *tokens* (numbers are
+    atomic).  Background colour is applied **only** to the differing spans, and
+    pre‑existing colour/bold styles are preserved.
+
+    Parameters
+    ----------
+    bg_color:
+        Background colour for differences.  Accepts any Rich colour string.
+    arrow_color:
+        Optionally recolour the ``->`` arrow.
+    case_sensitive:
+        Whether token comparison is case‑sensitive.  Defaults to *True* (keeps
+        original behaviour).
+    underline_changes:
+        Whether to underline differing spans in addition to background colour.
     """
-    Универсальная подсветка replace-строк формата:
-        '…: OLD -> NEW'
 
-    Правила:
-      • парсим только хвост ПОСЛЕ ПЕРВОГО ':' в строке;
-      • дифф по ТОКЕНАМ (число — единый токен), через difflib.SequenceMatcher;
-      • подсвечиваем фоном ТОЛЬКО отличия (OLD: replace/delete, NEW: replace/insert);
-      • уже существующие стили (цвет/жирность) сохраняются.
-
-    Параметры:
-      bg_color         — цвет фона для отличий (любой цвет rich: 'grey35', 'bright_black', '#eef3ff', …)
-      arrow_color      — цвет для стрелки '->' (None = не трогать)
-      case_sensitive   — учитывать регистр при сравнении
-      underline_changes— подчёркивать отличия
-    """
-
-    # Хвост после первого двоеточия:  left_ws  OLD  between_ws  ->  right_ws  NEW  trailing_ws
+    # Head  … :  ← we only parse the *tail* (OLD -> NEW)
     _TAIL_PATTERN = re.compile(
-        r'(?P<left_ws>\s*)'
-        r'(?P<old>.*?)'
-        r'(?P<between_ws>\s*)'
-        r'(?P<arrow>->)'
-        r'(?P<right_ws>\s*)'
-        r'(?P<new>.*?)'
-        r'(?P<trailing_ws>\s*)$'
+        r"(?P<left_ws>\s*)"  # leading spaces
+        r"(?P<old>.*?)"       # OLD segment (lazy)
+        r"(?P<between_ws>\s*)"
+        r"(?P<arrow>->)"     # arrow
+        r"(?P<right_ws>\s*)"
+        r"(?P<new>.*?)"      # NEW segment (lazy)
+        r"(?P<trailing_ws>\s*)$",
     )
 
-    # Токенизация:
-    #  - числа (в т.ч. -12, 3.14, 5, ∞, допускаем "10px"/"50%" как единый числовой токен);
-    #  - слова/идентификаторы;
-    #  - пробелы;
-    #  - одиночный символ (пунктуация, скобки, многоточия и т.п.).
+    # Tokeniser: numbers | words | spaces | single char
     _TOKEN_RE = re.compile(
         r"""
         (?P<num>[+-]?\d+(?:[.,]\d+)?(?:[a-z%]+)?|∞)
@@ -55,6 +63,9 @@ class ReplaceGenericHighlighter(LineHighlighter):
         re.VERBOSE | re.UNICODE,
     )
 
+    # ------------------------------------------------------------------
+    # Construction
+    # ------------------------------------------------------------------
     def __init__(
         self,
         *,
@@ -68,19 +79,17 @@ class ReplaceGenericHighlighter(LineHighlighter):
         self.case_sensitive = case_sensitive
         self.underline_changes = underline_changes
 
-        self._console = Console(force_terminal=True, color_system="truecolor", width=10_000)
         self._bg_style = Style(bgcolor=self.bg_color, underline=self.underline_changes)
         self._arrow_style = Style(color=self.arrow_color) if self.arrow_color else None
 
-    # ------------------------- Публичный API ---------------------------------
+    # ------------------------------------------------------------------
+    # Public helpers
+    # ------------------------------------------------------------------
+    def colorize_line(self, line: Text) -> Text:  # noqa: D401 (imperative mood)
+        """Apply diff‑based highlighting *in place* and return the same ``Text``."""
+        plain = line.plain
 
-    def colorize_line(self, line: str) -> str:
-        """Принимает ANSI-строку, возвращает ANSI-строку с подсветкой отличий."""
-        # 1) разбор уже раскрашенной ANSI-строки в rich.Text
-        text = Text.from_ansi(line)
-        plain = text.plain
-
-        # 2) первый ':' — всё, что справа, считаем 'OLD -> NEW'
+        # 1) locate first ':' — tail is everything to its right
         colon_idx = plain.find(":")
         if colon_idx == -1:
             return line
@@ -90,9 +99,9 @@ class ReplaceGenericHighlighter(LineHighlighter):
 
         m = self._TAIL_PATTERN.match(tail_plain)
         if not m:
-            return line
+            return line  # format didn't match
 
-        # 3) куски хвоста
+        # 2) extract tail pieces
         left_ws = m.group("left_ws")
         old_text = m.group("old")
         between_ws = m.group("between_ws")
@@ -101,7 +110,7 @@ class ReplaceGenericHighlighter(LineHighlighter):
         new_text = m.group("new")
         trailing_ws = m.group("trailing_ws")
 
-        # 4) абсолютные позиции OLD/NEW в plain-строке
+        # 3) absolute indices within *plain* string
         base = len(head_plain)
         old_start = base + len(left_ws)
         old_end = old_start + len(old_text)
@@ -112,60 +121,58 @@ class ReplaceGenericHighlighter(LineHighlighter):
         new_start = arrow_end + len(right_ws)
         new_end = new_start + len(new_text)
 
-        # 5) дифф по токенам (числа — атомарные)
+        # 4) diff tokens
         old_tokens = self._tokenize(old_text)
         new_tokens = self._tokenize(new_text)
 
         sm = difflib.SequenceMatcher(
-            a=[t[3] for t in old_tokens],  # cmp-значения
+            a=[t[3] for t in old_tokens],
             b=[t[3] for t in new_tokens],
         )
-        opcodes = sm.get_opcodes()
 
-        # OLD: replace/delete
-        for tag, i1, i2, j1, j2 in opcodes:
+        for tag, i1, i2, j1, j2 in sm.get_opcodes():
+            # OLD side: replace/delete
             if tag in ("replace", "delete"):
                 span = self._span_from_tokens(old_tokens, i1, i2)
                 if span:
                     s, e = span
-                    text.stylize(self._bg_style, old_start + s, old_start + e)
-
-        # NEW: replace/insert
-        for tag, i1, i2, j1, j2 in opcodes:
+                    line.stylize(self._bg_style, old_start + s, old_start + e)
+            # NEW side: replace/insert
             if tag in ("replace", "insert"):
                 span = self._span_from_tokens(new_tokens, j1, j2)
                 if span:
                     s, e = span
-                    text.stylize(self._bg_style, new_start + s, new_start + e)
+                    line.stylize(self._bg_style, new_start + s, new_start + e)
 
-        # 6) перекрас стрелки при необходимости
+        # 5) recolour arrow if requested
         if self._arrow_style:
-            text.stylize(self._arrow_style, arrow_start, arrow_end)
+            line.stylize(self._arrow_style, arrow_start, arrow_end)
 
-        # 7) обратно в ANSI
-        return self._render(text)
+        return line
 
-    # --------------------------- Внутреннее ----------------------------------
+    # Optional convenience wrapper -------------------------------------
+    def colorize_lines(self, lines: Sequence[Text]) -> List[Text]:
+        """Return the *same* ``Text`` objects after in‑place styling."""
+        return [self.colorize_line(t) for t in lines]
 
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
     def _tokenize(self, s: str) -> List[Tuple[str, int, int, str]]:
-        """
-        Возвращает список токенов: (raw_value, start, end, cmp_value)
-        cmp_value — с учётом case_sensitive.
-        """
+        """Return token list: ``(raw, start, end, cmp)``."""
         toks: List[Tuple[str, int, int, str]] = []
         for m in self._TOKEN_RE.finditer(s):
-            val = m.group(0)
-            cmpv = val if self.case_sensitive else val.lower()
-            toks.append((val, m.start(), m.end(), cmpv))
+            raw = m.group(0)
+            cmpv = raw if self.case_sensitive else raw.lower()
+            toks.append((raw, m.start(), m.end(), cmpv))
         return toks
 
     @staticmethod
-    def _span_from_tokens(tokens: List[Tuple[str, int, int, str]], i1: int, i2: int) -> Optional[Tuple[int, int]]:
+    def _span_from_tokens(
+        tokens: List[Tuple[str, int, int, str]],
+        i1: int,
+        i2: int,
+    ) -> Optional[Tuple[int, int]]:
         if i1 >= i2:
             return None
         return tokens[i1][1], tokens[i2 - 1][2]
-
-    def _render(self, t: Text) -> str:
-        with self._console.capture() as cap:
-            self._console.print(t, end="")
-        return cap.get()

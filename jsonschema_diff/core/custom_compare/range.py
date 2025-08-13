@@ -85,6 +85,31 @@ class CompareRange(CompareCombined):
         new_repr = self._format_bounds(self._bounds_for_side("new", dimension))
         return f"{header} {old_repr} -> {new_repr}"
 
+    @staticmethod
+    def legend() -> dict[str, str | list[str | dict]]:
+        return {
+            "element": "Ranges",
+            "description": "Range - custom render for min/max/exclusiveMin/exclusiveMax fields, as well as all their analogues for strings/arrays/objects.\n\n[] - inclusive, () - exclusive\n∞ - infinity\nThe principle is the same as it was taught in school.",
+            "example": [
+                {
+                    "old_value": {},
+                    "new_value": {"minimum": 1, "maximum": 32, "exclusiveMinimum": True, "exclusiveMaximum": False},
+                },
+                {
+                    "old_value": {"minProperties": 1},
+                    "new_value": {"minProperties": 1, "maxProperties": 32},
+                },
+                {
+                    "old_value": {"minItems": 1, "maxItems": 32},
+                    "new_value": {},
+                },
+                {
+                    "old_value": {"minLength": 1, "maxLength": 32},
+                    "new_value": {"minLength": 5, "maxLength": 10},
+                }
+            ]
+        }
+
     # ---- Определение измерения/ключа ----
 
     def _detect_dimension(self) -> Dimension:

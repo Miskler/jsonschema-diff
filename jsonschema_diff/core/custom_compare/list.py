@@ -38,9 +38,9 @@ class CompareList(Compare):
         elif self.status == Statuses.REPLACED: # replace or no-diff
             sm = difflib.SequenceMatcher(a=self.old_value, b=self.new_value, autojunk=False)
             for tag, i1, i2, j1, j2 in sm.get_opcodes():
-                def add_element(status: Statuses, from_index: int, to_index: int):
+                def add_element(source: list[Any], status: Statuses, from_index: int, to_index: int):
                     is_change = status != Statuses.NO_DIFF
-                    for v in self.old_value[from_index:to_index]:
+                    for v in source[from_index:to_index]:
                         element = CompareListElement(self.config, v, status)
                         self.elements.append(element)
                         if is_change:
@@ -48,14 +48,14 @@ class CompareList(Compare):
 
                 match tag:
                     case "equal":
-                        add_element(Statuses.NO_DIFF, i1, i2)
+                        add_element(self.old_value, Statuses.NO_DIFF, i1, i2)
                     case "delete":
-                        add_element(Statuses.DELETED, i1, i2)
+                        add_element(self.old_value, Statuses.DELETED, i1, i2)
                     case "insert":
-                        add_element(Statuses.ADDED, j1, j2)
+                        add_element(self.new_value, Statuses.ADDED, j1, j2)
                     case "replace":
-                        add_element(Statuses.DELETED, i1, i2)
-                        add_element(Statuses.ADDED, j1, j2)
+                        add_element(self.old_value, Statuses.DELETED, i1, i2)
+                        add_element(self.new_value, Statuses.ADDED,  j1, j2)
                     case _:
                         ValueError(f"Unknown tag: {tag}")
             
@@ -82,10 +82,10 @@ class CompareList(Compare):
     @staticmethod
     def legend() -> dict[str, Any]:
         return {
-            "element": "Arrays / Lists",
-            "description": "Arrays are always displayed fully, with statuses of all elements separately (left to them).\nIn example: [1, 2, 3] replace to [4, 1, 2]",
+            "element": "Arrays\nLists",
+            "description": "Arrays are always displayed fully, with statuses of all elements separately (left to them).\nIn example:\n[\"Masha\", \"Misha\", \"Vasya\"] replace to [\"Masha\", \"Olya\", \"Misha\"]",
             "example": {
-                "old_value": {"some_list": ["11", "22", "33"]},
-                "new_value": {"some_list": ["44", "11", "22"]}
+                "old_value": {"some_list": ["Masha", "Misha", "Vasya"]},
+                "new_value": {"some_list": ["Masha", "Olya", "Misha"]}
             }
         }

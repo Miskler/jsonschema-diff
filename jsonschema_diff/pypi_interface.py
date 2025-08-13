@@ -1,9 +1,9 @@
 from jsonschema_diff.color import HighlighterPipeline
 from jsonschema_diff.core import Config, Property, Compare
 from jsonschema_diff.table_render import make_standard_renderer
-from typing import Optional, Any
+from typing import Optional
 from json import loads
-from rich import box
+from rich.text import Text
 
 
 class JsonSchemaDiff:
@@ -11,11 +11,12 @@ class JsonSchemaDiff:
         self,
         config: "Config",
         colorize_pipeline: "HighlighterPipeline",
-
+        legend_ignore: list[type[Compare]] = []
     ):
         self.config = config
         self.colorize_pipeline = colorize_pipeline
-        self.table_maker = make_standard_renderer(example_processor=self._example_processor)
+        self.table_maker = make_standard_renderer(example_processor=self._example_processor, table_width=90)
+        self.legend_ignore = legend_ignore
     
     @staticmethod
     def fast_pipeline(config: "Config",
@@ -34,7 +35,7 @@ class JsonSchemaDiff:
         render_output, compare_list = prop.render()
         render_output = "\n\n".join(render_output)
         if colorize_pipeline is not None:
-            render_output = colorize_pipeline.colorize_lines(render_output)
+            render_output = colorize_pipeline.colorize_and_render(render_output)
         
         return render_output, compare_list
 
@@ -63,19 +64,25 @@ class JsonSchemaDiff:
         self.last_compare_list = output[1]
         
         if colorized:
-            return self.colorize_pipeline.colorize_lines(self.last_render_output)
+            return self.colorize_pipeline.colorize_and_render(self.last_render_output)
         else:
             return self.last_render_output
 
-    def _example_processor(self, old_value: dict, new_value: dict) -> str:
-        to_return, _ = JsonSchemaDiff.fast_pipeline(self.config, old_value, new_value, self.colorize_pipeline)
-        print(to_return)
+    def _example_processor(self, old_value: dict, new_value: dict) -> Text:
+        output, _ = JsonSchemaDiff.fast_pipeline(self.config, old_value, new_value, None)
+        to_return = self.colorize_pipeline.colorize(output)
         return to_return
 
-    def legend(self, comparators: list[type[Compare]]):
-        self.table_maker.render(comparators)
+    def legend(self, comparators: list[type[Compare]]) -> str:
+        real_comparators = [c for c in comparators if c not in self.legend_ignore]
+        return self.table_maker.render(real_comparators)
 
     def print(self, colorized: bool = True, with_body: bool = True, with_legend: bool = True):
-        print(self.render(colorized=colorized))
-        print()
-        print(self.last_compare_list)
+        if with_body:
+            print(self.render(colorized=colorized))
+        
+        if with_body and with_legend:
+            print()
+        
+        if with_legend:
+            print(self.legend(self.last_compare_list))
