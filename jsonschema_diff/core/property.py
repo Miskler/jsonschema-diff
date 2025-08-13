@@ -180,7 +180,7 @@ class Property:
 
         return with_context.values()
 
-    def self_render(self, tab_level: int = 0) -> tuple[str, list["Compare"]]:
+    def self_render(self, tab_level: int = 0) -> tuple[str, list[type["Compare"]]]:
         # Определение что рендерить
         to_render_count = self.get_for_rendering()
         
@@ -204,7 +204,7 @@ class Property:
 
         return to_render, list(dict.fromkeys([*compare_list]))
 
-    def render(self, tab_level: int = 0) -> tuple[list[str], list["Compare"]]:
+    def render(self, tab_level: int = 0) -> tuple[list[str], list[type["Compare"]]]:
         to_return = []
         compare_list = []
 
@@ -220,5 +220,3 @@ class Property:
             compare_list = list(dict.fromkeys([*compare_list, *part_compare]))
         
         return to_return, compare_list
-
-

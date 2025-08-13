@@ -1,30 +1,20 @@
-from jsonschema_diff.core import property
-from jsonschema_diff.core.config import default_config
-from json import loads
-
+from jsonschema_diff import JsonSchemaDiff, ConfigMaker
 from jsonschema_diff.color import HighlighterPipeline
 from jsonschema_diff.color.stages import MonoLinesHighlighter, ReplaceGenericHighlighter, PathHighlighter
 
-prop = property.Property(
-    config=default_config,
-    name=None,
-    schema_path=[],
-    json_path=[],
-    old_schema=loads(open("context.old.schema.json").read()),
-    new_schema=loads(open("context.new.schema.json").read()))
 
-prop.compare()
+prop = JsonSchemaDiff(
+    config=ConfigMaker.make(),
+    colorize_pipeline=HighlighterPipeline([
+        MonoLinesHighlighter(),
+        ReplaceGenericHighlighter(),
+        PathHighlighter(),
+    ])
+)
 
-result, compares = prop.render()
+prop.compare_from_files(
+    old_file_path="context.old.schema.json",
+    new_file_path="context.new.schema.json"
+)
 
-from pprint import pprint
-pprint(compares)
-
-colored = HighlighterPipeline([
-    MonoLinesHighlighter(),
-    ReplaceGenericHighlighter(),
-    PathHighlighter(),
-]).colorize_lines("\n\n".join(result)) 
-
-print(colored)
-
+prop.print(colorized=True, with_legend=False)

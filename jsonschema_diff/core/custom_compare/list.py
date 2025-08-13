@@ -83,10 +83,9 @@ class CompareList(Compare):
     def legend() -> dict[str, Any]:
         return {
             "element": "Arrays / Lists",
-            "description": "Arrays are always displayed fully, with statuses of all elements separately (left to them).",
+            "description": "Arrays are always displayed fully, with statuses of all elements separately (left to them).\nIn example: [1, 2, 3] replace to [4, 1, 2]",
             "example": {
-                "key": "list",
-                "old_value": [1, 2, 3],
-                "new_value": [4, 1, 2]
+                "old_value": {"some_list": ["11", "22", "33"]},
+                "new_value": {"some_list": ["44", "11", "22"]}
             }
         }

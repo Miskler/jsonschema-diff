@@ -14,7 +14,7 @@ class HighlighterPipeline:
             out = h.colorize_line(out)
         return out
 
-    def colorize_lines(self, text: str) -> str:
+    def colorize_lines(self, text: str | list[str]) -> str:
         out = text
         for h in self.stages:
             out = h.colorize_lines(out)
