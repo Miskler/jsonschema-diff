@@ -1,9 +1,9 @@
-from typing import Any
+import difflib
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
+
 from ..abstraction import Statuses
 from ..parameter_base import Compare
-from dataclasses import dataclass
-from typing import Any, TYPE_CHECKING
-import difflib
 
 if TYPE_CHECKING:
     from ..config import Config
@@ -14,7 +14,7 @@ class CompareListElement:
     config: "Config"
     value: Any
     status: Statuses
-    
+
     def render(self, tab_level: int = 0) -> str:
         return f"{self.status.value} {self.config.TAB * tab_level}{self.value}"
 
@@ -30,15 +30,18 @@ class CompareList(Compare):
 
         if self.status == Statuses.NO_DIFF:
             return self.status
-        elif self.status in [Statuses.ADDED, Statuses.DELETED]: # add
+        elif self.status in [Statuses.ADDED, Statuses.DELETED]:  # add
             for v in self.value:
                 element = CompareListElement(self.config, v, self.status)
                 self.elements.append(element)
                 self.changed_elements.append(element)
-        elif self.status == Statuses.REPLACED: # replace or no-diff
+        elif self.status == Statuses.REPLACED:  # replace or no-diff
             sm = difflib.SequenceMatcher(a=self.old_value, b=self.new_value, autojunk=False)
             for tag, i1, i2, j1, j2 in sm.get_opcodes():
-                def add_element(source: list[Any], status: Statuses, from_index: int, to_index: int):
+
+                def add_element(
+                    source: list[Any], status: Statuses, from_index: int, to_index: int
+                ):
                     is_change = status != Statuses.NO_DIFF
                     for v in source[from_index:to_index]:
                         element = CompareListElement(self.config, v, status)
@@ -55,10 +58,10 @@ class CompareList(Compare):
                         add_element(self.new_value, Statuses.ADDED, j1, j2)
                     case "replace":
                         add_element(self.old_value, Statuses.DELETED, i1, i2)
-                        add_element(self.new_value, Statuses.ADDED,  j1, j2)
+                        add_element(self.new_value, Statuses.ADDED, j1, j2)
                     case _:
                         ValueError(f"Unknown tag: {tag}")
-            
+
             if len(self.changed_elements) > 0:
                 self.status = Statuses.MODIFIED
             else:
@@ -67,25 +70,24 @@ class CompareList(Compare):
             raise ValueError(f"Unsupported keys combination")
 
         return self.status
-    
+
     def is_for_rendering(self) -> bool:
         return super().is_for_rendering() or len(self.changed_elements) > 0
-    
+
     def render(self, tab_level: int = 0, with_path: bool = True) -> str:
         to_return = self._render_start_line(tab_level=tab_level, with_path=with_path)
-        
+
         for i in self.elements:
             to_return += f"\n{i.render(tab_level + 1)}"
         return to_return
-
 
     @staticmethod
     def legend() -> dict[str, Any]:
         return {
             "element": "Arrays\nLists",
-            "description": "Arrays are always displayed fully, with statuses of all elements separately (left to them).\nIn example:\n[\"Masha\", \"Misha\", \"Vasya\"] replace to [\"Masha\", \"Olya\", \"Misha\"]",
+            "description": 'Arrays are always displayed fully, with statuses of all elements separately (left to them).\nIn example:\n["Masha", "Misha", "Vasya"] replace to ["Masha", "Olya", "Misha"]',
             "example": {
                 "old_value": {"some_list": ["Masha", "Misha", "Vasya"]},
-                "new_value": {"some_list": ["Masha", "Olya", "Misha"]}
-            }
+                "new_value": {"some_list": ["Masha", "Olya", "Misha"]},
+            },
         }

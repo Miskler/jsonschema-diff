@@ -1,21 +1,18 @@
 from __future__ import annotations
+
 from types import NoneType
-from typing import Any, TypeAlias, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 if TYPE_CHECKING:  # prevents import cycle
     from .. import Compare
 
 
 COMPARE_RULES_TYPE: TypeAlias = dict[
-      type 
-    | tuple[type, type] 
-    | str 
-    | tuple[str, type, type] 
-    | tuple[str, type],
-
-    type["Compare"]
+    type | tuple[type, type] | str | tuple[str, type, type] | tuple[str, type],
+    type["Compare"],
 ]
 """Mapping *search pattern* → *Compare* subclass."""
+
 
 class CompareRules:
     """Pick an appropriate comparator class according to rule precedence."""
@@ -25,20 +22,24 @@ class CompareRules:
     # ------------------------------------------------------------------ #
 
     @staticmethod
-    def get_comparator_from_values(rules: COMPARE_RULES_TYPE,
-                                   default: type["Compare"],
-                                   key: str,
-                                   old: Any,
-                                   new: Any) -> type["Compare"]:
+    def get_comparator_from_values(
+        rules: COMPARE_RULES_TYPE,
+        default: type["Compare"],
+        key: str,
+        old: Any,
+        new: Any,
+    ) -> type["Compare"]:
         """Wrapper that resolves comparator from **values**."""
         return CompareRules.get_comparator(rules, default, key, type(old), type(new))
 
     @staticmethod
-    def get_comparator(rules: COMPARE_RULES_TYPE,
-                       default: type["Compare"],
-                       key: str,
-                       old: type,
-                       new: type) -> type["Compare"]:
+    def get_comparator(
+        rules: COMPARE_RULES_TYPE,
+        default: type["Compare"],
+        key: str,
+        old: type,
+        new: type,
+    ) -> type["Compare"]:
         """
         Resolve a comparator class according to the following lookup order:
 

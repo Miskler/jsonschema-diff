@@ -1,16 +1,20 @@
 from enum import Enum
 from typing import Any
 
+
 class Statuses(Enum):
-    ADDED    = "+"
-    DELETED  = "-"
+    ADDED = "+"
+    DELETED = "-"
     REPLACED = "r"
     MODIFIED = "m"
-    NO_DIFF  = " "
-    UNKNOWN  = "?"
+    NO_DIFF = " "
+    UNKNOWN = "?"
+
 
 class ToCompare:
-    def __init__(self, old_key: str | None, old_value: Any, new_key: str | None, new_value: Any) -> None:
+    def __init__(
+        self, old_key: str | None, old_value: Any, new_key: str | None, new_value: Any
+    ) -> None:
         self.old_key = old_key
         self.old_value = old_value
         self.new_key = new_key
@@ -29,12 +33,13 @@ class ToCompare:
                 self.status = Statuses.NO_DIFF
             else:
                 self.status = Statuses.REPLACED
-            
+
             self.key = new_key
             self.value = new_value
         else:
-            raise ValueError(f"Cannot compare None to None: `{old_key}: {type(old_value).__name__} = {old_value}` -> `{new_key}: {type(new_value).__name__} = {new_value}`")
+            raise ValueError(
+                f"Cannot compare None to None: `{old_key}: {type(old_value).__name__} = {old_value}` -> `{new_key}: {type(new_value).__name__} = {new_value}`"
+            )
 
     def __repr__(self) -> str:
         return f"ToCompare(key={self.key}, old_value={self.old_value}, new_value={self.new_value}, status={self.status.name})"
-

@@ -1,20 +1,35 @@
-# tests/test_render_context_handler.py
-import pytest
-
 # Импортируем резолвер из проекта; оставлен fallback на локальный context.py
 from jsonschema_diff.core.tools.context import RenderContextHandler
 
 
 # ---- Заглушки компараторов для матчей по классам ----
 class CmpBase: ...
+
+
 class CompareType(CmpBase): ...
+
+
 class CompareFormat(CmpBase): ...
+
+
 class ComparePattern(CmpBase): ...
+
+
 class CompareRange(CmpBase): ...
+
+
 class CompareRangeLength(CmpBase): ...
+
+
 class CompareItems(CmpBase): ...
+
+
 class CompareUniqueItems(CmpBase): ...
+
+
 class CompareRef(CmpBase): ...
+
+
 class CompareDefs(CmpBase): ...
 
 
@@ -81,7 +96,11 @@ def test_pair_rule_class_and_string_bidirectional():
         pair_context_rules=pair_rules,
         context_rules=context_rules,
         for_render={"type": CompareType()},
-        not_for_render={"a": ComparePattern(), "b": ComparePattern(), "c": CompareFormat()},  # 'c' не pattern
+        not_for_render={
+            "a": ComparePattern(),
+            "b": ComparePattern(),
+            "c": CompareFormat(),
+        },  # 'c' не pattern
     )
     assert _klist(res2) == ["type", "a", "b"]
     # Проверяем, что подтянутые — именно исходные объекты
@@ -94,7 +113,11 @@ def test_context_rule_directed_string_to_class():
     pair_rules = []
     context_rules = {"uniqueItems": [CompareItems]}
     for_render = {"uniqueItems": CompareUniqueItems()}
-    not_for_render = {"items": CompareItems(), "prefixItems": CompareItems(), "type": CompareType()}
+    not_for_render = {
+        "items": CompareItems(),
+        "prefixItems": CompareItems(),
+        "type": CompareType(),
+    }
     res = RenderContextHandler.resolve(
         pair_context_rules=pair_rules,
         context_rules=context_rules,

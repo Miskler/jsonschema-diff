@@ -35,10 +35,14 @@ def _import_path_highlighter():
         return importlib.import_module("jsonschema_diff.color.stages.path").PathHighlighter
     except ModuleNotFoundError:
         # ── создаём пустые namespace-пакеты ──────────────────────────────
-        for pkg in ("jsonschema_diff", "jsonschema_diff.color", "jsonschema_diff.color.stages"):
+        for pkg in (
+            "jsonschema_diff",
+            "jsonschema_diff.color",
+            "jsonschema_diff.color.stages",
+        ):
             if pkg not in sys.modules:
                 pkg_mod = types.ModuleType(pkg)
-                pkg_mod.__path__ = []           # помечаем как package
+                pkg_mod.__path__ = []  # помечаем как package
                 sys.modules[pkg] = pkg_mod
             elif not hasattr(sys.modules[pkg], "__path__"):
                 sys.modules[pkg].__path__ = []
@@ -52,7 +56,7 @@ def _import_path_highlighter():
             )
             mod = importlib.util.module_from_spec(spec)
             sys.modules["jsonschema_diff.color.abstraction"] = mod
-            spec.loader.exec_module(mod)        # type: ignore[arg-type]
+            spec.loader.exec_module(mod)  # type: ignore[arg-type]
 
         # ── подгружаем сам path.py под «правильным» именем ───────────────
         path_path = root_dir / "path.py"
@@ -61,11 +65,12 @@ def _import_path_highlighter():
         )
         mod = importlib.util.module_from_spec(spec)
         sys.modules["jsonschema_diff.color.stages.path"] = mod
-        spec.loader.exec_module(mod)            # type: ignore[arg-type]
+        spec.loader.exec_module(mod)  # type: ignore[arg-type]
         return mod.PathHighlighter
 
 
 PathHighlighter = _import_path_highlighter()
+
 
 # ---------------------------------------------------------------------------
 # Вспомогалки для проверки цвета символа
@@ -75,7 +80,7 @@ def color_at(text: Text, idx: int) -> str | None:
     style = None
     for span in text.spans:
         if span.start <= idx < span.end:
-            style = span.style            # «побеждает» последний
+            style = span.style  # «побеждает» последний
     return style.color.name if style and style.color else None
 
 
@@ -86,6 +91,7 @@ HL = PathHighlighter(
     path_prop_color="green",
     prop_color="yellow",
 )
+
 
 # ---------------------------------------------------------------------------
 #                                Т Е С Т Ы
@@ -118,8 +124,8 @@ def test_bracketed_strings_highlighting():
     HL.colorize_line(txt)
 
     # кавычные строки — красные
-    assert color_at(txt, 2) == "red"      # «u» из "user"
-    assert color_at(txt, 10) == "red"     # «n» из "name"
+    assert color_at(txt, 2) == "red"  # «u» из "user"
+    assert color_at(txt, 10) == "red"  # «n» из "name"
 
     # скобки и ':' — белые
     for i, ch in enumerate(raw):
@@ -133,9 +139,9 @@ def test_numeric_indexes_highlighting():
     HL.colorize_line(txt)
 
     # числа — синие
-    assert color_at(txt, 1) == "blue"     # 0
-    assert color_at(txt, 4) == "blue"     # 1
-    assert color_at(txt, 5) == "blue"     # 2
+    assert color_at(txt, 1) == "blue"  # 0
+    assert color_at(txt, 4) == "blue"  # 1
+    assert color_at(txt, 5) == "blue"  # 2
 
     # скобки — белые
     for i, ch in enumerate(raw):

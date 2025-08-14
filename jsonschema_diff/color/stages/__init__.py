@@ -1,6 +1,6 @@
 from .mono_lines import MonoLinesHighlighter
-from .replace import ReplaceGenericHighlighter
 from .path import PathHighlighter
+from .replace import ReplaceGenericHighlighter
 
 __all__ = [
     "MonoLinesHighlighter",

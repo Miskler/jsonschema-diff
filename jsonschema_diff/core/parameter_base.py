@@ -1,18 +1,20 @@
-from typing import Any
-from .abstraction import Statuses, ToCompare
 from typing import TYPE_CHECKING
-from .tools.render import RenderTool
 
+from .abstraction import Statuses, ToCompare
+from .tools.render import RenderTool
 
 if TYPE_CHECKING:
     from .config import Config
 
+
 class Compare:
-    def __init__(self,
-                 config: "Config",
-                 schema_path: list[str | int],
-                 json_path: list[str | int],
-                 to_compare: list[ToCompare]):
+    def __init__(
+        self,
+        config: "Config",
+        schema_path: list[str | int],
+        json_path: list[str | int],
+        to_compare: list[ToCompare],
+    ):
         self.status = Statuses.UNKNOWN
 
         self.config = config
@@ -36,18 +38,29 @@ class Compare:
 
     def get_name(self) -> str:
         return self.to_compare[0].key
-    
-    def is_for_rendering(self) -> bool:
-        return self.status in [Statuses.ADDED, Statuses.DELETED, Statuses.REPLACED, Statuses.MODIFIED]
 
-    def _render_start_line(self, tab_level: int = 0, with_path: bool = True, with_key: bool = True) -> str:
-        to_return = f"{RenderTool.make_prefix(self.status)} {RenderTool.make_tab(self.config, tab_level)}"
+    def is_for_rendering(self) -> bool:
+        return self.status in [
+            Statuses.ADDED,
+            Statuses.DELETED,
+            Statuses.REPLACED,
+            Statuses.MODIFIED,
+        ]
+
+    def _render_start_line(
+        self, tab_level: int = 0, with_path: bool = True, with_key: bool = True
+    ) -> str:
+        to_return = (
+            f"{RenderTool.make_prefix(self.status)} {RenderTool.make_tab(self.config, tab_level)}"
+        )
         if with_path:
-            to_return += RenderTool.make_path(self.schema_path, self.json_path, ignore=self.config.PATH_MAKER_IGNORE)
-        
+            to_return += RenderTool.make_path(
+                self.schema_path, self.json_path, ignore=self.config.PATH_MAKER_IGNORE
+            )
+
         if with_key:
             to_return += f".{self.get_name()}"
-        return to_return+":"
+        return to_return + ":"
 
     def render(self, tab_level: int = 0, with_path: bool = True) -> str:
         to_return = self._render_start_line(tab_level=tab_level, with_path=with_path)
@@ -58,34 +71,42 @@ class Compare:
             to_return += f" {self.old_value} -> {self.new_value}"
         else:
             raise ValueError(f"Unsupported for render status: {self.status}")
-        
+
         return to_return
 
     @staticmethod
     def legend() -> dict[str, str | list[str | dict]]:
         return {
-            "element": [Statuses.ADDED.value, Statuses.DELETED.value, Statuses.REPLACED.value, Statuses.MODIFIED.value, Statuses.NO_DIFF.value, Statuses.UNKNOWN.value],
-            "description": [Statuses.ADDED.name, Statuses.DELETED.name, Statuses.REPLACED.name, Statuses.MODIFIED.name, Statuses.NO_DIFF.name, Statuses.UNKNOWN.name],
+            "element": [
+                Statuses.ADDED.value,
+                Statuses.DELETED.value,
+                Statuses.REPLACED.value,
+                Statuses.MODIFIED.value,
+                Statuses.NO_DIFF.value,
+                Statuses.UNKNOWN.value,
+            ],
+            "description": [
+                Statuses.ADDED.name,
+                Statuses.DELETED.name,
+                Statuses.REPLACED.name,
+                Statuses.MODIFIED.name,
+                Statuses.NO_DIFF.name,
+                Statuses.UNKNOWN.name,
+            ],
             "example": [
-                {
-                    "old_value": {},
-                    "new_value": {"added_key": "value"}
-                },
-                {
-                    "old_value": {"deleted_key": "value"},
-                    "new_value": {}
-                },
+                {"old_value": {}, "new_value": {"added_key": "value"}},
+                {"old_value": {"deleted_key": "value"}, "new_value": {}},
                 {
                     "old_value": {"replaced_key": "old-value"},
-                    "new_value": {"replaced_key": "new-value"}
+                    "new_value": {"replaced_key": "new-value"},
                 },
                 {
                     "old_value": {"modified_key": []},
-                    "new_value": {"modified_key": ["value"]}
+                    "new_value": {"modified_key": ["value"]},
                 },
                 {
                     "old_value": {"no_diff_key": "value"},
-                    "new_value": {"no_diff_key": "value"}
-                }
+                    "new_value": {"no_diff_key": "value"},
+                },
             ],
         }

@@ -67,7 +67,7 @@ class CompareRange(CompareCombined):
             self.status = Statuses.REPLACED
 
         return self.status
-    
+
     def get_name(self) -> str:
         dimension = self._detect_dimension()
         return self._key_for_dimension(dimension)
@@ -93,7 +93,12 @@ class CompareRange(CompareCombined):
             "example": [
                 {
                     "old_value": {},
-                    "new_value": {"minimum": 1, "maximum": 32, "exclusiveMinimum": True, "exclusiveMaximum": False},
+                    "new_value": {
+                        "minimum": 1,
+                        "maximum": 32,
+                        "exclusiveMinimum": True,
+                        "exclusiveMaximum": False,
+                    },
                 },
                 {
                     "old_value": {"minProperties": 1},
@@ -106,8 +111,8 @@ class CompareRange(CompareCombined):
                 {
                     "old_value": {"minLength": 1, "maxLength": 32},
                     "new_value": {"minLength": 5, "maxLength": 10},
-                }
-            ]
+                },
+            ],
         }
 
     # ---- Определение измерения/ключа ----
@@ -156,7 +161,9 @@ class CompareRange(CompareCombined):
             return self._bounds_inclusive_pair(side, "minProperties", "maxProperties")
         return self._bounds_numbers(side)
 
-    def _bounds_inclusive_pair(self, side: Literal["old", "new"], low_key: str, high_key: str) -> Bounds:
+    def _bounds_inclusive_pair(
+        self, side: Literal["old", "new"], low_key: str, high_key: str
+    ) -> Bounds:
         lower = self._as_number(self._get_side_value(side, low_key))
         upper = self._as_number(self._get_side_value(side, high_key))
         return Bounds(lower=lower, lower_inclusive=True, upper=upper, upper_inclusive=True)
@@ -199,7 +206,12 @@ class CompareRange(CompareCombined):
             upper = maximum
             upper_inc = maximum is not None
 
-        return Bounds(lower=lower, lower_inclusive=lower_inc, upper=upper, upper_inclusive=upper_inc)
+        return Bounds(
+            lower=lower,
+            lower_inclusive=lower_inc,
+            upper=upper,
+            upper_inclusive=upper_inc,
+        )
 
     @staticmethod
     def _as_number(value: object | None) -> Optional[Number]:

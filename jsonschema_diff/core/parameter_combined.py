@@ -1,4 +1,3 @@
-
 from .abstraction import Statuses
 from .parameter_base import Compare
 
@@ -18,12 +17,12 @@ class CompareCombined(Compare):
 
             self.dict_compare[c.key] = c
             self.dict_values[c.key] = c.value
-        
+
         return self.status
 
     def get_name(self) -> str:
         raise NotImplementedError("CompareCombined.get_name должен быть переопределен")
-    
+
     def render(self, tab_level: int = 0, with_path: bool = True) -> str:
         raise NotImplementedError("CompareCombined.render должен быть переопределен")
 

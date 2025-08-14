@@ -1,11 +1,8 @@
-import importlib
-import pytest
-
 # ---------------------------------
 # Импортируем тестируемый модуль
 # ---------------------------------
-from jsonschema_diff.core.custom_compare.list import CompareList, CompareListElement
 from jsonschema_diff.core.abstraction import Statuses, ToCompare
+from jsonschema_diff.core.custom_compare.list import CompareList
 
 
 # ---------------------------------
@@ -13,6 +10,7 @@ from jsonschema_diff.core.abstraction import Statuses, ToCompare
 # ---------------------------------
 class DummyConfig:
     """Достаточно TAB и PATH_MAKER_IGNORE для методов RenderTool."""
+
     def __init__(self, tab: str = "  "):
         self.TAB = tab
         self.PATH_MAKER_IGNORE = []
@@ -62,7 +60,6 @@ def test_no_diff_equal_lists():
     assert ".myList:" in rendered and rendered.strip().endswith(":")
 
 
-
 # --- ADDED -------------------------------------------------------
 def test_added_list():
     new = ["A", "B"]
@@ -73,7 +70,7 @@ def test_added_list():
     assert cmp.is_for_rendering() is True
 
     lines = cmp.render(with_path=False).splitlines()
-    assert len(lines) == 1 + len(new)      # шапка + элементы
+    assert len(lines) == 1 + len(new)  # шапка + элементы
     assert all(l.lstrip().startswith("+") for l in lines[1:])
 
 
@@ -92,7 +89,7 @@ def test_deleted_list():
 # --- MODIFIED (insert) ------------------------------------------
 def test_modified_list_insertion():
     old = ["A", "B", "C"]
-    new = ["A", "B", "C", "D"]          # вставка элемента
+    new = ["A", "B", "C", "D"]  # вставка элемента
     cmp = make_compare_list(old, new)
     assert cmp.status is Statuses.MODIFIED
 
@@ -108,7 +105,7 @@ def test_modified_list_insertion():
 # --- MODIFIED (replace) -----------------------------------------
 def test_modified_list_replace_middle():
     old = ["A", "B", "C"]
-    new = ["A", "X", "B", "C"]          # A ==, X +, B ==, C ==
+    new = ["A", "X", "B", "C"]  # A ==, X +, B ==, C ==
     cmp = make_compare_list(old, new)
     assert cmp.status is Statuses.MODIFIED
 

@@ -19,11 +19,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable, Iterable, Mapping, Sequence, Union
 
+from rich import box
 from rich.console import Console, RenderableType
 from rich.padding import Padding
-from rich.table import Table
 from rich.rule import Rule
-from rich import box
+from rich.table import Table
 
 StrOrRenderable = Union[str, RenderableType]
 Processor = Callable[..., StrOrRenderable | list[StrOrRenderable]]
@@ -41,7 +41,7 @@ class ColumnConfig:
     ratio: float | None = None
     justify: str = "left"
     no_wrap: bool = False
-    wrap: bool = True              # add Padding around the cell
+    wrap: bool = True  # add Padding around the cell
     processor: Processor | None = None
 
     def header_text(self) -> str:
@@ -53,7 +53,7 @@ class Cell:
     """Display‑ready cell."""
 
     value: RenderableType
-    pad: bool = True               # if False – value already framed (Panel/Table)
+    pad: bool = True  # if False – value already framed (Panel/Table)
 
     def renderable(self) -> RenderableType:
         if self.pad:
@@ -68,7 +68,7 @@ class LegendRenderer:
         self,
         columns: Sequence[ColumnConfig],
         *,
-        box_style = box.SQUARE_DOUBLE_HEAD,
+        box_style=box.SQUARE_DOUBLE_HEAD,
         header_style: str = "bold",
         table_width: int | None = None,
         show_outer_lines: bool = True,
@@ -91,7 +91,6 @@ class LegendRenderer:
 
         rows: list[list[Cell]] = [self._build_row(legend) for legend in legends]
         table = self._build_table(rows)
-
 
         # Use a throw‑away Console so we don't affect the caller's Console config
         console = Console(
@@ -192,9 +191,11 @@ class LegendRenderer:
             tbl.add_row(*[c.renderable() for c in r])
         return tbl
 
+
 # ---------------------------------------------------------------------------
 # Convenience factory
 # ---------------------------------------------------------------------------
+
 
 def make_standard_renderer(
     *,
@@ -204,6 +205,12 @@ def make_standard_renderer(
     columns = [
         ColumnConfig("element", header="Element", justify="center", ratio=0.5),
         ColumnConfig("description", header="Description", justify="center", ratio=2),
-        ColumnConfig("example", header="Diff Example", ratio=2.5, processor=example_processor, wrap=False),
+        ColumnConfig(
+            "example",
+            header="Diff Example",
+            ratio=2.5,
+            processor=example_processor,
+            wrap=False,
+        ),
     ]
     return LegendRenderer(columns, table_width=table_width)

@@ -1,5 +1,6 @@
-import pytest
 from collections import OrderedDict
+
+import pytest
 
 from jsonschema_diff.core.tools import LogicCombinerHandler
 
@@ -24,9 +25,9 @@ def test_extract_success():
 @pytest.mark.parametrize(
     "bad_item",
     [
-        123,                        # не-dict
-        {"comparator": "x"},        # нет to_compare
-        {"to_compare": 1},          # нет comparator
+        123,  # не-dict
+        {"comparator": "x"},  # нет to_compare
+        {"to_compare": 1},  # нет comparator
     ],
 )
 def test_extract_type_errors(bad_item):
@@ -51,7 +52,7 @@ def test_combine_group_and_singles():
             ("d", make_item("other", 4)),
         ]
     )
-    rules = [["b", "a"]]      # порядок в правиле важен
+    rules = [["b", "a"]]  # порядок в правиле важен
 
     result = LogicCombinerHandler.combine(subset, rules)
 
@@ -72,7 +73,7 @@ def test_combine_rule_with_missing_keys_is_ignored():
 
     result = LogicCombinerHandler.combine(subset, rules)
 
-    assert list(result) == [("x",)]                 # только одиночка
+    assert list(result) == [("x",)]  # только одиночка
     assert result[("x",)]["to_compare"] == [1]
 
 

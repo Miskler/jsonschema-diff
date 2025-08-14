@@ -1,7 +1,4 @@
-from .base import HighlighterPipeline
 from .abstraction import LineHighlighter
+from .base import HighlighterPipeline
 
-__all__ = [
-    "HighlighterPipeline",
-    "LineHighlighter"
-]
+__all__ = ["HighlighterPipeline", "LineHighlighter"]

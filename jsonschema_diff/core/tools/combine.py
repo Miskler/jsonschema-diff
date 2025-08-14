@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Tuple, TypeAlias
 COMBINE_RULES_TYPE: TypeAlias = List[List[str]]
 """Rule format: each inner list declares a logical group of keys."""
 
+
 class LogicCombinerHandler:
     """Group items by user-defined rules and merge their inner fields."""
 
@@ -17,10 +18,9 @@ class LogicCombinerHandler:
             raise ValueError("inner_key_field и inner_value_field должны быть заданы.")
 
     @staticmethod
-    def _extract(item: Any,
-                 key_name: str,
-                 inner_key_field: str,
-                 inner_value_field: str) -> Tuple[Any, Any]:
+    def _extract(
+        item: Any, key_name: str, inner_key_field: str, inner_value_field: str
+    ) -> Tuple[Any, Any]:
         """
         Return ``(inner_key, inner_value)`` taken from ``item`` (a dict).
 
@@ -51,11 +51,12 @@ class LogicCombinerHandler:
     # ------------------------------------------------------------------ #
 
     @staticmethod
-    def combine(subset: Dict[str, Any],
-                rules: List[List[str]],
-                inner_key_field: str | None = "comparator",
-                inner_value_field: str | None = "to_compare"
-                ) -> Dict[Tuple[str, ...], Dict[str, Any]]:
+    def combine(
+        subset: Dict[str, Any],
+        rules: List[List[str]],
+        inner_key_field: str | None = "comparator",
+        inner_value_field: str | None = "to_compare",
+    ) -> Dict[Tuple[str, ...], Dict[str, Any]]:
         """
         Build an ``OrderedDict`` that groups *subset* items per *rules*.
 
@@ -81,28 +82,24 @@ class LogicCombinerHandler:
 
             fields, vals = [], []
             for k in present:
-                f, v = LogicCombinerHandler._extract(subset[k], k,
-                                                     inner_key_field, inner_value_field)
+                f, v = LogicCombinerHandler._extract(
+                    subset[k], k, inner_key_field, inner_value_field
+                )
                 fields.append(f)
                 vals.append(v)
 
             base_field = fields[0]
             if any(f != base_field for f in fields[1:]):
-                raise ValueError(
-                    f"Mismatched '{inner_key_field}' inside group {tuple(present)}"
-                )
+                raise ValueError(f"Mismatched '{inner_key_field}' inside group {tuple(present)}")
 
-            out[tuple(present)] = {inner_key_field: base_field,
-                                   inner_value_field: vals}
+            out[tuple(present)] = {inner_key_field: base_field, inner_value_field: vals}
             seen_in_rules.update(present)
 
         # 2. leftover singletons, keep original order
         for k, item in subset.items():
             if k in seen_in_rules:
                 continue
-            f, v = LogicCombinerHandler._extract(item, k,
-                                                 inner_key_field, inner_value_field)
-            out[(k,)] = {inner_key_field: f,
-                         inner_value_field: [v]}
+            f, v = LogicCombinerHandler._extract(item, k, inner_key_field, inner_value_field)
+            out[(k,)] = {inner_key_field: f, inner_value_field: [v]}
 
         return out

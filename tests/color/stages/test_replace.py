@@ -14,7 +14,6 @@ from typing import List
 
 from rich.text import Text
 
-
 # ------------------------------------------------------------------
 # Робкий импорт — модуль может лежать либо «плоско», либо в пакете
 # ------------------------------------------------------------------
@@ -29,7 +28,7 @@ def style_at(text: Text, idx: int):
     style = None
     for span in text.spans:
         if span.start <= idx < span.end:
-            style = span.style          # «побеждает» последний
+            style = span.style  # «побеждает» последний
     return style
 
 
@@ -58,9 +57,9 @@ def test_diff_highlighting_and_arrow_color():
     hl.colorize_line(txt)
 
     # индексы первого символа изменённых слов
-    idx_old = raw.index("r")          # 'r' в «red»
-    idx_new = raw.index("b")          # 'b' в «blue»
-    idx_arrow = raw.index("-")        # «–>»
+    idx_old = raw.index("r")  # 'r' в «red»
+    idx_new = raw.index("b")  # 'b' в «blue»
+    idx_arrow = raw.index("-")  # «–>»
 
     old_style = style_at(txt, idx_old)
     new_style = style_at(txt, idx_new)
@@ -78,8 +77,8 @@ def test_underline_changes_flag():
     txt = Text(".p: one -> two")
     hl.colorize_line(txt)
 
-    assert style_at(txt, txt.plain.index("o")).underline is True   # «one»
-    assert style_at(txt, txt.plain.index("t")).underline is True   # «two»
+    assert style_at(txt, txt.plain.index("o")).underline is True  # «one»
+    assert style_at(txt, txt.plain.index("t")).underline is True  # «two»
 
 
 def test_colorize_lines_batch_returns_same_objects():

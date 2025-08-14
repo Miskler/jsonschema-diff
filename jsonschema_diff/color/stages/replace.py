@@ -7,12 +7,12 @@ This variant works **directly** on an existing :class:`rich.text.Text` object:
 returned.  The diffing semantics are unchanged.
 """
 
-import re
 import difflib
-from typing import Optional, List, Tuple, Sequence
+import re
+from typing import List, Optional, Sequence, Tuple
 
-from rich.text import Text
 from rich.style import Style
+from rich.text import Text
 
 from ..abstraction import LineHighlighter
 
@@ -44,11 +44,11 @@ class ReplaceGenericHighlighter(LineHighlighter):
     # Head  … :  ← we only parse the *tail* (OLD -> NEW)
     _TAIL_PATTERN = re.compile(
         r"(?P<left_ws>\s*)"  # leading spaces
-        r"(?P<old>.*?)"       # OLD segment (lazy)
+        r"(?P<old>.*?)"  # OLD segment (lazy)
         r"(?P<between_ws>\s*)"
-        r"(?P<arrow>->)"     # arrow
+        r"(?P<arrow>->)"  # arrow
         r"(?P<right_ws>\s*)"
-        r"(?P<new>.*?)"      # NEW segment (lazy)
+        r"(?P<new>.*?)"  # NEW segment (lazy)
         r"(?P<trailing_ws>\s*)$",
     )
 

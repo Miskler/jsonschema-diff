@@ -1,28 +1,28 @@
-from .abstraction import Statuses, ToCompare
-from .tools import LogicCombinerHandler, RenderContextHandler, CompareRules
-from .tools import RenderTool as RT
-from .parameter_base import Compare
-
-
 from typing import TYPE_CHECKING
+
+from .abstraction import Statuses, ToCompare
+from .parameter_base import Compare
+from .tools import CompareRules, LogicCombinerHandler, RenderContextHandler
+from .tools import RenderTool as RT
+
 if TYPE_CHECKING:
     from .config import Config
 
 
 class Property:
     def __init__(
-            self,
-            config: "Config",
-            schema_path: list[str | int],
-            json_path: list[str | int],
-            name: str | int | None,
-            old_schema: dict | None,
-            new_schema: dict | None
-        ):
+        self,
+        config: "Config",
+        schema_path: list[str | int],
+        json_path: list[str | int],
+        name: str | int | None,
+        old_schema: dict | None,
+        new_schema: dict | None,
+    ):
         self.status: Statuses = Statuses.UNKNOWN
         self.parameters: dict[str, "Compare"] = {}
         self.propertys: dict[str | int, "Property"] = {}
-        
+
         self.config = config
         self.name = name
         self.schema_path = schema_path
@@ -30,12 +30,12 @@ class Property:
 
         self.old_schema = {} if old_schema is None else old_schema
         self.new_schema = {} if new_schema is None else new_schema
-    
+
     @property
     def json_path_with_name(self):
         json_path_with_name = self.json_path
         if self.name is not None:
-            json_path_with_name = self.json_path+[self.name]
+            json_path_with_name = self.json_path + [self.name]
 
         return json_path_with_name
 
@@ -43,7 +43,7 @@ class Property:
     def schema_path_with_name(self):
         schema_path_with_name = self.schema_path
         if self.name is not None:
-            schema_path_with_name = self.schema_path+[self.name]
+            schema_path_with_name = self.schema_path + [self.name]
 
         return schema_path_with_name
 
@@ -67,7 +67,7 @@ class Property:
                 seen.add(k)
         return merged
 
-    def compare(self): 
+    def compare(self):
         if len(self.old_schema) <= 0:
             self.status = Statuses.ADDED
         elif len(self.new_schema) <= 0:
@@ -90,11 +90,11 @@ class Property:
 
                     prop = Property(
                         config=self.config,
-                        schema_path=self.schema_path_with_name+[key],
+                        schema_path=self.schema_path_with_name + [key],
                         json_path=self.json_path_with_name,
                         name=prop_key,
                         old_schema=old_to_prop,
-                        new_schema=new_to_prop
+                        new_schema=new_to_prop,
                     )
                     prop.compare()
                     self.propertys[prop_key] = prop
@@ -112,11 +112,11 @@ class Property:
 
                     prop = Property(
                         config=self.config,
-                        schema_path=self.schema_path_with_name+[key],
+                        schema_path=self.schema_path_with_name + [key],
                         json_path=self.json_path_with_name,
                         name=i,
                         old_schema=old_to_prop,
-                        new_schema=new_to_prop
+                        new_schema=new_to_prop,
                     )
                     prop.compare()
                     self.propertys[i] = prop
@@ -127,26 +127,31 @@ class Property:
                         default=Compare,
                         key=key,
                         old=old_value,
-                        new=new_value),
-                    "to_compare": ToCompare(old_key=old_key,
-                                            old_value=old_value,
-                                            new_key=new_key,
-                                            new_value=new_value)
+                        new=new_value,
+                    ),
+                    "to_compare": ToCompare(
+                        old_key=old_key,
+                        old_value=old_value,
+                        new_key=new_key,
+                        new_value=new_value,
+                    ),
                 }
-        
+
         result_combine = LogicCombinerHandler.combine(
             subset=parameters_subset,
             rules=self.config.COMBINE_RULES,
             inner_key_field="comparator",
-            inner_value_field="to_compare"
+            inner_value_field="to_compare",
         )
 
         for keys, values in result_combine.items():
             comparator = values["comparator"]
-            comparator = comparator(self.config,
-                                    self.schema_path_with_name,
-                                    self.json_path_with_name,
-                                    values["to_compare"])
+            comparator = comparator(
+                self.config,
+                self.schema_path_with_name,
+                self.json_path_with_name,
+                values["to_compare"],
+            )
 
             comparator.compare()
 
@@ -154,12 +159,17 @@ class Property:
                 self.status = Statuses.MODIFIED
 
             self.parameters[comparator.get_name()] = comparator
-        
+
         if self.status == Statuses.UNKNOWN:
             self.status = Statuses.NO_DIFF
 
     def is_for_rendering(self) -> bool:
-        return self.status in [Statuses.ADDED, Statuses.DELETED, Statuses.REPLACED, Statuses.MODIFIED]
+        return self.status in [
+            Statuses.ADDED,
+            Statuses.DELETED,
+            Statuses.REPLACED,
+            Statuses.MODIFIED,
+        ]
 
     def get_for_rendering(self) -> list["Compare"]:
         # Определение что рендерить
@@ -170,12 +180,12 @@ class Property:
                 for_render[param_name] = param
             else:
                 not_for_render[param_name] = param
-        
+
         with_context = RenderContextHandler.resolve(
             pair_context_rules=self.config.PAIR_CONTEXT_RULES,
             context_rules=self.config.CONTEXT_RULES,
             for_render=for_render,
-            not_for_render=not_for_render
+            not_for_render=not_for_render,
         )
 
         return with_context.values()
@@ -183,13 +193,17 @@ class Property:
     def self_render(self, tab_level: int = 0) -> tuple[str, list[type["Compare"]]]:
         # Определение что рендерить
         to_render_count = self.get_for_rendering()
-        
+
         # Рендер заголовка / пути
         my_to_render = []
-        property_line_render = self.name is not None and (self.status != Statuses.MODIFIED or len(to_render_count) > 1)
+        property_line_render = self.name is not None and (
+            self.status != Statuses.MODIFIED or len(to_render_count) > 1
+        )
         params_tab_level = tab_level
         if property_line_render:
-            my_to_render.append(f"{RT.make_prefix(self.status)} {RT.make_tab(self.config, tab_level)}{RT.make_path(self.schema_path+[self.name], self.json_path+[self.name], ignore=self.config.PATH_MAKER_IGNORE)}:")
+            my_to_render.append(
+                f"{RT.make_prefix(self.status)} {RT.make_tab(self.config, tab_level)}{RT.make_path(self.schema_path+[self.name], self.json_path+[self.name], ignore=self.config.PATH_MAKER_IGNORE)}:"
+            )
             params_tab_level += 1
 
         # Рендер параметров
@@ -212,11 +226,10 @@ class Property:
             part_to_return, part_compare = self.self_render(tab_level=tab_level)
             to_return.append(part_to_return)
             compare_list = list(dict.fromkeys([*compare_list, *part_compare]))
-            
-        
+
         for prop in self.propertys.values():
             part_to_return, part_compare = prop.render(tab_level=tab_level)
             to_return += part_to_return
             compare_list = list(dict.fromkeys([*compare_list, *part_compare]))
-        
+
         return to_return, compare_list

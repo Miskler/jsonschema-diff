@@ -10,16 +10,14 @@ $ jsonschema-diff old.schema.json new.schema.json
 from __future__ import annotations
 
 import argparse
-import json
 import sys
-from pathlib import Path
 
-from jsonschema_diff import JsonSchemaDiff, ConfigMaker
+from jsonschema_diff import ConfigMaker, JsonSchemaDiff
 from jsonschema_diff.color import HighlighterPipeline
 from jsonschema_diff.color.stages import (
     MonoLinesHighlighter,
-    ReplaceGenericHighlighter,
     PathHighlighter,
+    ReplaceGenericHighlighter,
 )
 from jsonschema_diff.core.parameter_base import Compare
 

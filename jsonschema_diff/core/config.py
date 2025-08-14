@@ -1,26 +1,25 @@
 from .custom_compare.list import CompareList
 from .custom_compare.range import CompareRange
-
-from .tools.compare import COMPARE_RULES_TYPE
 from .tools.combine import COMBINE_RULES_TYPE
-from .tools.render import PATH_MAKER_IGNORE_RULES_TYPE
+from .tools.compare import COMPARE_RULES_TYPE
 from .tools.context import CONTEXT_RULES_TYPE, PAIR_CONTEXT_RULES_TYPE
+from .tools.render import PATH_MAKER_IGNORE_RULES_TYPE
 
 
 class Config:
-    def __init__(self,
-                 tab: str = "  ",
-                 compare_rules: COMPARE_RULES_TYPE = {},
-                 combine_rules: COMBINE_RULES_TYPE = [],
-                 path_maker_ignore: PATH_MAKER_IGNORE_RULES_TYPE = ["properties", "items"],
-                 pair_context_rules: PAIR_CONTEXT_RULES_TYPE = [],
-                 context_rules: CONTEXT_RULES_TYPE = {}):
+    def __init__(
+        self,
+        tab: str = "  ",
+        compare_rules: COMPARE_RULES_TYPE = {},
+        combine_rules: COMBINE_RULES_TYPE = [],
+        path_maker_ignore: PATH_MAKER_IGNORE_RULES_TYPE = ["properties", "items"],
+        pair_context_rules: PAIR_CONTEXT_RULES_TYPE = [],
+        context_rules: CONTEXT_RULES_TYPE = {},
+    ):
         self.TAB = tab
-        
-        if compare_rules is None:
-            compare_rules = CompareRules()
+
         self.COMPARE_RULES = compare_rules
-        
+
         self.COMBINE_RULES = combine_rules
 
         self.PATH_MAKER_IGNORE = path_maker_ignore
@@ -32,21 +31,20 @@ class Config:
 default_config = Config(
     compare_rules={
         list: CompareList,
-        
         #  ЧИСЛА
-        "minimum":          CompareRange,
-        "maximum":          CompareRange,
+        "minimum": CompareRange,
+        "maximum": CompareRange,
         "exclusiveMinimum": CompareRange,
         "exclusiveMaximum": CompareRange,
         #  СТРОКИ (длины)
-        "minLength":        CompareRange,
-        "maxLength":        CompareRange,
+        "minLength": CompareRange,
+        "maxLength": CompareRange,
         #  МАССИВЫ (число элементов)
-        "minItems":         CompareRange,
-        "maxItems":         CompareRange,
+        "minItems": CompareRange,
+        "maxItems": CompareRange,
         #  ОБЪЕКТЫ (число свойств)
-        "minProperties":    CompareRange,
-        "maxProperties":    CompareRange,
+        "minProperties": CompareRange,
+        "maxProperties": CompareRange,
     },
     combine_rules=[
         ["minimum", "exclusiveMinimum", "maximum", "exclusiveMaximum"],
@@ -55,50 +53,48 @@ default_config = Config(
         ["minProperties", "maxProperties"],
     ],
     pair_context_rules=[
-        ["type", "format"],                          # строковые форматы
-        ["contentEncoding", "contentMediaType"],     # парные контент-атрибуты для строк
-        ["if", "then", "else"],                      # логический триплет показываем вместе
-        ["properties", "required"],                  # объект: список свойств и обязательность
-        ["items", "prefixItems"],                    # массив: позиционные/общие элементы
+        ["type", "format"],  # строковые форматы
+        ["contentEncoding", "contentMediaType"],  # парные контент-атрибуты для строк
+        ["if", "then", "else"],  # логический триплет показываем вместе
+        ["properties", "required"],  # объект: список свойств и обязательность
+        ["items", "prefixItems"],  # массив: позиционные/общие элементы
         ["contains", "minContains", "maxContains"],  # массив: contains и его пороги
-        ["dependentRequired", "dependentSchemas"],   # объект: зависимости
-        ["readOnly", "writeOnly"],                   # метаданные доступа поля
-        ["$ref", "$defs"],                           # ссылка и её пространство имён
-        ["additionalProperties", "unevaluatedProperties"],  # политика для «прочих» свойств
-        ["propertyNames", "patternProperties"],      # правила по именам vs по паттернам
-        ["pattern", "format"],                       # для строк часто полезно показать оба
+        ["dependentRequired", "dependentSchemas"],  # объект: зависимости
+        ["readOnly", "writeOnly"],  # метаданные доступа поля
+        ["$ref", "$defs"],  # ссылка и её пространство имён
+        [
+            "additionalProperties",
+            "unevaluatedProperties",
+        ],  # политика для «прочих» свойств
+        ["propertyNames", "patternProperties"],  # правила по именам vs по паттернам
+        ["pattern", "format"],  # для строк часто полезно показать оба
     ],
     context_rules={
         # Строки
-        "pattern": ["type"],                          # есть паттерн — покажем, что это строка
+        "pattern": ["type"],  # есть паттерн — покажем, что это строка
         "contentMediaType": ["type", "contentEncoding"],
         "contentEncoding": ["type", "contentMediaType"],
         "contentSchema": ["type", "contentMediaType"],
-
         # Числа
-        "multipleOf": ["type"],                       # кратность имеет смысл для number/integer
-
+        "multipleOf": ["type"],  # кратность имеет смысл для number/integer
         # Массивы
         "items": ["contains", "prefixItems", "uniqueItems", "unevaluatedItems"],
         "prefixItems": ["items", "unevaluatedItems"],
         "contains": ["minContains", "maxContains", "items"],
         "uniqueItems": ["type", "items"],
-
         # Объекты
         "properties": ["required", "additionalProperties", "patternProperties"],
-        "required": ["properties"],                   # дублирует пару, но безвредно
+        "required": ["properties"],  # дублирует пару, но безвредно
         "patternProperties": ["additionalProperties"],
         "dependentSchemas": ["dependentRequired", "properties"],
         "dependentRequired": ["properties"],
         "propertyNames": ["type"],
-
         # Комбинаторы
         "oneOf": ["type"],
         "anyOf": ["type"],
         "allOf": ["type"],
         "not": ["type"],
-
         # Референсы/мета
         "$ref": ["$defs"],
-    }
+    },
 )

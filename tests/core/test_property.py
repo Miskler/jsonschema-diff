@@ -1,4 +1,4 @@
-from jsonschema_diff.core import Property, Statuses, Config
+from jsonschema_diff.core import Config, Property, Statuses
 
 
 # ------------------------------------------------------------
@@ -105,4 +105,4 @@ def test_items_indexed_children():
     assert idx1.status is Statuses.ADDED
     lines, _ = prop.render()
     # убедимся, что путь содержит индекс [1]
-    assert any('[1]' in l for l in lines)
+    assert any("[1]" in l for l in lines)

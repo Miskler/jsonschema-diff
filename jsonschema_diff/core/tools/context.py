@@ -1,5 +1,16 @@
 from __future__ import annotations
-from typing import Dict, Iterable, List, Mapping, Sequence, Type, Union, TypeAlias, TYPE_CHECKING
+
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Sequence,
+    Type,
+    TypeAlias,
+    Union,
+)
 
 if TYPE_CHECKING:
     from jsonschema_diff.core.parameter_base import Compare
@@ -10,16 +21,18 @@ RULE_KEY: TypeAlias = Union[str, Type["Compare"]]
 CONTEXT_RULES_TYPE: TypeAlias = Mapping[RULE_KEY, Sequence[RULE_KEY]]
 PAIR_CONTEXT_RULES_TYPE: TypeAlias = Sequence[Sequence[RULE_KEY]]
 
+
 class RenderContextHandler:
     """Expand context comparators based on pair- and directed-dependency rules."""
 
     @staticmethod
-    def resolve(*,
-                pair_context_rules: PAIR_CONTEXT_RULES_TYPE,
-                context_rules: CONTEXT_RULES_TYPE,
-                for_render: Mapping[str, "Compare"],
-                not_for_render: Mapping[str, "Compare"]
-                ) -> Dict[str, "Compare"]:
+    def resolve(
+        *,
+        pair_context_rules: PAIR_CONTEXT_RULES_TYPE,
+        context_rules: CONTEXT_RULES_TYPE,
+        for_render: Mapping[str, "Compare"],
+        not_for_render: Mapping[str, "Compare"],
+    ) -> Dict[str, "Compare"]:
         """
         Build the final ordered context for rendering.
 
@@ -45,11 +58,11 @@ class RenderContextHandler:
         * While iterating, append new candidates to the tail of the scan list.
         * A candidate is added once when first matched by any rule.
         """
-        out: Dict[str, "Compare"] = dict(for_render)          # preserves order
-        pool_not: Dict[str, "Compare"] = dict(not_for_render) # preserves insertion order
+        out: Dict[str, "Compare"] = dict(for_render)  # preserves order
+        pool_not: Dict[str, "Compare"] = dict(not_for_render)  # preserves insertion order
 
         seq: List[str] = list(out.keys())  # scan list
-        in_out = set(seq)                  # O(1) membership checks
+        in_out = set(seq)  # O(1) membership checks
 
         def _matches(rule: RULE_KEY, name: str, cmp_obj: "Compare") -> bool:
             """Return True if *rule* matches given *(name, object)* pair."""
@@ -61,8 +74,7 @@ class RenderContextHandler:
             except TypeError:
                 return False
 
-        def _expand(rule: RULE_KEY,
-                    pool: Mapping[str, "Compare"]) -> Iterable[str]:
+        def _expand(rule: RULE_KEY, pool: Mapping[str, "Compare"]) -> Iterable[str]:
             """
             Yield keys from *pool* matching *rule* (order-stable).
 

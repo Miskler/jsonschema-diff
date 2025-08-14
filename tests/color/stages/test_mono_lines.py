@@ -1,4 +1,3 @@
-import importlib
 import pytest
 from rich.text import Text
 
@@ -18,13 +17,13 @@ def _first_span(line: Text):
 @pytest.mark.parametrize(
     "raw, expected_color",
     [
-        ("- removed", "red"),        # стандартные правила
+        ("- removed", "red"),  # стандартные правила
         ("+ added", "green"),
-        ("Rrenamed", "cyan"),        # 'r' / 'm' → cyan
+        ("Rrenamed", "cyan"),  # 'r' / 'm' → cyan
     ],
 )
 def test_default_rules(raw, expected_color):
-    hl = MonoLinesHighlighter()             # все параметры по умолчанию
+    hl = MonoLinesHighlighter()  # все параметры по умолчанию
     line = Text(raw)
     ret = hl.colorize_line(line)
 
@@ -40,14 +39,14 @@ def test_default_rules(raw, expected_color):
 # Пользовательские правила и   **первый-совпавший**   приоритет
 # ------------------------------------------------------------------
 def test_custom_rules_order():
-    rules = {"--": "blue", "-": "yellow"}   # порядок важен
+    rules = {"--": "blue", "-": "yellow"}  # порядок важен
     hl = MonoLinesHighlighter(rules=rules)
 
     line = Text("-- headline")
     hl.colorize_line(line)
 
     _, style = _first_span(line)
-    assert style.color.name == "blue"       # сработал первый префикс
+    assert style.color.name == "blue"  # сработал первый префикс
     assert style.bold is True
 
 
@@ -62,7 +61,7 @@ def test_case_sensitive_toggle():
     _, s_ok = _first_span(ok)
     assert s_ok.color.name == "yellow"
 
-    ko = Text("err failure")                # регистр не совпадает
+    ko = Text("err failure")  # регистр не совпадает
     hl.colorize_line(ko)
     _, s_ko = _first_span(ko)
     # правило не применилось → bold-fallback без цвета
@@ -78,7 +77,7 @@ def test_default_color_fallback():
     hl.colorize_line(line)
 
     _, style = _first_span(line)
-    assert style.color.name == "white"      # сработал default_color
+    assert style.color.name == "white"  # сработал default_color
     assert style.bold is False
 
 
@@ -88,5 +87,5 @@ def test_bold_only_fallback():
     hl.colorize_line(line)
 
     _, style = _first_span(line)
-    assert style.color is None              # цвета нет
-    assert style.bold is True               # только жирное начертание
+    assert style.color is None  # цвета нет
+    assert style.bold is True  # только жирное начертание

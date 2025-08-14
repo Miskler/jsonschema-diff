@@ -1,14 +1,20 @@
 from types import SimpleNamespace
 
 import pytest
-from rich.text import Text
-from rich.table import Table
 from rich.padding import Padding
+from rich.table import Table
+from rich.text import Text
 
 # ------------------------------------------------------------
 # Надёжный импорт: «плоский» файл или пакет jsonschema_diff
 # ------------------------------------------------------------
-from jsonschema_diff.table_render import _is_rich_renderable, ColumnConfig, Cell, LegendRenderer, make_standard_renderer
+from jsonschema_diff.table_render import (
+    Cell,
+    ColumnConfig,
+    LegendRenderer,
+    _is_rich_renderable,
+    make_standard_renderer,
+)
 
 
 # =================================================================
@@ -95,7 +101,7 @@ class GoodLegend:
 class BadLegend:
     @staticmethod
     def legend():
-        return {"element": "*", "description": "miss"}     # нет example
+        return {"element": "*", "description": "miss"}  # нет example
 
 
 def test_validate_legends_raises_on_missing_keys():

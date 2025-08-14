@@ -6,7 +6,6 @@ All optional switches are enabled by default; pass ``False`` to disable.
 
 from .core import Compare, Config
 from .core.custom_compare import CompareList, CompareRange
-
 from .core.tools.combine import COMBINE_RULES_TYPE
 from .core.tools.compare import COMPARE_RULES_TYPE
 from .core.tools.context import CONTEXT_RULES_TYPE, PAIR_CONTEXT_RULES_TYPE
@@ -70,15 +69,13 @@ class ConfigMaker:
 
         ranger = CompareRange
         if range_digit_comparator:
-            add_rule(["minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum"],
-                     ranger)
+            add_rule(["minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum"], ranger)
         if range_length_comparator:
             add_rule(["minLength", "maxLength"], ranger)
         if range_items_comparator:
             add_rule(["minItems", "maxItems"], ranger)
         if range_properties_comparator:
             add_rule(["minProperties", "maxProperties"], ranger)
-
 
         # Path-render filters
         if not path_render_with_properies:

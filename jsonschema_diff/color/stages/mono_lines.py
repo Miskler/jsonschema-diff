@@ -13,8 +13,8 @@ replacement for that use‑case.
 
 from typing import Mapping, Optional
 
-from rich.text import Text
 from rich.style import Style
+from rich.text import Text
 
 from ..abstraction import LineHighlighter
 

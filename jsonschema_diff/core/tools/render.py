@@ -1,8 +1,8 @@
-from typing import Sequence, List, Any, TypeAlias, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Sequence, TypeAlias
 
 if TYPE_CHECKING:
-    from ..config import Config
     from ..abstraction import Statuses
+    from ..config import Config
 
 PATH_MAKER_IGNORE_RULES_TYPE: TypeAlias = Sequence[str]
 
@@ -105,9 +105,7 @@ class RenderTool:
             s_tok = schema_path[i]
 
             # 1. Ignore schema-only service tokens
-            if s_tok in ignore and (
-                j >= len(json_path) or str(s_tok) != str(json_path[j])
-            ):
+            if s_tok in ignore and (j >= len(json_path) or str(s_tok) != str(json_path[j])):
                 i += 1
                 continue
 

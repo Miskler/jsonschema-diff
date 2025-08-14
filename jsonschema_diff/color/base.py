@@ -8,9 +8,10 @@ simple orchestrator that turns **raw strings → Text → styled Text** and—wh
 required—renders them back to ANSI for CLI output.
 """
 
-from typing import Iterable, TYPE_CHECKING
-from rich.text import Text
+from typing import TYPE_CHECKING, Iterable
+
 from rich.console import Console
+from rich.text import Text
 
 if TYPE_CHECKING:  # pragma: no cover
     from .abstraction import LineHighlighter  # noqa: F401  (imported for typing only)
@@ -27,7 +28,7 @@ class HighlighterPipeline:  # noqa: D101 (docstring just above)
     def colorize(self, text: str) -> Text:  # noqa: D401
         """Return a list of *new* ``Text`` objects after applying all stages."""
         lines = text.splitlines()
-        rich_lines = [Text(l) for l in lines]
+        rich_lines = [Text(line) for line in lines]
 
         for stage in self.stages:
             # prefer the vectorised helper when available — it's faster
@@ -71,5 +72,3 @@ class HighlighterPipeline:  # noqa: D101 (docstring just above)
             return max(get_terminal_size().columns, 20)
         except Exception:  # pragma: no cover — environment might be stubbed/missing
             return default
-
-        

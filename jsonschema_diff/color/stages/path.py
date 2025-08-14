@@ -9,10 +9,10 @@ and the *very same* object is returned, making it ideal for Rich tables,
 panels, or any workflow where you want to keep manipulating ``Text`` objects.
 """
 
-from typing import Optional, List, Tuple, Sequence
+from typing import List, Optional, Tuple
 
-from rich.text import Text
 from rich.style import Style
+from rich.text import Text
 
 from ..abstraction import LineHighlighter
 
@@ -97,9 +97,7 @@ class PathHighlighter(LineHighlighter):
                     inner = s[inner_start:inner_end]
                     inner_stripped = inner.strip()
                     # quoted string  "..." / '...'
-                    if (
-                        inner_stripped.startswith("\"") and inner_stripped.endswith("\"")
-                    ) or (
+                    if (inner_stripped.startswith('"') and inner_stripped.endswith('"')) or (
                         inner_stripped.startswith("'") and inner_stripped.endswith("'")
                     ):
                         lead_ws = len(inner) - len(inner.lstrip())

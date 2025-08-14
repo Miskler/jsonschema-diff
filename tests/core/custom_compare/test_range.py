@@ -1,13 +1,12 @@
 import importlib
+
 import pytest
 
 # ------------------------------------------------------------
 # Импортируем объект под тестом и вспомогательные типы
 # ------------------------------------------------------------
-CompareRange = importlib.import_module(
-    "jsonschema_diff.core.custom_compare.range"
-).CompareRange
-abstraction   = importlib.import_module("jsonschema_diff.core.abstraction")
+CompareRange = importlib.import_module("jsonschema_diff.core.custom_compare.range").CompareRange
+abstraction = importlib.import_module("jsonschema_diff.core.abstraction")
 Statuses, ToCompare = abstraction.Statuses, abstraction.ToCompare
 
 
@@ -57,8 +56,8 @@ def make_compare_range(old: dict, new: dict):
     [
         (5, 5),
         (3.14, 3.14),
-        (True, None),          # bool исключается
-        ("7", None),           # строка игнорируется
+        (True, None),  # bool исключается
+        ("7", None),  # строка игнорируется
     ],
 )
 def test_as_number_filters(raw, expected):
@@ -73,8 +72,7 @@ def test_no_diff_identical_bounds():
     assert cmp.status is Statuses.NO_DIFF
     out = cmp.render(with_path=False)
     assert "[1 ... 5]" in out
-    assert out.startswith("  ")          # префикс – два пробела
-
+    assert out.startswith("  ")  # префикс – два пробела
 
 
 # ---------- ADDED -------------------------------------------------
