@@ -1,3 +1,9 @@
+"""
+Factory for a ready-to-use :class:`jsonschema_diff.core.Config` instance.
+
+All optional switches are enabled by default; pass ``False`` to disable.
+"""
+
 from .core import Compare, Config
 from .core.custom_compare import CompareList, CompareRange
 
@@ -8,24 +14,43 @@ from .core.tools.render import PATH_MAKER_IGNORE_RULES_TYPE
 
 
 class ConfigMaker:
+    """Helper that builds a fully populated :class:`~jsonschema_diff.core.Config`."""
+
+    # pylint: disable=too-many-arguments
     @staticmethod
     def make(
+        *,
         tab_size: int = 2,
         path_render_with_properies: bool = False,
         path_render_with_items: bool = False,
         list_comparator: bool = True,
-        
         range_digit_comparator: bool = True,
         range_length_comparator: bool = True,
         range_items_comparator: bool = True,
         range_properties_comparator: bool = True,
-
         additional_compare_rules: COMPARE_RULES_TYPE = {},
         additional_combine_rules: COMBINE_RULES_TYPE = [],
         additional_pair_context_rules: PAIR_CONTEXT_RULES_TYPE = [],
         additional_context_rules: CONTEXT_RULES_TYPE = {},
         additional_path_maker_ignore: PATH_MAKER_IGNORE_RULES_TYPE = [],
     ) -> Config:
+        """
+        Assemble and return a :class:`~jsonschema_diff.core.Config`.
+
+        Parameters
+        ----------
+        tab_size : int
+            Number of spaces per indentation level.
+        path_render_with_properies, path_render_with_items : bool
+            Include these schema service tokens in rendered paths.
+        list_comparator : bool
+            Enable :class:`~jsonschema_diff.core.custom_compare.CompareList`.
+        range_*_comparator : bool
+            Enable :class:`~jsonschema_diff.core.custom_compare.CompareRange`
+            for numeric/length/items/properties limits.
+        additional_* : collections
+            User-supplied rules that override the built-ins.
+        """
         tab = " " * tab_size
 
         compare_rules = {}
@@ -34,7 +59,7 @@ class ConfigMaker:
         context_rules = {}
         path_maker_ignore = []
 
-
+        # Built-in comparators
         if list_comparator:
             compare_rules[list] = CompareList
 
@@ -55,13 +80,13 @@ class ConfigMaker:
             add_rule(["minProperties", "maxProperties"], ranger)
 
 
+        # Path-render filters
         if not path_render_with_properies:
             path_maker_ignore.append("properties")
         if not path_render_with_items:
             path_maker_ignore.append("items")
-        
 
-        # additional имеют приоритет и перезаписывают остальное при конфликте
+        # User additions override defaults
         compare_rules.update(additional_compare_rules)
         combine_rules.extend(additional_combine_rules)
         pair_context_rules.extend(additional_pair_context_rules)
