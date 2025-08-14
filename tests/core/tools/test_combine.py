@@ -95,7 +95,7 @@ def test_combine_mismatched_inner_key_raises():
         "p": make_item("one", 1),
         "q": make_item("two", 2),
     }
-    with pytest.raises(ValueError, match="Несовпадающий"):
+    with pytest.raises(ValueError, match="Mismatched"):
         LogicCombinerHandler.combine(subset, [["p", "q"]])
 
 

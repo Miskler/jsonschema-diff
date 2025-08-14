@@ -1,102 +1,104 @@
 from __future__ import annotations
-from typing import Dict, List, Mapping, Sequence, Type, Union, Iterable, TypeAlias, TYPE_CHECKING
+from typing import Dict, Iterable, List, Mapping, Sequence, Type, Union, TypeAlias, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from jsonschema_diff.core.parameter_base import Compare
 
-
-# Тип ключа в правилах: имя параметра ИЛИ класс компаратора
+# Key type accepted in rules: parameter name or Compare subclass
 RULE_KEY: TypeAlias = Union[str, Type["Compare"]]
-
 
 CONTEXT_RULES_TYPE: TypeAlias = Mapping[RULE_KEY, Sequence[RULE_KEY]]
 PAIR_CONTEXT_RULES_TYPE: TypeAlias = Sequence[Sequence[RULE_KEY]]
 
-
 class RenderContextHandler:
+    """Expand context comparators based on pair- and directed-dependency rules."""
+
     @staticmethod
-    def resolve(
-        *,
-        pair_context_rules: PAIR_CONTEXT_RULES_TYPE,
-        context_rules: CONTEXT_RULES_TYPE,
-        for_render: Mapping[str, "Compare"],
-        not_for_render: Mapping[str, "Compare"],
-    ) -> Dict[str, "Compare"]:
+    def resolve(*,
+                pair_context_rules: PAIR_CONTEXT_RULES_TYPE,
+                context_rules: CONTEXT_RULES_TYPE,
+                for_render: Mapping[str, "Compare"],
+                not_for_render: Mapping[str, "Compare"]
+                ) -> Dict[str, "Compare"]:
         """
-        pair_context_rules: список «неориентированных» групп — если текущий ключ
-            попал в группу, переносим остальных участников группы (по порядку записи группы).
-            Элементы группы — строки (имена параметров) или классы компараторов.
-        context_rules: ориентированные зависимости: source -> [targets...],
-            где source и targets — строки или классы компараторов.
+        Build the final ordered context for rendering.
 
-        for_render: {имя -> Compare} — триггер и базовый порядок вывода.
-        not_for_render: {имя -> Compare} — то, что можно подтянуть как контекст.
+        Parameters
+        ----------
+        pair_context_rules : Sequence[Sequence[RULE_KEY]]
+            Undirected groups: if one member is rendered, pull the rest (order preserved).
+        context_rules : Mapping[RULE_KEY, Sequence[RULE_KEY]]
+            Directed dependencies: ``source → [targets...]``.
+        for_render : Mapping[str, Compare]
+            Initial items, order defines primary screen order.
+        not_for_render : Mapping[str, Compare]
+            Optional items that may be added by the rules.
 
-        Возвращает упорядоченный dict {имя -> Compare} — тот же порядок, что на экране.
+        Returns
+        -------
+        dict
+            Ordered ``{name -> Compare}`` ready for UI.
+
+        Algorithm (high-level)
+        ----------------------
+        * Walk through *for_render* keys.
+        * While iterating, append new candidates to the tail of the scan list.
+        * A candidate is added once when first matched by any rule.
         """
+        out: Dict[str, "Compare"] = dict(for_render)          # preserves order
+        pool_not: Dict[str, "Compare"] = dict(not_for_render) # preserves insertion order
 
-        # Локальные копии, чтобы не мутировать вход
-        out: Dict[str, "Compare"] = dict(for_render)          # сохраняет порядок
-        pool_not: Dict[str, "Compare"] = dict(not_for_render) # сохраняет порядок вставки
+        seq: List[str] = list(out.keys())  # scan list
+        in_out = set(seq)                  # O(1) membership checks
 
-        # Порядок обхода: сканируем имена, новые кандидаты добавляем в хвост
-        seq: List[str] = list(out.keys())
-
-        in_out = set(seq)  # быстрые проверки наличия в out
-
-        def _matches(rule: RuleKey, name: str, cmp_obj: "Compare") -> bool:
+        def _matches(rule: RULE_KEY, name: str, cmp_obj: "Compare") -> bool:
+            """Return True if *rule* matches given *(name, object)* pair."""
             if isinstance(rule, str):
                 return rule == name
-            # rule — класс компаратора
+            # rule is a comparator class
             try:
                 return isinstance(cmp_obj, rule)  # type: ignore[arg-type]
             except TypeError:
                 return False
 
-        def _expand(rule: RuleKey, pool: Mapping[str, "Compare"]) -> Iterable[str]:
+        def _expand(rule: RULE_KEY,
+                    pool: Mapping[str, "Compare"]) -> Iterable[str]:
             """
-            Преобразует элемент правила в список КЛЮЧЕЙ из pool (not_for_render),
-            сохраняя порядок pool.
-            - Если rule — строка: вернём [rule] если он есть в pool.
-            - Если rule — класс компаратора: вернём все ключи в pool,
-            чьи компараторы isinstance этого класса.
+            Yield keys from *pool* matching *rule* (order-stable).
+
+            * String rule → single key.
+            * Class rule  → all keys whose comparator ``isinstance`` the class.
             """
             if isinstance(rule, str):
                 if rule in pool:
-                    # даже если pool потом мутируют — мы уже вернули конкретный ключ
                     yield rule
                 return
 
-            # правило — класс компаратора: берём снэпшот, чтобы не падать
-            # при последующих del из pool_not во внешнем коде
-            for n, obj in list(pool.items()):  # <-- Снэпшот!
+            for n, obj in list(pool.items()):  # snapshot to stay safe on ``del``
                 try:
                     if isinstance(obj, rule):  # type: ignore[arg-type]
                         yield n
                 except TypeError:
                     continue
 
-
         i = 0
         while i < len(seq):
             name = seq[i]
             cmp_obj = out[name]
 
-            # 1) Пары (неориентированные группы): если текущий участвует в группе — переносим остальных
+            # 1) Undirected groups
             for group in pair_context_rules:
                 if any(_matches(entry, name, cmp_obj) for entry in group):
                     for entry in group:
-                        # для каждого элемента группы разворачиваем в кандидатов из pool_not
                         for cand in _expand(entry, pool_not):
                             if cand in in_out:
                                 continue
-                            # переносим cand из not -> out (в конец)
                             out[cand] = pool_not[cand]
                             seq.append(cand)
                             in_out.add(cand)
                             del pool_not[cand]
 
-            # 2) Ориентированные зависимости: source(name/type) -> targets(...)
+            # 2) Directed dependencies
             for source, targets in context_rules.items():
                 if _matches(source, name, cmp_obj):
                     for entry in targets:
@@ -109,7 +111,5 @@ class RenderContextHandler:
                             del pool_not[cand]
 
             i += 1
-
-            # Новые элементы окажутся в хвосте seq и будут обработаны, когда до них дойдём.
 
         return out

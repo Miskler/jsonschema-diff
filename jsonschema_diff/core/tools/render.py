@@ -6,14 +6,55 @@ if TYPE_CHECKING:
 
 PATH_MAKER_IGNORE_RULES_TYPE: TypeAlias = Sequence[str]
 
+
 class RenderTool:
+    """
+    Small helper utilities used by the rendering subsystem.
+    """
+
+    # --------------------------------------------------------------------- #
+    # Basic helpers
+    # --------------------------------------------------------------------- #
+
     @staticmethod
     def make_tab(config: "Config", tab_level: int) -> str:
+        """
+        Return indentation string.
+
+        Parameters
+        ----------
+        config : Config
+            Application config that owns the ``TAB`` constant.
+        tab_level : int
+            Indentation depth.
+
+        Returns
+        -------
+        str
+            ``config.TAB`` repeated *tab_level* times.
+        """
         return config.TAB * tab_level
-    
+
     @staticmethod
     def make_prefix(status: "Statuses") -> str:
+        """
+        Convert a ``Statuses`` enum value to its printable form.
+
+        Parameters
+        ----------
+        status : Statuses
+            Validation status.
+
+        Returns
+        -------
+        str
+            ``status.value`` as plain text.
+        """
         return f"{status.value}"
+
+    # --------------------------------------------------------------------- #
+    # Path builder
+    # --------------------------------------------------------------------- #
 
     @staticmethod
     def make_path(
@@ -21,26 +62,41 @@ class RenderTool:
         json_path: Sequence[Any],
         ignore: PATH_MAKER_IGNORE_RULES_TYPE = ("properties",),
     ) -> str:
-        """Собирает «читаемый» путь по двум параллельным спискам:
+        """
+        Compose a human‑readable path by synchronising two parallel paths.
 
-        * **schema_path** — токены, полученные при обходе JSON Schema;
-        * **json_path**   — реальный путь в документе;
-        * **ignore**      — служебные схемные слова, которые следует пропускать.
+        The function walks through *schema_path* (tokens from JSON Schema) and
+        *json_path* (real path in the JSON instance) and emits a short textual
+        representation such as ``["items"][0].extra``.
 
-        Алгоритм
+        Parameters
+        ----------
+        schema_path : Sequence[Any]
+            Tokens encountered while traversing the schema.
+        json_path : Sequence[Any]
+            Path tokens from the actual JSON document.
+        ignore : Sequence[str], default (``"properties"``,)
+            Schema‑only service tokens to skip.
+
+        Returns
+        -------
+        str
+            Compact path string.
+
+        Algorithm
         ---------
-        1. Идём двумя указателями *i* (схема) и *j* (JSON).
-        2. Если текущий схемный токен входит в *ignore* и **не** совпадает с
-        токеном JSON — просто пропускаем.
-        3. Если токены совпали ⇒ выводим их как свойство или индекс и
-        продвигаем оба указателя.
-        4. Иначе токен присутствует только в схеме ⇒ выводим его как
-        дополнительное свойство «.*token*» и двигаем *i*.
-        5. После окончания *schema_path* дописываем оставшиеся элементы
-        *json_path*.
+        i — index in *schema_path*, j — index in *json_path*.
 
-        Числовые индексы (``int`` или строка из цифр) выводятся как ``[n]``
-        без кавычек; остальные — как ``["key"]``.
+        1.  If *schema_path[i]* is in *ignore* and **differs** from
+            *json_path[j]* → skip it.
+        2.  If tokens are equal → emit as property/index and advance both.
+        3.  Otherwise the token exists only in schema → emit as ``.token`` and
+            advance *i*.
+        4.  After the schema is exhausted, append remaining elements of
+            *json_path*.
+
+        Integer‑like tokens are rendered as ``[n]``; everything else as
+        ``["key"]``.
         """
         parts: List[str] = []
         i = j = 0
@@ -48,14 +104,14 @@ class RenderTool:
         while i < len(schema_path):
             s_tok = schema_path[i]
 
-            # 1. Игнорируемые схемные токены
+            # 1. Ignore schema-only service tokens
             if s_tok in ignore and (
                 j >= len(json_path) or str(s_tok) != str(json_path[j])
             ):
                 i += 1
                 continue
 
-            # 2. Совпадение схемы и JSON
+            # 2. Token is present in both paths
             if j < len(json_path) and str(s_tok) == str(json_path[j]):
                 tok = json_path[j]
                 parts.append(f"[{tok}]" if isinstance(tok, int) else f'["{tok}"]')
@@ -63,11 +119,11 @@ class RenderTool:
                 j += 1
                 continue
 
-            # 3. Токен есть только в схеме – выводим как .key
+            # 3. Token is schema-only – treat as extra property
             parts.append(f".{s_tok}")
             i += 1
 
-        # 4. Добираем остаток json_path
+        # 4. Append the rest of json_path
         for tok in json_path[j:]:
             parts.append(f"[{tok}]" if isinstance(tok, int) else f'["{tok}"]')
 
