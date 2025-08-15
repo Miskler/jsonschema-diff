@@ -1,29 +1,33 @@
 from types import NoneType
 
-import pytest
-
 from jsonschema_diff.core.tools import CompareRules
 
 
 # ---------------------------------
 # «Фейковые» классы-компараторы
 # ---------------------------------
-class DefaultCmp: ...
+class DefaultCmp:
+    pass
 
 
-class KeyTripleCmp: ...
+class KeyTripleCmp:
+    pass
 
 
-class KeyOnlyCmp: ...
+class KeyOnlyCmp:
+    pass
 
 
-class TypePairCmp: ...
+class TypePairCmp:
+    pass
 
 
-class NewTypeCmp: ...
+class NewTypeCmp:
+    pass
 
 
-class OldTypeCmp: ...
+class OldTypeCmp:
+    pass
 
 
 def make_rules(*partials, **string_keys):

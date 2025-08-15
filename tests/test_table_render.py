@@ -59,11 +59,15 @@ def test_apply_processor_variants():
     assert lr._apply_processor("v", None) == "v"
 
     # dict → kwargs
-    proc = lambda a, b: a + b
+    def proc(a, b):
+        return a + b
+
     assert lr._apply_processor({"a": 1, "b": 2}, proc) == 3
 
     # list из dict/tuple/скаляров
-    proc2 = lambda x=0, **kw: kw.get("x", x) + 1
+    def proc2(x=0, **kw):
+        return kw.get("x", x) + 1
+
     val = [{"x": 1}, (2,), 3]
     assert lr._apply_processor(val, proc2) == [2, 3, 4]
 

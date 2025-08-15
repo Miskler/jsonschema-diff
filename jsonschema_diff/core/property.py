@@ -40,14 +40,14 @@ class Property:
         return json_path_with_name
 
     @property
-    def schema_path_with_name(self):
+    def schema_path_with_name(self) -> list[str | int]:
         schema_path_with_name = self.schema_path
         if self.name is not None:
             schema_path_with_name = self.schema_path + [self.name]
 
         return schema_path_with_name
 
-    def _get_keys(self, old, new) -> list[str]:
+    def _get_keys(self, old: dict | None, new: dict | None) -> list[str]:
         """
         Детерминированное объединение ключей:
         1) все ключи из old в их исходном порядке;
@@ -144,9 +144,9 @@ class Property:
             inner_value_field="to_compare",
         )
 
-        for keys, values in result_combine.items():
-            comparator = values["comparator"]
-            comparator = comparator(
+        for key_tuple, values in result_combine.items():
+            comparator_cls = values["comparator"]
+            comparator = comparator_cls(
                 self.config,
                 self.schema_path_with_name,
                 self.json_path_with_name,
@@ -202,7 +202,13 @@ class Property:
         params_tab_level = tab_level
         if property_line_render:
             my_to_render.append(
-                f"{RT.make_prefix(self.status)} {RT.make_tab(self.config, tab_level)}{RT.make_path(self.schema_path+[self.name], self.json_path+[self.name], ignore=self.config.PATH_MAKER_IGNORE)}:"
+                f"{RT.make_prefix(self.status)} "
+                f"{RT.make_tab(self.config, tab_level)}"
+                f"{RT.make_path(
+                    self.schema_path + [self.name],
+                    self.json_path + [self.name],
+                    ignore=self.config.PATH_MAKER_IGNORE,
+                )}:"
             )
             params_tab_level += 1
 
@@ -223,13 +229,13 @@ class Property:
         compare_list: list[type["Compare"]] = []
 
         if self.is_for_rendering():
-            part_to_return, part_compare = self.self_render(tab_level=tab_level)
-            to_return.append(part_to_return)
-            compare_list = list(dict.fromkeys([*compare_list, *part_compare]))
+            start_line, start_compare = self.self_render(tab_level=tab_level)
+            to_return.append(start_line)
+            compare_list = list(dict.fromkeys([*compare_list, *start_compare]))
 
         for prop in self.propertys.values():
-            part_to_return, part_compare = prop.render(tab_level=tab_level)
-            to_return += part_to_return
+            part_lines, part_compare = prop.render(tab_level=tab_level)
+            to_return += part_lines
             compare_list = list(dict.fromkeys([*compare_list, *part_compare]))
 
         return to_return, compare_list

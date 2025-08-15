@@ -71,7 +71,7 @@ def test_added_list():
 
     lines = cmp.render(with_path=False).splitlines()
     assert len(lines) == 1 + len(new)  # шапка + элементы
-    assert all(l.lstrip().startswith("+") for l in lines[1:])
+    assert all(line.lstrip().startswith("+") for line in lines[1:])
 
 
 # --- DELETED -----------------------------------------------------
@@ -83,7 +83,7 @@ def test_deleted_list():
 
     lines = cmp.render(with_path=False).splitlines()
     assert len(lines) == 1 + len(old)
-    assert all(l.lstrip().startswith("-") for l in lines[1:])
+    assert all(line.lstrip().startswith("-") for line in lines[1:])
 
 
 # --- MODIFIED (insert) ------------------------------------------

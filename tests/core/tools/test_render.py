@@ -1,5 +1,7 @@
 import pytest
 
+from jsonschema_diff.core.tools import RenderTool
+
 
 # ------------------------------------------------------------
 # Подготовка «заглушек» для Config и Statuses
@@ -17,12 +19,9 @@ class DummyStatus:
 
 STATUS_ADDED = DummyStatus("+")
 STATUS_REMOVED = DummyStatus("-")
-
-
 # ------------------------------------------------------------
 # Тестируемый объект
 # ------------------------------------------------------------
-from jsonschema_diff.core.tools import RenderTool
 
 
 # ------------------------------------------------------------

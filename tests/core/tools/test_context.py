@@ -3,34 +3,44 @@ from jsonschema_diff.core.tools.context import RenderContextHandler
 
 
 # ---- Заглушки компараторов для матчей по классам ----
-class CmpBase: ...
+class CmpBase:
+    pass
 
 
-class CompareType(CmpBase): ...
+class CompareType(CmpBase):
+    pass
 
 
-class CompareFormat(CmpBase): ...
+class CompareFormat(CmpBase):
+    pass
 
 
-class ComparePattern(CmpBase): ...
+class ComparePattern(CmpBase):
+    pass
 
 
-class CompareRange(CmpBase): ...
+class CompareRange(CmpBase):
+    pass
 
 
-class CompareRangeLength(CmpBase): ...
+class CompareRangeLength(CmpBase):
+    pass
 
 
-class CompareItems(CmpBase): ...
+class CompareItems(CmpBase):
+    pass
 
 
-class CompareUniqueItems(CmpBase): ...
+class CompareUniqueItems(CmpBase):
+    pass
 
 
-class CompareRef(CmpBase): ...
+class CompareRef(CmpBase):
+    pass
 
 
-class CompareDefs(CmpBase): ...
+class CompareDefs(CmpBase):
+    pass
 
 
 def _klist(od):

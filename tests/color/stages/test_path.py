@@ -17,7 +17,6 @@ import pathlib
 import sys
 import types
 
-import pytest
 from rich.text import Text
 
 
