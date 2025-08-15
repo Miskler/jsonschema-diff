@@ -17,7 +17,10 @@ Changes v2
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable, Mapping, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Literal, Mapping, Sequence, Union, cast
+
+if TYPE_CHECKING:
+    from .core.parameter_base import Compare
 
 from rich import box
 from rich.console import Console, RenderableType
@@ -68,7 +71,7 @@ class LegendRenderer:
         self,
         columns: Sequence[ColumnConfig],
         *,
-        box_style=box.SQUARE_DOUBLE_HEAD,
+        box_style: box.Box = box.SQUARE_DOUBLE_HEAD,
         header_style: str = "bold",
         table_width: int | None = None,
         show_outer_lines: bool = True,
@@ -85,7 +88,7 @@ class LegendRenderer:
     # Public API
     # ------------------------------------------------------------------
 
-    def render(self, legend_classes: Iterable[type]) -> str:
+    def render(self, legend_classes: Iterable[type["Compare"]]) -> str:
         legends = [cls.legend() for cls in legend_classes]
         self._validate_legends(legends)
 
@@ -157,7 +160,11 @@ class LegendRenderer:
         # list / tuple – may mix str & renderables
         if isinstance(data, (list, tuple)):
             sub = Table.grid(expand=True, padding=(0, 0))
-            sub.add_column(ratio=1, justify=justify, overflow="fold")
+            sub.add_column(
+                ratio=1,
+                justify=cast(Literal["default", "left", "center", "right", "full"], justify),
+                overflow="fold",
+            )
             first = True
             for item in data:
                 if not first:
@@ -182,11 +189,12 @@ class LegendRenderer:
         for col in self.columns:
             tbl.add_column(
                 col.header_text(),
-                justify=col.justify,
-                ratio=col.ratio,
+                justify=cast(Literal["default", "left", "center", "right", "full"], col.justify),
+                ratio=None if col.ratio is None else int(col.ratio),
                 no_wrap=col.no_wrap,
-                overflow=self.default_overflow,
+                overflow=cast(Literal["fold", "crop", "ellipsis", "ignore"], self.default_overflow),
             )
+
         for r in rows:
             tbl.add_row(*[c.renderable() for c in r])
         return tbl

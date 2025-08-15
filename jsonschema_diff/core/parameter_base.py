@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from .abstraction import Statuses, ToCompare
 from .tools.render import RenderTool
@@ -6,13 +6,19 @@ from .tools.render import RenderTool
 if TYPE_CHECKING:
     from .config import Config
 
+COMPARE_PATH_TYPE: TypeAlias = list[str | int]
+LEGEND_PROCESSOR_TYPE: TypeAlias = dict[str, Any]
+LEGEND_RETURN_TYPE: TypeAlias = dict[
+    str, str | LEGEND_PROCESSOR_TYPE | list[str | LEGEND_PROCESSOR_TYPE]
+]
+
 
 class Compare:
     def __init__(
         self,
         config: "Config",
-        schema_path: list[str | int],
-        json_path: list[str | int],
+        schema_path: COMPARE_PATH_TYPE,
+        json_path: COMPARE_PATH_TYPE,
         to_compare: list[ToCompare],
     ):
         self.status = Statuses.UNKNOWN
@@ -75,7 +81,7 @@ class Compare:
         return to_return
 
     @staticmethod
-    def legend() -> dict[str, str | list[str | dict]]:
+    def legend() -> LEGEND_RETURN_TYPE:
         return {
             "element": [
                 Statuses.ADDED.value,

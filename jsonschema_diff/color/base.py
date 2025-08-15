@@ -34,7 +34,7 @@ class HighlighterPipeline:  # noqa: D101 (docstring just above)
             # prefer the vectorised helper when available — it's faster
             colorize_lines = getattr(stage, "colorize_lines", None)
             if callable(colorize_lines):
-                colorize_lines(rich_lines)  # type: ignore[arg-type]
+                colorize_lines(rich_lines)
             else:
                 for rl in rich_lines:
                     stage.colorize_line(rl)

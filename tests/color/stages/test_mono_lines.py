@@ -1,10 +1,11 @@
 import pytest
-from rich.text import Text
+from rich.text import Text, Span
+from rich.style import Style
 
 from jsonschema_diff.color.stages import MonoLinesHighlighter
 
 
-def _first_span(line: Text):
+def _first_span(line: Text) -> tuple[Span, Style]:
     """Утилита возвращает первый Span и его Style."""
     assert line.spans, "Text должен быть стилизован хотя бы один раз"
     span = line.spans[0]
@@ -38,7 +39,7 @@ def test_default_rules(raw, expected_color):
 # ------------------------------------------------------------------
 # Пользовательские правила и   **первый-совпавший**   приоритет
 # ------------------------------------------------------------------
-def test_custom_rules_order():
+def test_custom_rules_order() -> None:
     rules = {"--": "blue", "-": "yellow"}  # порядок важен
     hl = MonoLinesHighlighter(rules=rules)
 
@@ -53,7 +54,7 @@ def test_custom_rules_order():
 # ------------------------------------------------------------------
 # Чувствительность к регистру
 # ------------------------------------------------------------------
-def test_case_sensitive_toggle():
+def test_case_sensitive_toggle() -> None:
     hl = MonoLinesHighlighter(case_sensitive=True, rules={"Err": "yellow"})
 
     ok = Text("Err failure")
@@ -71,7 +72,7 @@ def test_case_sensitive_toggle():
 # ==================================================================
 #                       F A L L B A C K И
 # ==================================================================
-def test_default_color_fallback():
+def test_default_color_fallback() -> None:
     hl = MonoLinesHighlighter(bold=False, default_color="white", rules={"*": "magenta"})
     line = Text("no-match")
     hl.colorize_line(line)
@@ -81,7 +82,7 @@ def test_default_color_fallback():
     assert style.bold is False
 
 
-def test_bold_only_fallback():
+def test_bold_only_fallback() -> None:
     hl = MonoLinesHighlighter(bold=True, default_color=None, rules={})
     line = Text("plain line")
     hl.colorize_line(line)

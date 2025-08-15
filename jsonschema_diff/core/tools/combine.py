@@ -54,8 +54,8 @@ class LogicCombinerHandler:
     def combine(
         subset: Dict[str, Any],
         rules: List[List[str]],
-        inner_key_field: str | None = "comparator",
-        inner_value_field: str | None = "to_compare",
+        inner_key_field: str = "comparator",
+        inner_value_field: str = "to_compare",
     ) -> Dict[Tuple[str, ...], Dict[str, Any]]:
         """
         Build an ``OrderedDict`` that groups *subset* items per *rules*.

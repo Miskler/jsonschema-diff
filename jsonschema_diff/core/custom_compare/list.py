@@ -7,6 +7,7 @@ from ..parameter_base import Compare
 
 if TYPE_CHECKING:
     from ..config import Config
+    from ..parameter_base import LEGEND_RETURN_TYPE
 
 
 @dataclass
@@ -41,7 +42,7 @@ class CompareList(Compare):
 
                 def add_element(
                     source: list[Any], status: Statuses, from_index: int, to_index: int
-                ):
+                ) -> None:
                     is_change = status != Statuses.NO_DIFF
                     for v in source[from_index:to_index]:
                         element = CompareListElement(self.config, v, status)
@@ -60,7 +61,7 @@ class CompareList(Compare):
                         add_element(self.old_value, Statuses.DELETED, i1, i2)
                         add_element(self.new_value, Statuses.ADDED, j1, j2)
                     case _:
-                        ValueError(f"Unknown tag: {tag}")
+                        raise ValueError(f"Unknown tag: {tag}")
 
             if len(self.changed_elements) > 0:
                 self.status = Statuses.MODIFIED
@@ -71,7 +72,7 @@ class CompareList(Compare):
 
         return self.status
 
-    def is_for_rendering(self) -> bool:
+    def is_for_rendering(self):
         return super().is_for_rendering() or len(self.changed_elements) > 0
 
     def render(self, tab_level: int = 0, with_path: bool = True) -> str:
@@ -82,7 +83,7 @@ class CompareList(Compare):
         return to_return
 
     @staticmethod
-    def legend() -> dict[str, Any]:
+    def legend() -> "LEGEND_RETURN_TYPE":
         return {
             "element": "Arrays\nLists",
             "description": 'Arrays are always displayed fully, with statuses of all elements separately (left to them).\nIn example:\n["Masha", "Misha", "Vasya"] replace to ["Masha", "Olya", "Misha"]',

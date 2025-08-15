@@ -2,10 +2,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 from ..abstraction import Statuses, ToCompare
 from ..parameter_combined import CompareCombined
+
+if TYPE_CHECKING:
+    from ..parameter_base import LEGEND_RETURN_TYPE
+
 
 Number = Union[int, float]
 Dimension = Literal["value", "length", "items", "properties"]
@@ -86,7 +90,7 @@ class CompareRange(CompareCombined):
         return f"{header} {old_repr} -> {new_repr}"
 
     @staticmethod
-    def legend() -> dict[str, str | list[str | dict]]:
+    def legend() -> "LEGEND_RETURN_TYPE":
         return {
             "element": "Ranges",
             "description": "Range - custom render for min/max/exclusiveMin/exclusiveMax fields, as well as all their analogues for strings/arrays/objects.\n\n[] - inclusive, () - exclusive\n∞ - infinity\nThe principle is the same as it was taught in school.",
@@ -153,13 +157,12 @@ class CompareRange(CompareCombined):
     def _bounds_for_side(self, side: Literal["old", "new"], dimension: Dimension) -> Bounds:
         if dimension == "value":
             return self._bounds_numbers(side)
-        if dimension == "length":
+        elif dimension == "length":
             return self._bounds_inclusive_pair(side, "minLength", "maxLength")
-        if dimension == "items":
+        elif dimension == "items":
             return self._bounds_inclusive_pair(side, "minItems", "maxItems")
-        if dimension == "properties":
+        else:  # dimension == "properties"
             return self._bounds_inclusive_pair(side, "minProperties", "maxProperties")
-        return self._bounds_numbers(side)
 
     def _bounds_inclusive_pair(
         self, side: Literal["old", "new"], low_key: str, high_key: str

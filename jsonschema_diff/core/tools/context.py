@@ -70,7 +70,7 @@ class RenderContextHandler:
                 return rule == name
             # rule is a comparator class
             try:
-                return isinstance(cmp_obj, rule)  # type: ignore[arg-type]
+                return isinstance(cmp_obj, rule)
             except TypeError:
                 return False
 
@@ -88,7 +88,7 @@ class RenderContextHandler:
 
             for n, obj in list(pool.items()):  # snapshot to stay safe on ``del``
                 try:
-                    if isinstance(obj, rule):  # type: ignore[arg-type]
+                    if isinstance(obj, rule):
                         yield n
                 except TypeError:
                     continue

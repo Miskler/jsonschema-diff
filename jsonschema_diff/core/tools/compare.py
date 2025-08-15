@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import NoneType
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any, TypeAlias, cast
 
 if TYPE_CHECKING:  # prevents import cycle
     from .. import Compare
@@ -65,7 +65,7 @@ class CompareRules:
             (key),
             ((old, new)),
         ]:
-            tuple_types = rules.get(search, None)
+            tuple_types = rules.get(cast(Any, search), None)
             if tuple_types is not None:
                 return tuple_types
         else:

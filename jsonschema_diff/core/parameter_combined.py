@@ -1,5 +1,10 @@
+from typing import TYPE_CHECKING
+
 from .abstraction import Statuses
 from .parameter_base import Compare
+
+if TYPE_CHECKING:
+    from .parameter_base import LEGEND_RETURN_TYPE
 
 
 class CompareCombined(Compare):
@@ -27,5 +32,5 @@ class CompareCombined(Compare):
         raise NotImplementedError("CompareCombined.render должен быть переопределен")
 
     @staticmethod
-    def legend() -> dict[str, str | list[str]]:
+    def legend() -> "LEGEND_RETURN_TYPE":
         raise NotImplementedError("CompareCombined.legend должен быть переопределен")

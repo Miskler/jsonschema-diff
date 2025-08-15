@@ -52,17 +52,17 @@ class ConfigMaker:
         """
         tab = " " * tab_size
 
-        compare_rules = {}
-        combine_rules = []
-        pair_context_rules = []
-        context_rules = {}
-        path_maker_ignore = []
+        compare_rules: COMPARE_RULES_TYPE = {}
+        combine_rules: COMBINE_RULES_TYPE = []
+        pair_context_rules: PAIR_CONTEXT_RULES_TYPE = []
+        context_rules: CONTEXT_RULES_TYPE = {}
+        path_maker_ignore: PATH_MAKER_IGNORE_RULES_TYPE = []
 
         # Built-in comparators
         if list_comparator:
             compare_rules[list] = CompareList
 
-        def add_rule(keys: list[str], value: type[Compare]):
+        def add_rule(keys: list[str], value: type[Compare]) -> None:
             combine_rules.append(keys)
             for key in keys:
                 compare_rules[key] = value

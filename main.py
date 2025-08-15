@@ -22,4 +22,4 @@ prop.compare_from_files(
     new_file_path="context.new.schema.json"
 )
 
-prop.print(colorized=True, with_legend=False)
+prop.print(colorized=True, with_legend=True)

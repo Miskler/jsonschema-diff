@@ -39,6 +39,9 @@ class JsonSchemaDiff:
         )
         self.legend_ignore: list[type[Compare]] = legend_ignore or []
 
+        self.last_render_output: str = ""
+        self.last_compare_list: list[type[Compare]] = []
+
     # ------------------------------------------------------------------ #
     # Static helpers
     # ------------------------------------------------------------------ #
@@ -63,8 +66,8 @@ class JsonSchemaDiff:
             new_schema=new_schema,
         )
         prop.compare()
-        rendered_text, compare_list = prop.render()
-        rendered_text = "\n\n".join(rendered_text)
+        output_text, compare_list = prop.render()
+        rendered_text = "\n\n".join(output_text)
 
         if colorize_pipeline is not None:
             rendered_text = colorize_pipeline.colorize_and_render(rendered_text)

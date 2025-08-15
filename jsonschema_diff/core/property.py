@@ -32,7 +32,7 @@ class Property:
         self.new_schema = {} if new_schema is None else new_schema
 
     @property
-    def json_path_with_name(self):
+    def json_path_with_name(self) -> list[str | int]:
         json_path_with_name = self.json_path
         if self.name is not None:
             json_path_with_name = self.json_path + [self.name]
@@ -47,7 +47,7 @@ class Property:
 
         return schema_path_with_name
 
-    def _get_keys(self, old, new):
+    def _get_keys(self, old, new) -> list[str]:
         """
         Детерминированное объединение ключей:
         1) все ключи из old в их исходном порядке;
@@ -67,7 +67,7 @@ class Property:
                 seen.add(k)
         return merged
 
-    def compare(self):
+    def compare(self) -> None:
         if len(self.old_schema) <= 0:
             self.status = Statuses.ADDED
         elif len(self.new_schema) <= 0:
@@ -188,7 +188,7 @@ class Property:
             not_for_render=not_for_render,
         )
 
-        return with_context.values()
+        return list(with_context.values())
 
     def self_render(self, tab_level: int = 0) -> tuple[str, list[type["Compare"]]]:
         # Определение что рендерить
@@ -219,8 +219,8 @@ class Property:
         return to_render, list(dict.fromkeys([*compare_list]))
 
     def render(self, tab_level: int = 0) -> tuple[list[str], list[type["Compare"]]]:
-        to_return = []
-        compare_list = []
+        to_return: list[str] = []
+        compare_list: list[type["Compare"]] = []
 
         if self.is_for_rendering():
             part_to_return, part_compare = self.self_render(tab_level=tab_level)
