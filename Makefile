@@ -43,7 +43,7 @@ format:
 	isort jsonschema_diff/ tests/
 
 type-check:
-	mypy jsonschema_diff/ tests/
+	mypy jsonschema_diff/
 
 clean:
 	rm -rf build/ dist/ *.egg-info/

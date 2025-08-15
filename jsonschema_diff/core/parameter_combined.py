@@ -1,6 +1,6 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict
 
-from .abstraction import Statuses
+from .abstraction import Statuses, ToCompare
 from .parameter_base import Compare
 
 if TYPE_CHECKING:
@@ -8,10 +8,10 @@ if TYPE_CHECKING:
 
 
 class CompareCombined(Compare):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.dict_compare = {}
-        self.dict_values = {}
+        self.dict_compare: Dict[str, ToCompare] = {}
+        self.dict_values: Dict[str, Any] = {}
 
     def compare(self) -> Statuses:
         for c in self.to_compare:

@@ -1,6 +1,6 @@
 import pytest
-from rich.text import Text, Span
 from rich.style import Style
+from rich.text import Span, Text
 
 from jsonschema_diff.color.stages import MonoLinesHighlighter
 

@@ -73,7 +73,7 @@ def test_status_modified_simple_param():
 
     lines, _ = prop.render()
     # строка diff-а содержит "string -> number"
-    assert any("string -> number" in l for l in lines)
+    assert any("string -> number" in line for line in lines)
 
 
 # ---------- Рекурсивные «properties» ---------------------------------------
@@ -89,9 +89,9 @@ def test_nested_property_changes_bubble_down_only():
 
     lines, _ = root.render()
     # выводится только дифф дочернего параметра
-    assert any("string -> number" in l for l in lines)
+    assert any("string -> number" in line for line in lines)
     # при этом нет строки самого корня
-    assert not any(".root:" in l for l in lines)
+    assert not any(".root:" in line for line in lines)
 
 
 # ---------- prefixItems / items (массивы) ----------------------------------
@@ -105,4 +105,4 @@ def test_items_indexed_children():
     assert idx1.status is Statuses.ADDED
     lines, _ = prop.render()
     # убедимся, что путь содержит индекс [1]
-    assert any("[1]" in l for l in lines)
+    assert any("[1]" in line for line in lines)

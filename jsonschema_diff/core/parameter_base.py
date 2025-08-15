@@ -28,12 +28,12 @@ class Compare:
         self.json_path = json_path
 
         if len(to_compare) <= 0:
-            raise ValueError(f"Cannot compare empty list")
+            raise ValueError("Cannot compare empty list")
         self.to_compare = to_compare
 
     def compare(self) -> Statuses:
         if len(self.to_compare) > 1:
-            raise ValueError(f"Unsupported multiple compare for base logic")
+            raise ValueError("Unsupported multiple compare for base logic")
 
         self.status = self.to_compare[0].status
         self.key = self.to_compare[0].key

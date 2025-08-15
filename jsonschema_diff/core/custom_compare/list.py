@@ -21,7 +21,7 @@ class CompareListElement:
 
 
 class CompareList(Compare):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.elements: list[CompareListElement] = []
         self.changed_elements: list[CompareListElement] = []
@@ -68,11 +68,11 @@ class CompareList(Compare):
             else:
                 self.status = Statuses.NO_DIFF
         else:
-            raise ValueError(f"Unsupported keys combination")
+            raise ValueError("Unsupported keys combination")
 
         return self.status
 
-    def is_for_rendering(self):
+    def is_for_rendering(self) -> bool:
         return super().is_for_rendering() or len(self.changed_elements) > 0
 
     def render(self, tab_level: int = 0, with_path: bool = True) -> str:
@@ -86,7 +86,11 @@ class CompareList(Compare):
     def legend() -> "LEGEND_RETURN_TYPE":
         return {
             "element": "Arrays\nLists",
-            "description": 'Arrays are always displayed fully, with statuses of all elements separately (left to them).\nIn example:\n["Masha", "Misha", "Vasya"] replace to ["Masha", "Olya", "Misha"]',
+            "description": (
+                "Arrays are always displayed fully, with statuses of all elements "
+                "separately (left to them).\nIn example:\n"
+                '["Masha", "Misha", "Vasya"] replace to ["Masha", "Olya", "Misha"]'
+            ),
             "example": {
                 "old_value": {"some_list": ["Masha", "Misha", "Vasya"]},
                 "new_value": {"some_list": ["Masha", "Olya", "Misha"]},

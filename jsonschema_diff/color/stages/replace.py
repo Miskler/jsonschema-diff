@@ -108,7 +108,6 @@ class ReplaceGenericHighlighter(LineHighlighter):
         arrow = m.group("arrow")
         right_ws = m.group("right_ws")
         new_text = m.group("new")
-        trailing_ws = m.group("trailing_ws")
 
         # 3) absolute indices within *plain* string
         base = len(head_plain)
@@ -119,7 +118,6 @@ class ReplaceGenericHighlighter(LineHighlighter):
         arrow_end = arrow_start + len(arrow)
 
         new_start = arrow_end + len(right_ws)
-        new_end = new_start + len(new_text)
 
         # 4) diff tokens
         old_tokens = self._tokenize(old_text)

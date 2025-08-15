@@ -38,8 +38,14 @@ class ToCompare:
             self.value = new_value
         else:
             raise ValueError(
-                f"Cannot compare None to None: `{old_key}: {type(old_value).__name__} = {old_value}` -> `{new_key}: {type(new_value).__name__} = {new_value}`"
+                "Cannot compare None to None: "
+                f"`{old_key}: {type(old_value).__name__} = {old_value}` -> "
+                f"`{new_key}: {type(new_value).__name__} = {new_value}`"
             )
 
     def __repr__(self) -> str:
-        return f"ToCompare(key={self.key}, old_value={self.old_value}, new_value={self.new_value}, status={self.status.name})"
+        return (
+            "ToCompare("
+            f"key={self.key}, old_value={self.old_value}, "
+            f"new_value={self.new_value}, status={self.status.name})"
+        )

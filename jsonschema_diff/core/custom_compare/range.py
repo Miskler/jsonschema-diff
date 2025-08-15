@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 from ..abstraction import Statuses, ToCompare
 from ..parameter_combined import CompareCombined
@@ -93,7 +93,13 @@ class CompareRange(CompareCombined):
     def legend() -> "LEGEND_RETURN_TYPE":
         return {
             "element": "Ranges",
-            "description": "Range - custom render for min/max/exclusiveMin/exclusiveMax fields, as well as all their analogues for strings/arrays/objects.\n\n[] - inclusive, () - exclusive\n∞ - infinity\nThe principle is the same as it was taught in school.",
+            "description": (
+                "Range - custom render for min/max/exclusiveMin/exclusiveMax fields, "
+                "as well as all their analogues for strings/arrays/objects.\n\n"
+                "[] - inclusive, () - exclusive\n"
+                "∞ - infinity\n"
+                "The principle is the same as it was taught in school."
+            ),
             "example": [
                 {
                     "old_value": {},
@@ -146,7 +152,7 @@ class CompareRange(CompareCombined):
 
     # ---- Извлечение значений (только через ToCompare) ----
 
-    def _get_side_value(self, side: Literal["old", "new"], key: str):
+    def _get_side_value(self, side: Literal["old", "new"], key: str) -> Any:
         tc: ToCompare | None = self.dict_compare.get(key)
         if tc is None:
             return None
@@ -188,6 +194,7 @@ class CompareRange(CompareCombined):
         ex_max_num = self._as_number(ex_max_raw)
 
         # нижняя граница
+        lower: Number | None
         if ex_min_num is not None:
             lower = ex_min_num
             lower_inc = False
@@ -199,6 +206,7 @@ class CompareRange(CompareCombined):
             lower_inc = minimum is not None
 
         # верхняя граница
+        upper: Number | None
         if ex_max_num is not None:
             upper = ex_max_num
             upper_inc = False

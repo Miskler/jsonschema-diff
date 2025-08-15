@@ -54,9 +54,9 @@ class ConfigMaker:
 
         compare_rules: COMPARE_RULES_TYPE = {}
         combine_rules: COMBINE_RULES_TYPE = []
-        pair_context_rules: PAIR_CONTEXT_RULES_TYPE = []
-        context_rules: CONTEXT_RULES_TYPE = {}
-        path_maker_ignore: PATH_MAKER_IGNORE_RULES_TYPE = []
+        pair_context_rules: list[list[str | type[Compare]]] = []
+        context_rules: dict[str | type[Compare], list[str | type[Compare]]] = {}
+        path_maker_ignore: list[str] = []
 
         # Built-in comparators
         if list_comparator:
@@ -86,8 +86,8 @@ class ConfigMaker:
         # User additions override defaults
         compare_rules.update(additional_compare_rules)
         combine_rules.extend(additional_combine_rules)
-        pair_context_rules.extend(additional_pair_context_rules)
-        context_rules.update(additional_context_rules)
+        pair_context_rules.extend([list(r) for r in additional_pair_context_rules])
+        context_rules.update({k: list(v) for k, v in additional_context_rules.items()})
         path_maker_ignore.extend(additional_path_maker_ignore)
 
         return Config(

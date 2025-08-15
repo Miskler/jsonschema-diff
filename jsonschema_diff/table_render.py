@@ -111,7 +111,7 @@ class LegendRenderer:
     # Internals
     # ------------------------------------------------------------------
 
-    def _validate_legends(self, legends: list[Mapping[str, Any]]) -> None:
+    def _validate_legends(self, legends: Sequence[Mapping[str, Any]]) -> None:
         required = {c.name for c in self.columns}
         for i, legend in enumerate(legends):
             missing = required - legend.keys()
