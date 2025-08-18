@@ -214,7 +214,7 @@ def make_standard_renderer(
     table_width: int | None = None,
 ) -> LegendRenderer:
     columns = [
-        ColumnConfig("element", header="Element", justify="center", ratio=0.5),
+        ColumnConfig("element", header="Element", justify="center", ratio=1),
         ColumnConfig("description", header="Description", justify="center", ratio=2),
         ColumnConfig(
             "example",

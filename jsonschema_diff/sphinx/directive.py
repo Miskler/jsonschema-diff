@@ -6,7 +6,7 @@ Usage::
     .. jsonschemadiff:: old.json new.json
        :name:   my_diff.svg   # optional custom file name (".svg" can be omitted)
        :title:  Schema Diff   # title shown inside the virtual terminal tab
-       :no-body:             # hide diff body, keep (future) legend only
+       :no-body:             # hide diff body, keep legend only
        :no-legend:           # hide legend, show body only
        :width:  80%          # pass through to the resulting <img> tag
 
@@ -18,7 +18,7 @@ import hashlib
 import inspect
 import shutil
 from pathlib import Path
-from typing import List, Optional, Callable
+from typing import Callable, List, Optional
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
@@ -50,7 +50,7 @@ class JsonSchemaDiffDirective(Directive):
     _CONSOLE_WIDTH = 120
 
     # ---------------------------------------------------------------------
-    def run(self) -> List[nodes.Node]:  # noqa: D401 (imperative name is fine)
+    def run(self) -> List[nodes.Node]:  # noqa: D401
         env = self.state.document.settings.env
         srcdir = Path(env.srcdir)
 
@@ -59,6 +59,8 @@ class JsonSchemaDiffDirective(Directive):
         if not old_path.exists() or not new_path.exists():
             raise self.error(f"JSON‑schema file not found: {old_path} / {new_path}")
 
+        # ------------------------------------------------------------------
+        # Retrieve configured diff object from conf.py
         diff = getattr(env.app.config, "jsonschema_diff", None)
         if diff is None:
             raise ExtensionError(
@@ -70,21 +72,23 @@ class JsonSchemaDiffDirective(Directive):
         if not isinstance(diff, JsonSchemaDiff):
             raise ExtensionError("`jsonschema_diff` is not a JsonSchemaDiff instance.")
 
-        # Perform comparison and collect Rich renderables
+        # ------------------------------------------------------------------
+        # Produce Rich renderables
         diff.compare(str(old_path), str(new_path))
-        parts: list = []
+        renderables: list = []
+        body = diff.rich_render()
         if "no-body" not in self.options:
-            parts.append(diff.rich_render())
-        # Placeholder for future legend rendering
-        # if "no-legend" not in self.options:
-        #     parts.append(diff.rich_legend())
-        if not parts:
+            renderables.append(body)
+        if "no-legend" not in self.options and hasattr(diff, "rich_legend"):
+            renderables.append(diff.rich_legend(diff.last_compare_list))
+        if not renderables:
             return []
 
+        # ------------------------------------------------------------------
+        # Use Rich to create SVG
         console = Console(record=True, width=self._CONSOLE_WIDTH)
-        console.print(Group(*parts))
+        console.print(Group(*renderables))
 
-        # Export SVG
         export_kwargs = {
             "title": self.options.get("title", "Rich"),
             "clear": False,
@@ -94,7 +98,8 @@ class JsonSchemaDiffDirective(Directive):
 
         svg_code = console.export_svg(**export_kwargs)
 
-        # Prepare filesystem paths
+        # ------------------------------------------------------------------
+        # Save SVG to _static/jsonschema_diff
         static_dir = Path(env.app.srcdir) / self._STATIC_SUBDIR
         if not hasattr(env.app, "_jsonschema_diff_cleaned"):
             shutil.rmtree(static_dir, ignore_errors=True)
@@ -105,10 +110,10 @@ class JsonSchemaDiffDirective(Directive):
         svg_path = static_dir / svg_name
         svg_path.write_text(svg_code, encoding="utf-8")
 
-        # Ensure asset copied to build directory
         fileutil.copy_asset_file(svg_path, Path(env.app.outdir) / self._STATIC_SUBDIR / svg_name)
 
-        # Build relative URI (works regardless of documentation depth)
+        # ------------------------------------------------------------------
+        # Insert <img> node with correct relative URI
         doc_depth = env.docname.count("/")
         uri_prefix = "../" * doc_depth
         img_uri = f"{uri_prefix}_static/jsonschema_diff/{svg_name}"
@@ -125,6 +130,7 @@ class JsonSchemaDiffDirective(Directive):
         new_path: Path,
         export_text: Callable,
     ) -> str:
+        """Return custom name (if provided) or deterministic hash‑based name."""
         custom_name: Optional[str] = self.options.get("name")
         if custom_name and not custom_name.lower().endswith(".svg"):
             custom_name += ".svg"
