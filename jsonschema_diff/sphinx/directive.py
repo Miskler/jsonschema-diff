@@ -18,7 +18,7 @@ import hashlib
 import inspect
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Callable
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
@@ -57,13 +57,13 @@ class JsonSchemaDiffDirective(Directive):
         old_path = (srcdir / self.arguments[0]).resolve()
         new_path = (srcdir / self.arguments[1]).resolve()
         if not old_path.exists() or not new_path.exists():
-            raise self.error(
-                f"JSON‑schema file not found: {old_path} / {new_path}")
+            raise self.error(f"JSON‑schema file not found: {old_path} / {new_path}")
 
         diff = getattr(env.app.config, "jsonschema_diff", None)
         if diff is None:
             raise ExtensionError(
-                "Define variable `jsonschema_diff` (JsonSchemaDiff instance) in conf.py.")
+                "Define variable `jsonschema_diff` (JsonSchemaDiff instance) in conf.py."
+            )
 
         from jsonschema_diff import JsonSchemaDiff  # pylint: disable=import-outside-toplevel
 
@@ -123,7 +123,7 @@ class JsonSchemaDiffDirective(Directive):
         self,
         old_path: Path,
         new_path: Path,
-        export_text,
+        export_text: Callable,
     ) -> str:
         custom_name: Optional[str] = self.options.get("name")
         if custom_name and not custom_name.lower().endswith(".svg"):

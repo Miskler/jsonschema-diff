@@ -8,8 +8,8 @@ applies optional ANSI-color highlighting.
 from json import loads
 from typing import Optional
 
-from rich.text import Text
 from rich.table import Table
+from rich.text import Text
 
 from jsonschema_diff.color import HighlighterPipeline
 from jsonschema_diff.core import Compare, Config, Property
@@ -53,7 +53,7 @@ class JsonSchemaDiff:
             return schema
         else:
             with open(schema, "r", encoding="utf-8") as fp:
-                return loads(fp.read())
+                return dict(loads(fp.read()))
 
     @staticmethod
     def fast_pipeline(
@@ -89,12 +89,9 @@ class JsonSchemaDiff:
     # Public API
     # ------------------------------------------------------------------ #
 
-    def compare(self,
-                old_schema: dict | str,
-                new_schema: dict | str
-                ) -> "JsonSchemaDiff":
+    def compare(self, old_schema: dict | str, new_schema: dict | str) -> "JsonSchemaDiff":
         """Populate internal :class:`Property` tree and perform comparison.
-        
+
         Accepted formats: dict or path to JSON file."""
 
         self.property = Property(
