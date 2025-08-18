@@ -15,7 +15,7 @@ All options are optional; sensible defaults are applied when omitted.
 from __future__ import annotations
 
 import hashlib
-import inspect
+import io
 import shutil
 from pathlib import Path
 from typing import Callable, List, Optional
@@ -86,14 +86,14 @@ class JsonSchemaDiffDirective(Directive):
 
         # ------------------------------------------------------------------
         # Use Rich to create SVG
-        console = Console(record=True, width=self._CONSOLE_WIDTH)
+        console = Console(record=True, width=self._CONSOLE_WIDTH, file=io.StringIO())
         console.print(Group(*renderables))
 
         export_kwargs = {
             "title": self.options.get("title", "Rich"),
             "clear": False,
         }
-        
+
         svg_code = console.export_svg(**export_kwargs)
 
         # ------------------------------------------------------------------
