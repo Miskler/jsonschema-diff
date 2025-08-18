@@ -93,9 +93,7 @@ class JsonSchemaDiffDirective(Directive):
             "title": self.options.get("title", "Rich"),
             "clear": False,
         }
-        if "inline_styles" in inspect.signature(console.export_svg).parameters:
-            export_kwargs["inline_styles"] = True
-
+        
         svg_code = console.export_svg(**export_kwargs)
 
         # ------------------------------------------------------------------

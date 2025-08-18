@@ -1,95 +1,96 @@
-# Configuration file for the Sphinx documentation builder.
-#
-# For the full list of built-in configuration values, see the documentation:
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
-
+# docs/source/conf.py
 from __future__ import annotations
-
-import json
-import os
-import subprocess
-import sys
+import sys, os, importlib
 from pathlib import Path
-
-from pathlib import Path
-import json
-from rich.console import Console
-
-
-# -- Path setup --------------------------------------------------------------
-# Allow importing the project without installation.
-sys.path.insert(0, os.path.abspath("../.."))
-
-from jsonschema_diff import ConfigMaker, JsonSchemaDiff
-from jsonschema_diff.color import HighlighterPipeline
-from jsonschema_diff.color.stages import (
-    MonoLinesHighlighter,
-    PathHighlighter,
-    ReplaceGenericHighlighter,
-)
 from docutils.parsers.rst import roles
 from sphinx.roles import XRefRole
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Paths
+# ──────────────────────────────────────────────────────────────────────────────
+ROOT = Path(__file__).resolve().parents[2]          # repo root
+sys.path.insert(0, str(ROOT))                       # import project without install
 
-# -- Project information -----------------------------------------------------
-
-project = "jsonschema-diff"
+# ──────────────────────────────────────────────────────────────────────────────
+# Project meta
+# ──────────────────────────────────────────────────────────────────────────────
+project   = "jsonschema-diff"
+author    = "Miskler"
 copyright = "2025, Miskler"
-author = "Miskler"
-release = "0.1.0"
+release   = "0.1.0"
 
-
-# -- General configuration ---------------------------------------------------
-
+# ──────────────────────────────────────────────────────────────────────────────
+# Extensions
+# ──────────────────────────────────────────────────────────────────────────────
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
-    "jsonschema_diff.sphinx",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.viewcode",
+    "autoapi.extension",          # → собирает *.rst из исходников
+    "jsonschema_diff.sphinx",     # ваша раскраска
 ]
 
-autosummary_generate = True
+# ──────────────────────────────────────────────────────────────────────────────
+# Theme / HTML
+# ──────────────────────────────────────────────────────────────────────────────
+html_theme       = "furo"
+html_static_path = ["_static"]
+templates_path   = ["_templates"]
 
-templates_path = ["_templates"]
-exclude_patterns: list[str] = []
+# ──────────────────────────────────────────────────────────────────────────────
+# Навигация и compact-style
+# ──────────────────────────────────────────────────────────────────────────────
+add_module_names                     = False        # compare() → Config
+toc_object_entries_show_parents      = "hide"       # короче TOC
+python_use_unqualified_type_names    = True         # Config, а не jsonschema_diff.core.Config
+multi_line_parameter_list            = True         # каждый аргумент с новой строки
+python_maximum_signature_line_length = 60           # длина, после которой рвём строку
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Type-hints
+# ──────────────────────────────────────────────────────────────────────────────
+autodoc_typehints = "signature"      # str / Dict[...] остаются в сигнатуре
+typehints_fqcn    = False            # короткие имена в хинтах
 
+# ──────────────────────────────────────────────────────────────────────────────
+# AutoAPI – строим flat API Reference
+# ──────────────────────────────────────────────────────────────────────────────
+autoapi_type              = "python"
+autoapi_dirs              = [str(ROOT / "jsonschema_diff")]
+autoapi_root              = "reference/api"
+autoapi_add_toctree_entry = True
+autoapi_python_use_implicit_namespaces = True
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Intersphinx – ссылки на stdlib / typing
+# ──────────────────────────────────────────────────────────────────────────────
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "rich": ("https://rich.readthedocs.io/en/stable/", None),
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# jsonschema-diff highlight pipeline (без изменений)
+# ──────────────────────────────────────────────────────────────────────────────
+from jsonschema_diff import ConfigMaker, JsonSchemaDiff
+from jsonschema_diff.color import HighlighterPipeline
+from jsonschema_diff.color.stages import (
+    MonoLinesHighlighter, PathHighlighter, ReplaceGenericHighlighter,
+)
 
 jsonschema_diff = JsonSchemaDiff(
     config=ConfigMaker.make(),
     colorize_pipeline=HighlighterPipeline(
-        [MonoLinesHighlighter(), ReplaceGenericHighlighter(), PathHighlighter()]
+        [MonoLinesHighlighter(), ReplaceGenericHighlighter(), PathHighlighter()],
     ),
 )
 
+# ──────────────────────────────────────────────────────────────────────────────
+# Extra hooks
+# ──────────────────────────────────────────────────────────────────────────────
 
-# -- HTML output -------------------------------------------------------------
-
-html_theme = "furo"
-html_static_path = ["_static"]
-
-
-# -- Dynamic documentation builders -----------------------------------------
-
-def run_apidoc(app: "Sphinx") -> None:
-    """Invoke sphinx-apidoc to build API reference."""
-    root = Path(app.confdir).resolve().parent.parent
-    module_dir = root / "jsonschema_diff"
-    out_dir = Path(app.confdir) / "reference" / "api"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "sphinx.ext.apidoc",
-            "-o",
-            str(out_dir),
-            str(module_dir),
-        ],
-        check=True,
-    )
-
-
-def setup(app: "Sphinx") -> None:
-    roles.register_local_role("pyclass", XRefRole("class"))
-    app.connect("builder-inited", run_apidoc)
+def setup(app):
+    app.add_role("pyclass", XRefRole("class"))
+    app.add_role("pyfunc", XRefRole("func"))
