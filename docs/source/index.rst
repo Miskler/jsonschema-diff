@@ -1,17 +1,21 @@
-.. jsonschema-diff documentation master file, created by
-   sphinx-quickstart on Thu Aug 14 18:46:03 2025.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-jsonschema-diff documentation
-=============================
-
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
-
+Welcome to jsonschema-diff's documentation!
+============================================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Basic use
+
+   basic/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Pro use / Develop it
+
+   pro/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Reference
+
+   reference/index
 

@@ -57,7 +57,7 @@ build: clean
 	python -m build
 
 docs:
-	cd docs && sphinx-build -b html . _build/html
+	cd docs && sphinx-build -b html source _build/html
 
 example-docs:
 	cd examples/docs && sphinx-build -b html . _build/html

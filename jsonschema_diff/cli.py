@@ -61,14 +61,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Disable ANSI colors even if the terminal supports them",
     )
     p.add_argument(
-        "--no-legend",
+        "--legend",
         action="store_true",
-        help="Do not print the legend at the end",
-    )
-    p.add_argument(
-        "--no-body",
-        action="store_true",
-        help="Print only the legend (if not suppressed) but skip the diff body",
+        help="Do print the legend at the end",
     )
 
     # Exit-code control
@@ -93,16 +88,14 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
     )
 
     # 2. Compare the files
-    diff.compare_from_files(
-        old_file_path=args.old_schema,
-        new_file_path=args.new_schema,
+    diff.compare(
+        old_schema=args.old_schema,
+        new_schema=args.new_schema,
     )
 
     # 3. Print the result
     diff.print(
-        colorized=not args.no_color,
-        with_body=not args.no_body,
-        with_legend=not args.no_legend,
+        with_legend=args.legend,
     )
 
     # 4. Optional special exit code

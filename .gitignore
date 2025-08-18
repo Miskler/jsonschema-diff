@@ -1,3 +1,5 @@
+docs/source/_static/jsonschema_diff/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -70,6 +72,11 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+
+# Generated documentation
+docs/source/basic/real_world_examples.rst
+docs/source/reference/api/*
+!docs/source/reference/api/.gitkeep
 
 # PyBuilder
 .pybuilder/
