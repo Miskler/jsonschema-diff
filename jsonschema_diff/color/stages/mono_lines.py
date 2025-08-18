@@ -1,16 +1,26 @@
 from __future__ import annotations
-
 """
-A variant of ``MonoLinesHighlighter`` that **accepts a `rich.text.Text` object**
-and returns **the very same instance** after applying the style rules in place.
+Monochrome prefix-based high-lighter
+====================================
 
-The original implementation converted the line to a string and rendered ANSI
-codes through a ``Console`` capture.  In many scenarios—e.g. when building a
-Rich table, panel, or live‑update widget—you often need to keep working with
-`Text` objects instead of rendered strings.  This rewrite is a drop‑in
-replacement for that use‑case.
+A :class:`~jsonschema_diff.color.abstraction.LineHighlighter` that decorates a
+single :class:`rich.text.Text` *in-place* by looking at its **first matching
+prefix**—typically the leading character produced by *unified diff* output
+(``-``, ``+``, *etc.*).
+
+Why a “Rich-native” rewrite?
+----------------------------
+The original *jsonschema-diff* implementation rendered to a string containing
+ANSI escape codes.  In interactive TUI applications you often want to keep the
+object as a real ``Text`` so you can:
+
+* put it into a :class:`rich.table.Table`,
+* display it inside a :class:`rich.panel.Panel`,
+* or update it live without re-parsing ANSI.
+
+This drop-in replacement keeps behaviour identical while removing the ANSI
+round-trip.
 """
-
 from typing import Mapping, Optional
 
 from rich.style import Style
@@ -20,22 +30,28 @@ from ..abstraction import LineHighlighter
 
 
 class MonoLinesHighlighter(LineHighlighter):
-    """Highlight a line **in place** based on the first matching prefix.
+    """Colourise one line based on a prefix lookup.
 
     Parameters
     ----------
-    bold:
-        Whether to apply the *bold* attribute when a style is applied.  Defaults
-        to *True* to keep visual parity with the original version.
-    default_color:
-        Fallback colour to use when no rule matches.  If *None*, the line is
-        left unchanged unless ``bold`` is *True*.
-    case_sensitive:
-        Whether prefix matching should be case‑sensitive.  Defaults to
-        *False* (original behaviour).
-    rules:
-        Mapping *prefix → colour*.  The mapping order is preserved so the first
-        match wins, exactly as before.
+    bold :
+        Apply the *bold* attribute together with the foreground colour.
+        Enabled by default to keep parity with the original.
+    default_color :
+        Fallback colour when no rule matches.  If *None* the line is left
+        unchanged (except for *bold* when that option is *True*).
+    case_sensitive :
+        Whether prefix matching should be case-sensitive.  Defaults to *False*.
+    rules :
+        Mapping ``prefix → colour``.  The first match wins; order is therefore
+        significant.  If *None*, the following defaults are used::
+
+            {
+                "-": "red",
+                "+": "green",
+                "r": "cyan",
+                "m": "cyan",
+            }
     """
 
     def __init__(
@@ -55,26 +71,45 @@ class MonoLinesHighlighter(LineHighlighter):
         self.bold = bold
         self.default_color = default_color
         self.case_sensitive = case_sensitive
-        # preserve order of the user‑supplied mapping
-        self.rules: Mapping[str, str] = dict(rules)
+        self.rules: Mapping[str, str] = dict(rules)  # preserve order
 
-    # ---------------------------------------------------------------------
-    # Public helpers
-    # ---------------------------------------------------------------------
-    def colorize_line(self, line: Text) -> Text:  # noqa: D401  (imperative mood)
-        """Apply style **in place** and return *the same* ``Text`` instance."""
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+    def colorize_line(self, line: Text) -> Text:
+        """Apply a single style pass **in place**.
+
+        Parameters
+        ----------
+        line :
+            The :class:`rich.text.Text` instance to be modified.
+
+        Returns
+        -------
+        rich.text.Text
+            **The very same instance** that was passed in—allowing fluent,
+            chainable APIs.
+
+        Note
+        ----
+        Only the *first* matching prefix is honoured; subsequent rules are
+        ignored, mirroring classic *grep* / *sed* behaviour.
+        """
         probe = line.plain if self.case_sensitive else line.plain.lower()
 
         for prefix, color in self.rules.items():
             pref = prefix if self.case_sensitive else prefix.lower()
             if probe.startswith(pref):
                 line.stylize(Style(color=color, bold=self.bold), 0, len(line))
-                return line  # we are done: first match wins
+                return line  # first match wins
 
-        # --- No rule matched: fallbacks ----------------------------------
+        # --- fall-back -------------------------------------------------
         if self.default_color is not None:
             line.stylize(Style(color=self.default_color, bold=self.bold), 0, len(line))
         elif self.bold:
-            # Apply only bold; keeps parity with original behaviour
             line.stylize(Style(bold=True), 0, len(line))
         return line
+
+    def colorize_lines(self, lines):
+        """Vectorised helper; simply delegates to :meth:`colorize_line`."""
+        return [self.colorize_line(t) for t in lines]

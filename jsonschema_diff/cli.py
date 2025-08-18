@@ -1,12 +1,28 @@
-#!/usr/bin/env python3
 """
-Diff two JSON-Schema files directly from the terminal.
+jsonschema_diff CLI
+===================
 
-Examples
---------
-$ jsonschema-diff old.schema.json new.schema.json
+A tiny command-line front-end around :pymod:`jsonschema_diff`
+that highlights semantic differences between two JSON-Schema
+documents directly in your terminal.
+
+Typical usage
+-------------
+>>> jsonschema-diff old.schema.json new.schema.json
+>>> jsonschema-diff --no-color --legend old.json new.json
+>>> jsonschema-diff --exit-code old.json new.json  # useful in CI
+
+Exit status
+-----------
+* **0** – the two schemas are semantically identical  
+* **1** – at least one difference was detected (only when
+  ``--exit-code`` is given)
+
+The CLI is intentionally minimal: *all* comparison options are taken
+from :pyclass:`jsonschema_diff.ConfigMaker`, so the behaviour stays
+in sync with the library defaults.
+
 """
-
 from __future__ import annotations
 
 import argparse
@@ -24,13 +40,36 @@ from jsonschema_diff.core.parameter_base import Compare
 
 def _make_highlighter(disable_color: bool) -> HighlighterPipeline:
     """
-    Return an empty ``HighlighterPipeline`` if *disable_color* is ``True``,
-    otherwise the default 3-stage pipeline.
+    Create the high-lighting pipeline used to colorise diff output.
 
     Parameters
     ----------
-    disable_color : bool
-        When ``True`` ANSI colors are suppressed even if the terminal supports them.
+    disable_color :
+        When *True* ANSI escape sequences are suppressed even if the
+        invoking TTY advertises color support (e.g. when piping the
+        output into a file).
+
+    Returns
+    -------
+    HighlighterPipeline
+        Either an **empty** pipeline (no colour) or the standard
+        three-stage pipeline consisting of
+        :class:`~jsonschema_diff.color.stages.MonoLinesHighlighter`,
+        :class:`~jsonschema_diff.color.stages.ReplaceGenericHighlighter`
+        and :class:`~jsonschema_diff.color.stages.PathHighlighter`.
+
+    Note
+    -----
+    The composition of the *default* pipeline mirrors what the core
+    library exposes; duplicating the stages here keeps the CLI fully
+    self-contained while allowing future customisation.
+
+    Examples
+    --------
+    >>> _make_highlighter(True)
+    HighlighterPipeline(stages=[])
+    >>> _make_highlighter(False).stages   # doctest: +ELLIPSIS
+    [<jsonschema_diff.color.stages.MonoLinesHighlighter ...>, ...]
     """
     if disable_color:
         return HighlighterPipeline([])
@@ -44,7 +83,21 @@ def _make_highlighter(disable_color: bool) -> HighlighterPipeline:
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    """Build and return the CLI argument parser."""
+    """
+    Construct the :pyclass:`argparse.ArgumentParser` for the CLI.
+
+    Returns
+    -------
+    argparse.ArgumentParser
+        The fully configured parser containing positional arguments
+        for the *old* and *new* schema paths, together with three
+        optional feature flags.
+
+    See Also
+    --------
+    * :pyfunc:`main` – where the parser is consumed.
+    * The *argparse* documentation for available formatting options.
+    """
     p = argparse.ArgumentParser(
         prog="jsonschema-diff",
         description="Show the difference between two JSON-Schema files",
@@ -63,21 +116,42 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--legend",
         action="store_true",
-        help="Do print the legend at the end",
+        help="Print a legend explaining diff symbols at the end",
     )
 
     # Exit-code control
     p.add_argument(
         "--exit-code",
         action="store_true",
-        help="Return 1 if differences are detected, otherwise 0",
+        help="Return **1** if differences are detected, otherwise **0**",
     )
 
     return p
 
 
 def main(argv: list[str] | None = None) -> None:  # pragma: no cover
-    """Entry-point used by ``__main__`` and the console script."""
+    """
+    CLI entry-point (invoked by ``python -m jsonschema_diff`` or by the
+    ``jsonschema-diff`` console script).
+
+    Parameters
+    ----------
+    argv :
+        Command-line argument vector **excluding** the executable name.
+        When *None* (default) ``sys.argv[1:]`` is used – this is the
+        behaviour required by *setuptools* console-scripts.
+
+    
+    Note
+    ----
+        The function performs four sequential steps:
+
+        1. Build a :class:`JsonSchemaDiff` instance.  
+        2. Compare the two user-supplied schema files.  
+        3. Print a colourised diff (optionally with a legend).  
+        4. Optionally exit with code 1 if differences are present.
+
+    """
     args = _build_parser().parse_args(argv)
 
     # 1. Build the wrapper object

@@ -1,12 +1,22 @@
 from __future__ import annotations
-
-"""Rich‑native rewrite of ``ReplaceGenericHighlighter``.
-
-This variant works **directly** on an existing :class:`rich.text.Text` object:
-*No* ANSI round‑trip; styling is applied **in place** and the *same* instance is
-returned.  The diffing semantics are unchanged.
 """
+Token-level diff high-lighter
+=============================
 
+A Rich-native replacement for the original ``ReplaceGenericHighlighter`` that
+marks *token-by-token* differences inside a ``OLD -> NEW`` tail.  It operates
+directly on :class:`rich.text.Text` so you can embed the result in Rich tables
+or live dashboards without ANSI parsing.
+
+Detection strategy
+------------------
+#) Split *OLD* and *NEW* into tokens (numbers, words, spaces, punctuation).  
+#) Run :class:`difflib.SequenceMatcher` to classify *replace*, *delete*,
+   *insert* spans.  
+#) Apply background colour ± underline only to the differing tokens.
+
+Everything left of the first ``:`` is treated as an opaque *head*.
+"""
 import difflib
 import re
 from typing import List, Optional, Sequence, Tuple
@@ -18,54 +28,44 @@ from ..abstraction import LineHighlighter
 
 
 class ReplaceGenericHighlighter(LineHighlighter):
-    """Highlight token‑level differences in ``OLD -> NEW`` tails *in place*.
-
-    Expected line format (unchanged):
-        ``<anything>: OLD -> NEW``
-
-    Only the segment **after the first ':'** is parsed.  Differences are
-    detected via :pyclass:`difflib.SequenceMatcher` on *tokens* (numbers are
-    atomic).  Background colour is applied **only** to the differing spans, and
-    pre‑existing colour/bold styles are preserved.
+    """Highlight token differences in ``OLD -> NEW`` tails.
 
     Parameters
     ----------
-    bg_color:
-        Background colour for differences.  Accepts any Rich colour string.
-    arrow_color:
-        Optionally recolour the ``->`` arrow.
-    case_sensitive:
-        Whether token comparison is case‑sensitive.  Defaults to *True* (keeps
-        original behaviour).
-    underline_changes:
-        Whether to underline differing spans in addition to background colour.
+    bg_color :
+        Background colour used to mark differing spans.
+    arrow_color :
+        Optional foreground colour for the ``->`` arrow.
+    case_sensitive :
+        Compare tokens case-sensitively when *True* (default).
+    underline_changes :
+        Underline differing spans in addition to background colour.
     """
 
-    # Head  … :  ← we only parse the *tail* (OLD -> NEW)
+    # -- regex patterns & helpers -------------------------------------
     _TAIL_PATTERN = re.compile(
-        r"(?P<left_ws>\s*)"  # leading spaces
-        r"(?P<old>.*?)"  # OLD segment (lazy)
+        r"(?P<left_ws>\s*)"      # leading spaces
+        r"(?P<old>.*?)"          # OLD
         r"(?P<between_ws>\s*)"
-        r"(?P<arrow>->)"  # arrow
+        r"(?P<arrow>->)"
         r"(?P<right_ws>\s*)"
-        r"(?P<new>.*?)"  # NEW segment (lazy)
+        r"(?P<new>.*?)"          # NEW
         r"(?P<trailing_ws>\s*)$",
     )
 
-    # Tokeniser: numbers | words | spaces | single char
     _TOKEN_RE = re.compile(
         r"""
-        (?P<num>[+-]?\d+(?:[.,]\d+)?(?:[a-z%]+)?|∞)
-      | (?P<word>\w+)
-      | (?P<space>\s+)
-      | (?P<punc>.)
+        (?P<num>[+-]?\d+(?:[.,]\d+)?(?:[a-z%]+)?|∞) |
+        (?P<word>\w+)                                |
+        (?P<space>\s+)                               |
+        (?P<punc>.?)
         """,
         re.VERBOSE | re.UNICODE,
     )
 
-    # ------------------------------------------------------------------
+    # -----------------------------------------------------------------
     # Construction
-    # ------------------------------------------------------------------
+    # -----------------------------------------------------------------
     def __init__(
         self,
         *,
@@ -82,11 +82,23 @@ class ReplaceGenericHighlighter(LineHighlighter):
         self._bg_style = Style(bgcolor=self.bg_color, underline=self.underline_changes)
         self._arrow_style = Style(color=self.arrow_color) if self.arrow_color else None
 
-    # ------------------------------------------------------------------
-    # Public helpers
-    # ------------------------------------------------------------------
-    def colorize_line(self, line: Text) -> Text:  # noqa: D401 (imperative mood)
-        """Apply diff‑based highlighting *in place* and return the same ``Text``."""
+    # -----------------------------------------------------------------
+    # Public API
+    # -----------------------------------------------------------------
+    def colorize_line(self, line: Text) -> Text:
+        """Apply diff-based styling **in place**.
+
+        Parameters
+        ----------
+        line :
+            The :class:`rich.text.Text` instance containing a diff line.
+
+        Returns
+        -------
+        rich.text.Text
+            The same object, now decorated with background and/or underline
+            spans on the differing tokens.
+        """
         plain = line.plain
 
         # 1) locate first ':' — tail is everything to its right

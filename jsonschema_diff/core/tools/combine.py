@@ -65,8 +65,8 @@ class LogicCombinerHandler:
         dict
             ``(k1, k2, …) -> {inner_key_field: common_key, inner_value_field: [v1, v2, …]}``
 
-        Notes
-        -----
+        Note
+        ----
         * Keys not covered by *rules* stay as single-element groups.
         * Inner keys in the same group must match or ``ValueError`` is raised.
         """

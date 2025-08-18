@@ -1,14 +1,22 @@
 from __future__ import annotations
-
-"""Rich‑native rewrite of :pyclass:`PathHighlighter`.
-
-Unlike the original version—which accepted a *string*, captured a ``Console``
-render, and returned an ANSI‑styled **string**—this variant works directly on a
-pre‑existing :class:`rich.text.Text` instance.  All styling happens **in place**
-and the *very same* object is returned, making it ideal for Rich tables,
-panels, or any workflow where you want to keep manipulating ``Text`` objects.
 """
+JSON-Pointer path high-lighter
+==============================
 
+Rich-native version of the original ``PathHighlighter`` that styles a
+:class:`rich.text.Text` object **in place** instead of emitting raw ANSI.  It
+distinguishes:
+
+* brackets ``[ ... ]`` and dots ``.``  → *base colour*  
+* quoted strings inside brackets      → *string colour*  
+* numbers inside brackets             → *number colour*  
+* property names before the final ``:``:
+  * intermediate path components      → *path_prop colour*
+  * the final property                → *prop colour*
+
+Only the public constructor and :meth:`colorize_line` are part of the public
+API; everything else is an implementation detail.
+"""
 from typing import List, Optional, Tuple
 
 from rich.style import Style
@@ -18,14 +26,23 @@ from ..abstraction import LineHighlighter
 
 
 class PathHighlighter(LineHighlighter):
-    """Colourise JSON‑pointer‑like paths *in place* on a ``Text`` object.
+    """Colourise JSON-pointer-like paths.
 
-    The logic is unchanged: brackets, dots, quoted strings, numbers, and path
-    properties retain the exact highlighting semantics of the original—only
-    the I/O API differs.
+    Parameters
+    ----------
+    base_color :
+        Colour for structural characters (``.[]:``).
+    string_color :
+        Colour for quoted strings inside brackets.
+    number_color :
+        Colour for numeric indices inside brackets.
+    path_prop_color :
+        Colour for non-final property names.
+    prop_color :
+        Colour for the final property (right before the ``:``).
     """
 
-    def __init__(
+    def __init__(  # noqa: D401 – imperative mood is fine in NumPy style
         self,
         *,
         base_color: str = "grey70",
@@ -43,8 +60,19 @@ class PathHighlighter(LineHighlighter):
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
-    def colorize_line(self, line: Text) -> Text:  # noqa: D401 (imperative mood)
-        """Apply styles and return the **same** ``Text`` instance."""
+    def colorize_line(self, line: Text) -> Text:
+        """Apply path styling **in place** and return the same ``Text``.
+
+        Parameters
+        ----------
+        line :
+            The :class:`rich.text.Text` object to be stylised.
+
+        Returns
+        -------
+        rich.text.Text
+            The *modified* object (for fluent method chaining).
+        """
         s = line.plain
 
         # --- Find path boundaries -------------------------------------
