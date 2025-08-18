@@ -59,16 +59,8 @@ build: clean
 docs:
 	cd docs && sphinx-build -b html source _build/html
 
-example-docs:
-	cd examples/docs && sphinx-build -b html . _build/html
-
-build-all-docs: docs example-docs
-
 serve-docs:
 	cd docs/_build/html && python -m http.server 8000
-
-serve-examples:
-	cd examples/docs/_build/html && python -m http.server 8001
 
 # CI simulation
 ci-test:

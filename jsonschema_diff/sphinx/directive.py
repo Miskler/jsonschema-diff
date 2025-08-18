@@ -110,8 +110,6 @@ class JsonSchemaDiffDirective(Directive):
         svg_path = static_dir / svg_name
         svg_path.write_text(svg_code, encoding="utf-8")
 
-        fileutil.copy_asset_file(svg_path, Path(env.app.outdir) / self._STATIC_SUBDIR / svg_name)
-
         # ------------------------------------------------------------------
         # Insert <img> node with correct relative URI
         doc_depth = env.docname.count("/")
