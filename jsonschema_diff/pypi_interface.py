@@ -9,6 +9,7 @@ from json import loads
 from typing import Optional
 
 from rich.text import Text
+from rich.table import Table
 
 from jsonschema_diff.color import HighlighterPipeline
 from jsonschema_diff.core import Compare, Config, Property
@@ -47,23 +48,33 @@ class JsonSchemaDiff:
     # ------------------------------------------------------------------ #
 
     @staticmethod
+    def _schema_resolver(schema: str | dict) -> dict:
+        if isinstance(schema, dict):
+            return schema
+        else:
+            with open(schema, "r", encoding="utf-8") as fp:
+                return loads(fp.read())
+
+    @staticmethod
     def fast_pipeline(
         config: "Config",
-        old_schema: dict,
-        new_schema: dict,
+        old_schema: dict | str,
+        new_schema: dict | str,
         colorize_pipeline: Optional["HighlighterPipeline"],
     ) -> tuple[str, list[type[Compare]]]:
         """
         One-shot utility: compare *old_schema* vs *new_schema* and
         return ``(rendered_text, compare_list)``.
+
+        Accepted formats: dict or path to JSON file.
         """
         prop = Property(
             config=config,
             name=None,
             schema_path=[],
             json_path=[],
-            old_schema=old_schema,
-            new_schema=new_schema,
+            old_schema=JsonSchemaDiff._schema_resolver(old_schema),
+            new_schema=JsonSchemaDiff._schema_resolver(new_schema),
         )
         prop.compare()
         output_text, compare_list = prop.render()
@@ -78,33 +89,28 @@ class JsonSchemaDiff:
     # Public API
     # ------------------------------------------------------------------ #
 
-    def compare_from_files(self, old_file_path: str, new_file_path: str) -> "JsonSchemaDiff":
-        """Load two files (JSON) and run :meth:`compare`."""
-        with (
-            open(old_file_path, "r", encoding="utf-8") as fp_old,
-            open(new_file_path, "r", encoding="utf-8") as fp_new,
-        ):
-            return self.compare(
-                old_schema=loads(fp_old.read()),
-                new_schema=loads(fp_new.read()),
-            )
+    def compare(self,
+                old_schema: dict | str,
+                new_schema: dict | str
+                ) -> "JsonSchemaDiff":
+        """Populate internal :class:`Property` tree and perform comparison.
+        
+        Accepted formats: dict or path to JSON file."""
 
-    def compare(self, *, old_schema: dict, new_schema: dict) -> "JsonSchemaDiff":
-        """Populate internal :class:`Property` tree and perform comparison."""
         self.property = Property(
             config=self.config,
             name=None,
             schema_path=[],
             json_path=[],
-            old_schema=old_schema,
-            new_schema=new_schema,
+            old_schema=JsonSchemaDiff._schema_resolver(old_schema),
+            new_schema=JsonSchemaDiff._schema_resolver(new_schema),
         )
         self.property.compare()
         return self
 
-    def render(self, *, colorized: bool = True) -> str:
+    def rich_render(self) -> Text:
         """
-        Return the diff body (ANSI-colored if *colorized*).
+        Return the diff body ANSI-colored.
 
         Side effects
         ------------
@@ -115,9 +121,22 @@ class JsonSchemaDiff:
         self.last_render_output = "\n\n".join(body)
         self.last_compare_list = compare_list
 
-        if colorized:
-            return self.colorize_pipeline.colorize_and_render(self.last_render_output)
-        return self.last_render_output
+        return self.colorize_pipeline.colorize(self.last_render_output)
+
+    def render(self) -> str:
+        """
+        Return the diff body ANSI-colored.
+
+        Side effects
+        ------------
+        * ``self.last_render_output`` – cached rendered text.
+        * ``self.last_compare_list`` – list of Compare subclasses encountered.
+        """
+        body, compare_list = self.property.render()
+        self.last_render_output = "\n\n".join(body)
+        self.last_compare_list = compare_list
+
+        return self.colorize_pipeline.colorize_and_render(self.last_render_output)
 
     # ------------------------------------------------------------------ #
     # Internal helpers
@@ -135,6 +154,11 @@ class JsonSchemaDiff:
     # Legend & printing
     # ------------------------------------------------------------------ #
 
+    def rich_legend(self, comparators: list[type[Compare]]) -> Table:
+        """Return a legend table filtered by *self.legend_ignore*."""
+        real = [c for c in comparators if c not in self.legend_ignore]
+        return self.table_maker.rich_render(real)
+
     def legend(self, comparators: list[type[Compare]]) -> str:
         """Return a legend table filtered by *self.legend_ignore*."""
         real = [c for c in comparators if c not in self.legend_ignore]
@@ -143,7 +167,6 @@ class JsonSchemaDiff:
     def print(
         self,
         *,
-        colorized: bool = True,
         with_body: bool = True,
         with_legend: bool = True,
     ) -> None:
@@ -158,7 +181,7 @@ class JsonSchemaDiff:
             Toggle respective sections.
         """
         if with_body:
-            print(self.render(colorized=colorized))
+            print(self.render())
 
         if with_body and with_legend:
             print()

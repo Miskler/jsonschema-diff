@@ -88,12 +88,15 @@ class LegendRenderer:
     # Public API
     # ------------------------------------------------------------------
 
-    def render(self, legend_classes: Iterable[type["Compare"]]) -> str:
+    def rich_render(self, legend_classes: Iterable[type["Compare"]]) -> Table:
         legends = [cls.legend() for cls in legend_classes]
         self._validate_legends(legends)
 
         rows: list[list[Cell]] = [self._build_row(legend) for legend in legends]
-        table = self._build_table(rows)
+        return self._build_table(rows)
+
+    def render(self, legend_classes: Iterable[type["Compare"]]) -> str:
+        table = self.rich_render(legend_classes)
 
         # Use a throw‑away Console so we don't affect the caller's Console config
         console = Console(

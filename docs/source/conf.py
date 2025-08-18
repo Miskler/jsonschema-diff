@@ -11,6 +11,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+from pathlib import Path
+import json
+from rich.console import Console
+
 
 # -- Path setup --------------------------------------------------------------
 # Allow importing the project without installation.
@@ -41,6 +45,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
+    "jsonschema_diff.sphinx",
 ]
 
 autosummary_generate = True
@@ -49,55 +54,22 @@ templates_path = ["_templates"]
 exclude_patterns: list[str] = []
 
 
+
+jsonschema_diff = JsonSchemaDiff(
+    config=ConfigMaker.make(),
+    colorize_pipeline=HighlighterPipeline(
+        [MonoLinesHighlighter(), ReplaceGenericHighlighter(), PathHighlighter()]
+    ),
+)
+
+
 # -- HTML output -------------------------------------------------------------
 
-html_theme = "alabaster"
+html_theme = "furo"
 html_static_path = ["_static"]
 
 
 # -- Dynamic documentation builders -----------------------------------------
-
-
-def generate_examples(app: "Sphinx") -> None:
-    """Create ``basic/real_world_examples.rst`` from schema pairs."""
-    root = Path(app.confdir).resolve().parent.parent
-    target = Path(app.confdir) / "basic" / "real_world_examples.rst"
-
-    config = ConfigMaker.make()
-    pipeline = HighlighterPipeline(
-        [MonoLinesHighlighter(), ReplaceGenericHighlighter(), PathHighlighter()]
-    )
-
-    lines = [
-        "Real-world Examples",
-        "===================",
-        "",
-        "Generated from ``*.old.schema.json`` / ``*.new.schema.json`` pairs.",
-        "",
-    ]
-
-    for old_file in sorted(root.glob("*.old.schema.json")):
-        base = old_file.name.replace(".old.schema.json", "")
-        new_file = root / old_file.name.replace("old.schema.json", "new.schema.json")
-        if not new_file.exists():
-            continue
-        label = base or "example"
-        with open(old_file, "r", encoding="utf-8") as f_old, open(
-            new_file, "r", encoding="utf-8"
-        ) as f_new:
-            rendered, _ = JsonSchemaDiff.fast_pipeline(
-                config, json.load(f_old), json.load(f_new), pipeline
-            )
-        lines.append(label)
-        lines.append("-" * len(label))
-        lines.append("")
-        lines.append("::")
-        lines.append("")
-        lines.extend([f"   {line}" for line in rendered.splitlines()])
-        lines.append("")
-
-    target.write_text("\n".join(lines), encoding="utf-8")
-
 
 def run_apidoc(app: "Sphinx") -> None:
     """Invoke sphinx-apidoc to build API reference."""
@@ -120,5 +92,4 @@ def run_apidoc(app: "Sphinx") -> None:
 
 def setup(app: "Sphinx") -> None:
     roles.register_local_role("pyclass", XRefRole("class"))
-    app.connect("builder-inited", generate_examples)
     app.connect("builder-inited", run_apidoc)
