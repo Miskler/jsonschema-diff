@@ -17,9 +17,9 @@ prop = JsonSchemaDiff(
     ]
 )
 
-prop.compare_from_files(
-    old_file_path="context.old.schema.json",
-    new_file_path="context.new.schema.json"
+prop.compare(
+    old_schema="context.old.schema.json",
+    new_schema="context.new.schema.json"
 )
 
-prop.print(colorized=True, with_legend=True)
+prop.print(with_legend=True)

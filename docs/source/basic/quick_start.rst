@@ -7,28 +7,12 @@ Install the library and compare two schemas in a few lines.
 
    pip install jsonschema-diff
 
-.. code-block:: python
+Дальше все зависит от того, как вы планируете использовать библиотеку.
 
-   from jsonschema_diff import ConfigMaker, JsonSchemaDiff
-   from jsonschema_diff.color import HighlighterPipeline
-   from jsonschema_diff.color.stages import MonoLinesHighlighter, ReplaceGenericHighlighter, PathHighlighter
-   from jsonschema_diff.core.parameter_base import Compare
+.. toctree::
+   :maxdepth: 4
 
-   diff = JsonSchemaDiff(
-       config=ConfigMaker.make(),
-       colorize_pipeline=HighlighterPipeline([
-           MonoLinesHighlighter(),
-           ReplaceGenericHighlighter(),
-           PathHighlighter(),
-       ]),
-       legend_ignore=[Compare],
-   )
-   diff.compare_from_files("old.schema.json", "new.schema.json")
-   print(diff.render(colorized=False))
-
-Alternatively, use the CLI:
-
-.. code-block:: console
-
-   jsonschema-diff old.schema.json new.schema.json
+   quick_start/cli
+   quick_start/python
+   quick_start/sphinxs
 

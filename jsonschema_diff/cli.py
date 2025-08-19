@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import json
 
 from jsonschema_diff import ConfigMaker, JsonSchemaDiff
 from jsonschema_diff.color import HighlighterPipeline
@@ -161,10 +162,16 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
         legend_ignore=[Compare],  # as in the library example
     )
 
+    def try_load(data: str) -> dict | str:
+        try:
+            return json.loads(data)
+        except:
+            return data
+
     # 2. Compare the files
     diff.compare(
-        old_schema=args.old_schema,
-        new_schema=args.new_schema,
+        old_schema=try_load(args.old_schema),
+        new_schema=try_load(args.new_schema),
     )
 
     # 3. Print the result

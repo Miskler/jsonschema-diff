@@ -2,17 +2,16 @@ Welcome to jsonschema-diff's documentation!
 ============================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Basic use
 
    basic/quick_start
-   basic/real_world_examples
-   basic/config_maker
-   basic/cli
    basic/colorize
+   basic/config_maker
+   basic/real_world_examples
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Pro use / Develop it
 
    pro/compares
@@ -21,6 +20,6 @@ Welcome to jsonschema-diff's documentation!
    pro/context_rules
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Reference
 

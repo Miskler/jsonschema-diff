@@ -56,6 +56,10 @@ clean:
 build: clean
 	python -m build
 
+build-install:
+	$(MAKE) build
+	$(MAKE) install
+
 docs:
 	cd docs && sphinx-build -b html source _build/html
 
