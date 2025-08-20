@@ -25,11 +25,12 @@ release   = "0.1.0"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.autodoc.typehints",
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
-    "autoapi.extension",          # → собирает *.rst из исходников
-    "jsonschema_diff.sphinx",     # ваша раскраска
+    "autoapi.extension",
+    "jsonschema_diff.sphinx",
 ]
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -69,7 +70,7 @@ autoapi_options = [
     #"private-members",
     "show-module-summary",
     "special-members",
-    "imported-members" # УБРАН
+    "imported-members"
 ]
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -100,6 +101,21 @@ jsonschema_diff = JsonSchemaDiff(
 # Extra hooks
 # ──────────────────────────────────────────────────────────────────────────────
 
+ALIASES = {
+    "Compare":  "jsonschema_diff.core.parameter_base",
+    "Statuses": "jsonschema_diff.core.abstraction",
+    "Config":   "jsonschema_diff.core.config",
+}
+
+def skip_canon(app, what, name, obj, skip, options):
+    short = name.rsplit(".", 1)[-1]
+    # если имя в списке и мы сейчас документируем канонический модуль — пропустить
+    if short in ALIASES and name.startswith(ALIASES[short]):
+        return True
+    return skip
+
+
 def setup(app):
+    app.connect("autoapi-skip-member", skip_canon)
     app.add_role("pyclass", XRefRole("class"))
     app.add_role("pyfunc", XRefRole("func"))
