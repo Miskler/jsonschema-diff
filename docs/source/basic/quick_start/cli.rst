@@ -14,7 +14,7 @@ OR
 
 .. code-block:: console
 
-   jsonschema-diff {\"type\":\"string\"} {\"type\":\"number\"} # экранирование обязательно
+   jsonschema-diff "{\"type\":\"string\"}" "{\"type\":\"number\"}" # escaping is required
 
 Options:
 
@@ -25,3 +25,5 @@ Options:
 * ``--no-color`` to disable ANSI colors.
 * ``--legend`` to show legend table.
 * ``--exit-code`` to return ``1`` when differences are found.
+
+See also: 

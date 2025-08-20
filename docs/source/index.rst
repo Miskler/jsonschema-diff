@@ -23,3 +23,4 @@ Welcome to jsonschema-diff's documentation!
    :maxdepth: 4
    :caption: Reference
 
+   reference/type_aliases
