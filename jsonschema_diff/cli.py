@@ -2,7 +2,7 @@
 jsonschema_diff CLI
 ===================
 
-A tiny command-line front-end around :pymod:`jsonschema_diff`
+A tiny command-line front-end around :py:mod:`jsonschema_diff`
 that highlights semantic differences between two JSON-Schema
 documents directly in your terminal.
 

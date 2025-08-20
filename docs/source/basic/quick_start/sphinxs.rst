@@ -1,4 +1,5 @@
 .. _sphinx_quick_start:
+
 Sphinx Extension
 ================
 

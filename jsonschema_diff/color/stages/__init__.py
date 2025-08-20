@@ -17,7 +17,7 @@ succinct code such as ::
 
     from jsonschema_diff.color.stages import MonoLinesHighlighter
 
-Only the three public classes below are exported via :pydata:`__all__`.
+Only the three public classes below are exported via :py:data:`__all__`.
 """
 
 from .mono_lines import MonoLinesHighlighter

@@ -9,7 +9,7 @@ we stay on the high-level picture.
 
 
 Prerequisites fixed since the previous draft
--------------------------------------------
+--------------------------------------------
 
 .. note::
 
