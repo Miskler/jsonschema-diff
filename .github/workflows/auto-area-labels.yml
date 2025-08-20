@@ -1,0 +1,41 @@
+# .github/workflows/auto-area-labels.yml
+name: Area labels from Bug-report form
+on:
+  issues: {types: [opened, edited]}
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  add-area-labels:
+    if: contains(github.event.issue.labels.*.name, 'bug')  # only bug reports
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4      # parser needs the template
+
+      - name: Parse issue form
+        id: parse
+        uses: stefanbuck/github-issue-parser@v3
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          repo-token:   ${{ secrets.GITHUB_TOKEN }}
+      # parser output → env.FORM_JSON
+
+      - name: Apply area labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue = context.issue
+            const form  = JSON.parse(process.env.FORM_JSON)
+            const areas = form.area || []         // 'area' = checkbox id
+            const existing = context.payload.issue.labels.map(l => l.name)
+            const toAdd = areas.filter(a => !existing.includes(a))
+            if (toAdd.length) {
+              await github.rest.issues.addLabels({...issue, labels: toAdd})
+              core.info(`Added labels: ${toAdd.join(', ')}`)
+            }
+        env:
+          FORM_JSON: ${{ steps.parse.outputs.jsonString }}
