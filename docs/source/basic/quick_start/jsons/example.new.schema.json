@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:test:profile:v1",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "id": { "type": "string" },
+    "email": { "type": "string", "format": "idn-email", "minLength": 12, "maxLength": 124 },
+    "username": { "type": "string", "pattern": "^[a-c0-9_\\-]+$" }
+  },
+  "required": ["id", "email", "username"]
+}

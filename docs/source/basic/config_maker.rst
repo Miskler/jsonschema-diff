@@ -1,13 +1,13 @@
 Config Maker
 ============
 
-``ConfigMaker`` assembles a :class:`jsonschema_diff.core.config.Config` with sensible
+:class:`~jsonschema_diff.config_maker.ConfigMaker` assembles a :class:`~jsonschema_diff.core.config.Config` with sensible
 defaults. Each switch enables a family of comparison rules.
 
-Вы можете использовать напрямую Config если нужны более детальные настройки.
-ConfigMaker лишь упрощает процесс включая в себя стандартные шаблоны.
+You can use :class:`~jsonschema_diff.core.config.Config` directly if you need more detailed settings.
+ConfigMaker only simplifies the process by including standard templates.
 
-Для детальной информации о допустимых параметрах смотрите :py:meth:`~jsonschema_diff.config_maker.ConfigMaker.make`
+For detailed information about the allowed parameters, see :py:meth:`~jsonschema_diff.config_maker.ConfigMaker.make`
 
 .. code-block:: python
 
@@ -23,5 +23,5 @@ ConfigMaker лишь упрощает процесс включая в себя 
        additional_compare_rules={str: CustomComparator},
    )
 
-The resulting object is :py:class:`jsonschema_diff.core.config.Config`.
+The resulting object is :py:class:`~jsonschema_diff.core.config.Config`.
 

@@ -1,16 +1,6 @@
 # jsonschema_diff/sphinx/__init__.py
 """
 Sphinx extension: ``jsonschema_diff.sphinx``
-
-Директива::
-
-    .. jsonschemadiff:: old.schema.json new.schema.json
-       :no-legend:   # убрать легенду
-       :no-body:     # показать только легенду
-       :width: 90%   # ширина вставляемого SVG
-
-В ``conf.py`` проекта ОБЯЗАТЕЛЬНО объявить переменную
-``jsonschema_diff`` — готовый экземпляр :class:`JsonSchemaDiff`.
 """
 
 from __future__ import annotations
@@ -22,7 +12,7 @@ from sphinx.application import Sphinx
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
-    """Регистрация директивы и конфигурационной переменной."""
+    """Register the directive and configuration variable."""
     from .directive import JsonSchemaDiffDirective
 
     app.add_directive("jsonschemadiff", JsonSchemaDiffDirective)

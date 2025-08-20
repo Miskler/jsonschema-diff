@@ -2,7 +2,7 @@
 Python Interface
 ================
 
-Чтобы быстро сравнить схемы и вывести результат в консоль:
+To quickly compare schemas and print the result to the console:
 
 .. code-block:: python
 
@@ -21,7 +21,7 @@ Python Interface
         ])
     )
 
-    prop.compare( # Фукция принимает как путь до файла, так и сами dict схемы // можно комбинировать
+    prop.compare( # Function accepts both file path and schema dict itself // can be combined
         old_schema="context.old.schema.json",
         new_schema="context.new.schema.json"
     )
@@ -29,4 +29,7 @@ Python Interface
     # Теперь можно вывести
     prop.print(with_legend=True)
 
+.. jsonschemadiff:: basic/quick_start/jsons/example.old.schema.json basic/quick_start/jsons/example.new.schema.json
+   :title: Terminal
 
+See also for more: :mod:`jsonschema_diff.pypi_interface`

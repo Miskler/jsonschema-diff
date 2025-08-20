@@ -13,7 +13,7 @@ from rich.text import Text
 
 from jsonschema_diff.color import HighlighterPipeline
 from jsonschema_diff.core import Compare, Config, Property
-from jsonschema_diff.table_render import make_standard_renderer
+from jsonschema_diff.table_render import make_standard_renderer, LegendRenderer
 
 
 class JsonSchemaDiff:
@@ -29,13 +29,13 @@ class JsonSchemaDiff:
 
     def __init__(
         self,
-        config: "Config",
-        colorize_pipeline: "HighlighterPipeline",
+        config: Config,
+        colorize_pipeline: HighlighterPipeline,
         legend_ignore: list[type[Compare]] | None = None,
     ):
-        self.config = config
-        self.colorize_pipeline = colorize_pipeline
-        self.table_maker = make_standard_renderer(
+        self.config: Config = config
+        self.colorize_pipeline: HighlighterPipeline = colorize_pipeline
+        self.table_maker: LegendRenderer = make_standard_renderer(
             example_processor=self._example_processor, table_width=90
         )
         self.legend_ignore: list[type[Compare]] = legend_ignore or []

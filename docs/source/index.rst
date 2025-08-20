@@ -5,10 +5,10 @@ Welcome to jsonschema-diff's documentation!
    :maxdepth: 4
    :caption: Basic use
 
-   basic/quick_start
+   basic/quick_start/index
    basic/colorize
    basic/config_maker
-   basic/real_world_examples
+   basic/how_read_it/index
 
 .. toctree::
    :maxdepth: 4

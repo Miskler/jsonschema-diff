@@ -63,6 +63,15 @@ autoapi_root              = "reference/api"
 autoapi_add_toctree_entry = True
 autoapi_python_use_implicit_namespaces = True
 
+autoapi_options = [
+    "members",
+    "undoc-members",
+    #"private-members",
+    "show-module-summary",
+    "special-members",
+    "imported-members" # УБРАН
+]
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Intersphinx – ссылки на stdlib / typing
 # ──────────────────────────────────────────────────────────────────────────────
