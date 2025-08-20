@@ -11,6 +11,7 @@
 [![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)](https://github.com/your-org/jsonschema-diff)
 [![Python](https://img.shields.io/badge/python-3.9+-blue)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+![BlackCode](https://img.shields.io/badge/code%20style-black-black)
 
 ## ✨ Features
 
