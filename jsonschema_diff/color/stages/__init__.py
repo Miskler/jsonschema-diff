@@ -7,9 +7,9 @@ This *sub-package* bundles three ready-to-use implementations of
 common needs when rendering a JSON-Schema diff to the terminal:
 
 * :class:`MonoLinesHighlighter` – apply a foreground colour chosen from a
-  *prefix → colour* mapping  
+  *prefix → colour* mapping
 * :class:`ReplaceGenericHighlighter` – highlight token-level changes within
-  ``OLD -> NEW`` tails  
+  ``OLD -> NEW`` tails
 * :class:`PathHighlighter` – pretty-print JSON-Pointer-like paths
 
 Importing the package directly re-exports these classes so you can write

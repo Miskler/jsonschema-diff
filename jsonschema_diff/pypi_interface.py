@@ -13,7 +13,7 @@ from rich.text import Text
 
 from jsonschema_diff.color import HighlighterPipeline
 from jsonschema_diff.core import Compare, Config, Property
-from jsonschema_diff.table_render import make_standard_renderer, LegendRenderer
+from jsonschema_diff.table_render import LegendRenderer, make_standard_renderer
 
 
 class JsonSchemaDiff:

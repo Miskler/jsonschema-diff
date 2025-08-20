@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 Monochrome prefix-based high-lighter
 ====================================
@@ -109,7 +110,3 @@ class MonoLinesHighlighter(LineHighlighter):
         elif self.bold:
             line.stylize(Style(bold=True), 0, len(line))
         return line
-
-    def colorize_lines(self, lines):
-        """Vectorised helper; simply delegates to :meth:`colorize_line`."""
-        return [self.colorize_line(t) for t in lines]

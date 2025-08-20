@@ -14,7 +14,7 @@ Typical usage
 
 Exit status
 -----------
-* **0** – the two schemas are semantically identical  
+* **0** – the two schemas are semantically identical
 * **1** – at least one difference was detected (only when
   ``--exit-code`` is given)
 
@@ -23,11 +23,12 @@ from :pyclass:`jsonschema_diff.ConfigMaker`, so the behaviour stays
 in sync with the library defaults.
 
 """
+
 from __future__ import annotations
 
 import argparse
-import sys
 import json
+import sys
 
 from jsonschema_diff import ConfigMaker, JsonSchemaDiff
 from jsonschema_diff.color import HighlighterPipeline
@@ -142,14 +143,14 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
         When *None* (default) ``sys.argv[1:]`` is used – this is the
         behaviour required by *setuptools* console-scripts.
 
-    
+
     Note
     ----
         The function performs four sequential steps:
 
-        1. Build a :class:`JsonSchemaDiff` instance.  
-        2. Compare the two user-supplied schema files.  
-        3. Print a colourised diff (optionally with a legend).  
+        1. Build a :class:`JsonSchemaDiff` instance.
+        2. Compare the two user-supplied schema files.
+        3. Print a colourised diff (optionally with a legend).
         4. Optionally exit with code 1 if differences are present.
 
     """
@@ -164,9 +165,9 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
 
     def try_load(data: str) -> dict | str:
         try:
-            return json.loads(data)
-        except:
-            return data
+            return dict(json.loads(data))
+        except json.JSONDecodeError:
+            return str(data)
 
     # 2. Compare the files
     diff.compare(

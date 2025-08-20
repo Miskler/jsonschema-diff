@@ -42,9 +42,7 @@ class LineHighlighter(Protocol):
         NotImplementedError
             Always here; concrete subclasses must override this method.
         """
-        raise NotImplementedError(
-            "LineHighlighter.colorize_line должен быть переопределен"
-        )
+        raise NotImplementedError("LineHighlighter.colorize_line должен быть переопределен")
 
     def colorize_lines(self, lines: Sequence[Text]) -> List[Text]:
         """Vectorised helper that stylises a *sequence* of lines.

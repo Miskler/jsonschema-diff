@@ -24,7 +24,7 @@ from docutils import nodes
 from docutils.parsers.rst import Directive, directives
 from rich.console import Console, Group
 from sphinx.errors import ExtensionError
-from sphinx.util import fileutil, logging
+from sphinx.util import logging
 
 __all__ = ["JsonSchemaDiffDirective"]
 

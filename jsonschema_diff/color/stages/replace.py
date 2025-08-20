@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 Token-level diff high-lighter
 =============================
@@ -10,16 +11,16 @@ or live dashboards without ANSI parsing.
 
 Detection strategy
 ------------------
-#) Split *OLD* and *NEW* into tokens (numbers, words, spaces, punctuation).  
+#) Split *OLD* and *NEW* into tokens (numbers, words, spaces, punctuation).
 #) Run :class:`difflib.SequenceMatcher` to classify *replace*, *delete*,
-   *insert* spans.  
+   *insert* spans.
 #) Apply background colour ± underline only to the differing tokens.
 
 Everything left of the first ``:`` is treated as an opaque *head*.
 """
 import difflib
 import re
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Tuple
 
 from rich.style import Style
 from rich.text import Text
@@ -44,12 +45,12 @@ class ReplaceGenericHighlighter(LineHighlighter):
 
     # -- regex patterns & helpers -------------------------------------
     _TAIL_PATTERN = re.compile(
-        r"(?P<left_ws>\s*)"      # leading spaces
-        r"(?P<old>.*?)"          # OLD
+        r"(?P<left_ws>\s*)"  # leading spaces
+        r"(?P<old>.*?)"  # OLD
         r"(?P<between_ws>\s*)"
         r"(?P<arrow>->)"
         r"(?P<right_ws>\s*)"
-        r"(?P<new>.*?)"          # NEW
+        r"(?P<new>.*?)"  # NEW
         r"(?P<trailing_ws>\s*)$",
     )
 
@@ -159,11 +160,6 @@ class ReplaceGenericHighlighter(LineHighlighter):
             line.stylize(self._arrow_style, arrow_start, arrow_end)
 
         return line
-
-    # Optional convenience wrapper -------------------------------------
-    def colorize_lines(self, lines: Sequence[Text]) -> List[Text]:
-        """Return the *same* ``Text`` objects after in‑place styling."""
-        return [self.colorize_line(t) for t in lines]
 
     # ------------------------------------------------------------------
     # Internal helpers

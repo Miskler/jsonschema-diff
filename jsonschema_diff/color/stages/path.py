@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 JSON-Pointer path high-lighter
 ==============================
@@ -7,9 +8,9 @@ Rich-native version of the original ``PathHighlighter`` that styles a
 :class:`rich.text.Text` object **in place** instead of emitting raw ANSI.  It
 distinguishes:
 
-* brackets ``[ ... ]`` and dots ``.``  → *base colour*  
-* quoted strings inside brackets      → *string colour*  
-* numbers inside brackets             → *number colour*  
+* brackets ``[ ... ]`` and dots ``.``  → *base colour*
+* quoted strings inside brackets      → *string colour*
+* numbers inside brackets             → *number colour*
 * property names before the final ``:``:
   * intermediate path components      → *path_prop colour*
   * the final property                → *prop colour*
