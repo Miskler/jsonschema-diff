@@ -1,3 +1,6 @@
+
+<div align="center">
+
 # 🔍 JSON Schema Diff
 
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/your-org/jsonschema-diff)
@@ -9,47 +12,58 @@ A powerful, intelligent library for comparing JSON schemas with **beautiful form
 
 ## ✨ Features
 
+</div>
+
 - 🎯 **Intelligent Comparison** - Detects and categorizes all types of schema changes
 - 🎨 **Beautiful Output** - Colored, formatted differences with clear symbols  
-- 🔗 **Smart Combination** - Combines related parameters (e.g., `type` + `format`)
-- 📍 **Context Aware** - Shows related fields for better understanding
+- 🔗 **Smart Combination** - Combines related parameters (e.g., `minimum` + `maximum` = `range`)
+- 📍 **Context Aware** - Shows related fields for better understanding (e.g., `type` + `format`)
 - ⚡ **High Performance** - Efficient algorithms for large schemas
-- 🧪 **99%+ Test Coverage** - Reliable and battle-tested
-- 🛠️ **CLI & API** - Use programmatically or from command line
+- 🛠️ **CLI & Python API & Sphinx Extension** - Use programmatically or from command line or in `.rst`
 - 🔧 **Highly Configurable** - Customize behavior for your needs
 
+<div align="center">
+
 ## 🚀 Quick Start
+
+</div>
 
 ### Installation
 
 ```bash
 # Standard installation
 pip install jsonschema-diff
-
-# With CLI colors (recommended)
-pip install "jsonschema-diff[cli]"
 ```
 
 ### 30-Second Example
 
 ```python
-from jsonschema_diff import compare_schemas
+from jsonschema_diff import JsonSchemaDiff, ConfigMaker
+from jsonschema_diff.color import HighlighterPipeline
+from jsonschema_diff.color.stages import (
+    MonoLinesHighlighter, ReplaceGenericHighlighter, PathHighlighter
+)
 
-# Your schemas
-old = {"type": "string", "format": "email"}  
-new = {"type": "integer", "minimum": 0}
+prop = JsonSchemaDiff(
+    config=ConfigMaker.make(),
+    colorize_pipeline=HighlighterPipeline([
+        MonoLinesHighlighter(),
+        ReplaceGenericHighlighter(),
+        PathHighlighter(),
+    ])
+)
 
-# Compare them
-print(compare_schemas(old, new))
+prop.compare(
+    old_schema="context.old.schema.json",
+    new_schema="context.new.schema.json"
+)
+
+prop.print(with_legend=True)
 ```
 
 **Output:**
-```
-r type: "string/email" -> "integer"
-+ minimum: 0
-```
+![example_working.svg](./example_working.svg)
 
-✨ **Notice**: `type` and `format` were automatically combined for cleaner output!
 
 ### CLI Usage
 
@@ -57,81 +71,88 @@ r type: "string/email" -> "integer"
 # Compare schema files
 jsonschema-diff schema_v1.json schema_v2.json
 
-# No colors (for logs/CI)
-jsonschema-diff --no-color schema_v1.json schema_v2.json
+# No colors (for logs/CI) and with exit-code
+jsonschema-diff --no-color --exit-code schema_v1.json schema_v2.json
+
+# Compare JSON strings
+jsonschema-diff "{\"type\":\"string\"}" "{\"type\":\"number\"}"
 ```
+
+
+### Sphinx Extension
+
+Use the extension in your build:
+
+```python
+extensions += ["jsonschema_diff.sphinx"]
+```
+
+You must also configure the extension. Add the following variable to your `conf.py`:
+
+```python
+from jsonschema_diff import ConfigMaker, JsonSchemaDiff
+from jsonschema_diff.color import HighlighterPipeline
+from jsonschema_diff.color.stages import (
+    MonoLinesHighlighter, PathHighlighter, ReplaceGenericHighlighter,
+)
+
+jsonschema_diff = JsonSchemaDiff(
+    config=ConfigMaker.make(),
+    colorize_pipeline=HighlighterPipeline(
+        [MonoLinesHighlighter(), ReplaceGenericHighlighter(), PathHighlighter()],
+    ),
+)
+```
+
+After that, you can use it in your `.rst` files:
+
+```rst
+.. jsonschemadiff:: path/to/file.old.schema.json path/to/file.new.schema.json # from folder `source`
+    :name: filename.svg # optional
+    :title: Title in virtual terminal # optional
+    :no-legend: # optional
+```
+
+
+<div align="center">
 
 ## 📊 Output Format
 
 | Symbol | Meaning | Color | Example |
 |--------|---------|-------|---------|
-| `+` | Added | 🟢 Green | `+ ["new_field"]: "string"` |
-| `-` | Removed | 🔴 Red | `- ["old_field"]: "string"` |
-| `r` | Changed | 🔵 Cyan | `r ["field"]: "old" -> "new"` |
+| `+` | Added | 🟢 Green | `+ ["new_field"].field: "string"` |
+| `-` | Removed | 🔴 Red | `- ["old_field"].field: "string"` |
+| `r` | Changed | 🔵 Cyan | `r ["field"].field: "old" -> "new"` |
+| `m` | Modified | 🔵 Cyan | `m ["field"]: ...` |
 | ` ` | Context | ⚪ None | `  ["related"]: "unchanged"` |
-
-## 🎯 Real-World Example
-
-```python
-old_schema = {
-    "type": "object",
-    "properties": {
-        "user": {
-            "type": "object", 
-            "properties": {
-                "name": {"type": "string", "format": "email"},
-                "age": {"type": "integer", "minimum": 0, "maximum": 120}
-            }
-        }
-    }
-}
-
-new_schema = {
-    "type": "object",
-    "properties": {
-        "user": {
-            "type": "object",
-            "properties": {
-                "name": {"type": "string"},  # format removed
-                "age": {"type": "integer", "minimum": 18, "maximum": 120},  # min changed
-                "email": {"type": "string", "format": "email"}  # new field
-            }
-        }
-    }
-}
-
-print(compare_schemas(old_schema, new_schema))
-```
-
-**Output:**
-```
-- ["user"]["name"].format: "email"
-r ["user"]["age"].minimum: 0 -> 18
-  ["user"]["age"].maximum: 120                    # context
-+ ["user"]["email"]: {"format": "email", "type": "string"}
-```
 
 ## 🏗️ Architecture
 
-Modern 5-stage pipeline for clean, testable code:
+</div>
+
+Modern 6-stage pipeline for clean, testable code:
 
 ```
-┌─────────────┐    ┌──────────────┐    ┌─────────────┐
-│ DiffFinder  │───▶│ DiffProcessor │───▶│  Combiner   │
-└─────────────┘    └──────────────┘    └─────────────┘
-                                              │
-┌─────────────┐    ┌──────────────┐          ▼
-│  Formatter  │◀───│RenderProcessor│◀─────────┘
-└─────────────┘    └──────────────┘
+┌─────────────┐    ┌───────────────┐    ┌──────────────────┐
+│ DiffFinder  │───▶│ CompareFinder │───▶│ CombineProcessor │
+└─────────────┘    └───────────────┘    └──────────────────┘
+                                                  ▼
+┌─────────────┐    ┌───────────────┐      ┌───────────────┐
+│  Formatter  │◀───│RenderProcessor│◀─────│ DiffProcessor │
+└─────────────┘    └───────────────┘      └───────────────┘
 ```
 
 1. **DiffFinder**: Finds raw differences
-2. **DiffProcessor**: Converts add/remove pairs to changes  
+2. **CompareProcessor**: Find class-processors
 3. **Combiner**: Combines related parameters
-4. **RenderProcessor**: Adds context information
+4. **RenderProcessor**: Adds context information and render
 5. **Formatter**: Beautiful colored output
 
+<div align="center">
+
 ## 🛠️ Development
+
+</div>
 
 ### Setup
 
@@ -140,21 +161,27 @@ git clone https://github.com/your-org/jsonschema-diff.git
 cd jsonschema-diff
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
+make build
+make install-dev
 ```
 
 ### Commands
 
 ```bash
+# Checks
 make test          # Run tests with coverage
 make lint          # Lint code
 make type-check    # Type checking  
+# Action
 make format        # Format code
 make docs          # Build documentation
-make ci-test       # Full CI pipeline
 ```
 
+<div align="center">
+
 ## 📚 Documentation
+
+</div>
 
 - **[📖 Full Documentation](https://your-org.github.io/jsonschema-diff/)**
 - **[🚀 Quick Start Guide](https://your-org.github.io/jsonschema-diff/quickstart.html)**
@@ -162,21 +189,34 @@ make ci-test       # Full CI pipeline
 - **[🔧 API Reference](https://your-org.github.io/jsonschema-diff/api/)**
 - **[🐛 Troubleshooting](https://your-org.github.io/jsonschema-diff/troubleshooting.html)**
 
+<div align="center">
+
 ## 🤝 Contributing
 
-We welcome contributions! See our [Contributing Guide](docs/contributing.md) for details.
+### ***We welcome contributions!***
 
 ### Quick Contribution Setup
+
+</div>
 
 ```bash
 # Fork the repo, then:
 git clone https://github.com/your-username/jsonschema-diff.git
 cd jsonschema-diff
+# Install
+make build
 make install-dev
-make test  # Ensure everything works
+# Ensure everything works
+make test
+make lint
+make type-check
 ```
 
+<div align="center">
+
 ## 📄 License
+
+</div>
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
