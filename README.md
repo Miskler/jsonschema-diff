@@ -3,12 +3,14 @@
 
 # 🔍 JSON Schema Diff
 
+<img src="./logo.webp" width="70%" alt="example_working.svg" />
+
+*A powerful, intelligent library for comparing JSON schemas with **beautiful formatted output**, **smart parameter combination**, and **contextual information**.*
+
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/your-org/jsonschema-diff)
 [![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)](https://github.com/your-org/jsonschema-diff)
 [![Python](https://img.shields.io/badge/python-3.9+-blue)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-
-A powerful, intelligent library for comparing JSON schemas with **beautiful formatted output**, **smart parameter combination**, and **contextual information**.
 
 ## ✨ Features
 
@@ -16,8 +18,8 @@ A powerful, intelligent library for comparing JSON schemas with **beautiful form
 
 - 🎯 **Intelligent Comparison** - Detects and categorizes all types of schema changes
 - 🎨 **Beautiful Output** - Colored, formatted differences with clear symbols  
-- 🔗 **Smart Combination** - Combines related parameters (e.g., `minimum` + `maximum` = `range`)
-- 📍 **Context Aware** - Shows related fields for better understanding (e.g., `type` + `format`)
+- 🔗 **Smart Combination** - Combines related parameters *(e.g., `minimum` + `maximum` = `range`)*
+- 📍 **Context Aware** - Shows related fields for better understanding *(e.g., `type` + `format`)*
 - ⚡ **High Performance** - Efficient algorithms for large schemas
 - 🛠️ **CLI & Python API & Sphinx Extension** - Use programmatically or from command line or in `.rst`
 - 🔧 **Highly Configurable** - Customize behavior for your needs
