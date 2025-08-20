@@ -1,0 +1,14 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      upload-coverage: false
