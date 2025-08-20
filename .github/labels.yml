@@ -1,20 +1,20 @@
 # .github/labels.yml
 - name: core
-  color: B60205   # red
+  color: "B60205"   # red
   description: Engine / core logic
 
 - name: colorize
-  color: 5319E7   # purple
+  color: "5319E7"   # purple
   description: Image colourisation
 
 - name: cli
-  color: 0E8A16   # green
+  color: "0E8A16"   # green
   description: Command-line interface
 
 - name: sphinx
-  color: FBCA04   # yellow
+  color: "FBCA04"   # yellow
   description: Sphinx extension
 
 - name: python interface
-  color: 1D76DB   # blue
+  color: "1D76DB"   # blue
   description: Public Python API
