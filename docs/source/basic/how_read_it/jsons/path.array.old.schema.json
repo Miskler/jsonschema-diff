@@ -1,0 +1,13 @@
+{
+  "properties": {
+    "removedArr": {
+      "type": "array",
+      "items": { "type": "integer" }
+    },
+
+    "modifiedArr": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

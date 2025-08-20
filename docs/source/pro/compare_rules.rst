@@ -1,20 +1,26 @@
-Compare rules
-=============
+.. _compare_rules:
 
-``compare_rules`` map JSON‑Schema keys to comparator classes.  When a key is
-present in both old and new schemas, the associated comparator decides whether a
-difference exists and how it should be displayed.
+Comparator Rules Page
+=====================
 
-.. code-block:: python
+Precedence tiers
+----------------
 
-   from jsonschema_diff import ConfigMaker
-   from jsonschema_diff.core.custom_compare import CompareRange
+#. ``(keyword, old_type, new_type)``  
+#. ``keyword``  
+#. ``(old_type, new_type)``  
+#. ``old_type`` **or** ``new_type`` (single-sided)  
+#. *default* comparator
 
-   config = ConfigMaker.make(
-       additional_compare_rules={"minimum": CompareRange}
-   )
+Declaration
+-----------
 
-A comparator may also be registered for a Python ``type``.  For example the
-built‑in :class:`~jsonschema_diff.core.custom_compare.CompareList` handles
-``list`` values.
+Add entries to ``Config.COMPARE_RULES``; resolution is performed by
+:py:meth:`CompareRules.get_comparator`.
 
+Extending
+~~~~~~~~~
+
+1. Implement a ``Compare`` subclass.  
+2. Register it in the rules table.  
+3. (Optional) expose it via ``ConfigMaker`` so convenience constructors pick it up.

@@ -28,15 +28,15 @@ class Bounds:
 
 class CompareRange(CompareCombined):
     """
-    Диапазоны для JSON Schema:
+    Ranges for JSON Schema:
       - value:       minimum/maximum (+ exclusiveMinimum/Maximum: bool|number)
       - length:      minLength/maxLength
       - items:       minItems/maxItems
       - properties:  minProperties/maxProperties
 
-    Примечания:
-      - bool не считаем числом (исключаем из isinstance(int))
-      - используем только dict_compare (ToCompare по ключам)
+    Notes:
+      - bool is not considered a number (excluded from isinstance(int))
+      - use only dict_compare (ToCompare by keys)
     """
 
     INFINITY = "∞"

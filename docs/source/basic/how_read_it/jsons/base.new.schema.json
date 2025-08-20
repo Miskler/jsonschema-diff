@@ -1,0 +1,19 @@
+{
+  "$id": "urn:example:new",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer"
+    },
+    "name": {
+      "type": "string"
+    },
+    "added": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "integer",
+      "example": 89005553535
+    }
+  }
+}

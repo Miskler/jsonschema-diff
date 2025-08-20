@@ -1,0 +1,16 @@
+{
+  "properties": {
+    "modifiedArr": {
+      "type": "array",
+      "prefixItems": [
+        { "type": "integer" },
+        { "type": "string" }
+      ],
+      "items": { "type": "string" }
+    },
+    "addedArr": {
+      "type": "array",
+      "items": { "type": "integer" }
+    }
+  }
+}

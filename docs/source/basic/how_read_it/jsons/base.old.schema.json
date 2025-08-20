@@ -1,0 +1,19 @@
+{
+  "$id": "urn:example:old",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "integer"
+    },
+    "missed": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "integer",
+      "example": 88005553535
+    }
+  }
+}

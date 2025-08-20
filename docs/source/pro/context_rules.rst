@@ -1,23 +1,16 @@
-Context rules
-=============
+.. _context_rules:
 
-Contextual information helps users understand why a keyword changed.  Two
-collections control this behaviour:
+Context Rules Page
+==================
 
-``pair_context_rules``
-   lists of related keys that should appear together (e.g. ``["type", "format"]``).
+Tables
+------
 
-``context_rules``
-   a mapping of a key to other keys that provide useful background when the first
-   one changes.
+* **``PAIR_CONTEXT_RULES``** – undirected cliques (render one ⇒ render all).  
+* **``CONTEXT_RULES``**     – directed dependencies (``A ⇒ [B, C]``).
 
-.. code-block:: python
+Resolution algorithm
+--------------------
 
-   config = ConfigMaker.make(
-       additional_pair_context_rules=[["type", "format"]],
-       additional_context_rules={"pattern": ["type"]},
-   )
-
-During rendering these rules add rows around the actual change, giving the reader
-more context.
-
+:py:meth:`RenderContextHandler.resolve` walks the primary render list, extending it with
+dependencies while guaranteeing **stable order** and **single inclusion**.

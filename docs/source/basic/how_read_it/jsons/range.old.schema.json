@@ -1,6 +1,4 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:demo:range-old",
   "type": "object",
   "additionalProperties": false,
 
@@ -8,8 +6,7 @@
     "price": {
       "type": "number",
       "minimum": 0,
-      "exclusiveMaximum": 1000,
-      "multipleOf": 0.5
+      "exclusiveMaximum": 1000
     },
 
     "temperature": {

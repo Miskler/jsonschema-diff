@@ -14,7 +14,7 @@ Welcome to jsonschema-diff's documentation!
    :maxdepth: 4
    :caption: Pro use / Develop it
 
-   pro/compares
+   pro/workflow_cycle
    pro/compare_rules
    pro/combine_rules
    pro/context_rules
