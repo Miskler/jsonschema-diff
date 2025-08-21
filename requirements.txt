@@ -6,3 +6,4 @@ black
 isort
 mypy
 flake8
+pytest-xdist
