@@ -40,7 +40,7 @@ dev = [
     "mypy",
     "flake8",
     "sphinx",
-    "autoapi",
+    "sphinx-autoapi",
     "docutils",
     "types-docutils"
 ]
