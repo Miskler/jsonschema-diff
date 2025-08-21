@@ -8,5 +8,6 @@ mypy
 flake8
 pytest-xdist
 sphinx
+autoapi
 docutils
 types-docutils
