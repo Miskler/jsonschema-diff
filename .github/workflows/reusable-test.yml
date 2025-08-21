@@ -54,6 +54,7 @@ jobs:
         with:
           name: junit-${{ matrix.python-version }}
           path: |
+            htmlcov/
             junit.xml
             coverage.xml
 
@@ -80,6 +81,12 @@ jobs:
           genbadge tests    -i junit.xml    -o tests-badge.svg
           genbadge coverage -i coverage.xml -o coverage.svg
           junit2html junit.xml tests-report.html
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
