@@ -7,3 +7,6 @@ isort
 mypy
 flake8
 pytest-xdist
+sphinx
+docutils
+types-docutils

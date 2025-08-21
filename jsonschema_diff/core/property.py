@@ -201,10 +201,16 @@ class Property:
         )
         params_tab_level = tab_level
         if property_line_render:
+            rendered_path = RT.make_path(
+                self.schema_path + [self.name],
+                self.json_path + [self.name],
+                ignore=self.config.PATH_MAKER_IGNORE,
+            )
+
             my_to_render.append(
                 f"{RT.make_prefix(self.status)} "
                 f"{RT.make_tab(self.config, tab_level)}"
-                f"{RT.make_path(self.schema_path + [self.name], self.json_path + [self.name], ignore=self.config.PATH_MAKER_IGNORE)}:"
+                f"{rendered_path}:"
             )
             params_tab_level += 1
 

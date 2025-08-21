@@ -39,6 +39,9 @@ dev = [
     "isort",
     "mypy",
     "flake8",
+    "sphinx",
+    "docutils",
+    "types-docutils",
 ]
 
 [project.urls]
