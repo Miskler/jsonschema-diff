@@ -22,7 +22,7 @@ jobs:
       matrix:
         python-version: ${{ fromJson(inputs.python-versions) }}
         include:
-          - python-version: "3.11"
+          - python-version: "3.12"
             primary: true
     steps:
       - uses: actions/checkout@v4
@@ -58,19 +58,18 @@ jobs:
 
   reports:
     needs: tests
-    if: contains(fromJson(inputs.python-versions), '3.11')
+    if: contains(fromJson(inputs.python-versions), '3.12')
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: junit-3.11
+          pattern: junit-3.12
           merge-multiple: true
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-          cache: "pip"
+          python-version: "3.12"
 
       - name: Install reporting tools
         run: python -m pip install --no-cache-dir "genbadge[all]" junit2html
