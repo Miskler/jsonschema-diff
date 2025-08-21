@@ -204,11 +204,7 @@ class Property:
             my_to_render.append(
                 f"{RT.make_prefix(self.status)} "
                 f"{RT.make_tab(self.config, tab_level)}"
-                f"{RT.make_path(
-                    self.schema_path + [self.name],
-                    self.json_path + [self.name],
-                    ignore=self.config.PATH_MAKER_IGNORE,
-                )}:"
+                f"{RT.make_path(self.schema_path + [self.name], self.json_path + [self.name], ignore=self.config.PATH_MAKER_IGNORE)}:"
             )
             params_tab_level += 1
 
