@@ -38,6 +38,15 @@ extensions = [
 # ──────────────────────────────────────────────────────────────────────────────
 html_theme       = "furo"
 html_static_path = ["_static"]
+html_theme_options = {
+    "light_logo": "logo_day.png",
+    "dark_logo": "logo_night.png",
+    "sidebar_hide_name": True,
+
+    "source_repository": "https://github.com/Miskler/jsonschema-diff",
+    "source_branch": "main",
+    "source_directory": "docs/",
+}
 templates_path   = ["_templates"]
 
 # ──────────────────────────────────────────────────────────────────────────────
