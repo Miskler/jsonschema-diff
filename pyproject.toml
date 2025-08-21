@@ -39,7 +39,7 @@ dev = [
     "isort",
     "mypy",
     "flake8",
-    
+
     "sphinx",
     "sphinx-autoapi",
     "furo",
@@ -48,9 +48,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/jsonschema-diff"
+Homepage = "https://github.com/Miskler/jsonschema-diff"
 Repository = "https://github.com/yourusername/jsonschema-diff"
-Issues = "https://github.com/yourusername/jsonschema-diff/issues"
+Documentation = "https://miskler.github.io/jsonschema-diff/basic/quick_start/index.html"
+Issues = "https://github.com/Miskler/jsonschema-diff/issues"
 
 [project.scripts]
 jsonschema-diff = "jsonschema_diff.cli:main"

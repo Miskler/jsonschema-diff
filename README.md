@@ -7,11 +7,17 @@
 
 *A powerful, intelligent library for comparing JSON schemas with **beautiful formatted output**, **smart parameter combination**, and **contextual information**.*
 
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen)](https://github.com/your-org/jsonschema-diff)
-[![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen)](https://github.com/your-org/jsonschema-diff)
-[![Python](https://img.shields.io/badge/python-3.9+-blue)](https://python.org)
+[![Tests](https://miskler.github.io/jsonschema-diff/tests-badge.svg)](https://miskler.github.io/jsonschema-diff/tests/tests-report.html)
+[![Coverage](https://miskler.github.io/jsonschema-diff/coverage.svg)](https://miskler.github.io/jsonschema-diff/coverage/)
+[![Python](https://img.shields.io/badge/python-3.10+-blue)](https://python.org)
+[![PyPI - Package Version](https://img.shields.io/pypi/v/jsonschema-diff?color=blue)](https://pypi.org/project/jsonschema-diff/)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-![BlackCode](https://img.shields.io/badge/code%20style-black-black)
+[![BlackCode](https://img.shields.io/badge/code%20style-black-black)](https://github.com/psf/black)
+[![Discord](https://img.shields.io/discord/792572437292253224?label=Discord&labelColor=%232c2f33&color=%237289da)](https://discord.gg/UnJnGHNbBp)
+[![Telegram](https://img.shields.io/badge/Telegram-24A1DE)](https://t.me/miskler_dev)
+
+
+**[⭐ Star us on GitHub](https://github.com/Miskler/jsonschema-diff)** | **[📚 Read the Docs](https://miskler.github.io/jsonschema-diff/basic/quick_start/)** | **[🐛 Report Bug](https://github.com/Miskler/jsonschema-diff/issues)**
 
 ## ✨ Features
 
@@ -160,7 +166,7 @@ Modern 6-stage pipeline for clean, testable code:
 ### Setup
 
 ```bash
-git clone https://github.com/your-org/jsonschema-diff.git
+git clone https://github.com/Miskler/jsonschema-diff.git
 cd jsonschema-diff
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
@@ -186,11 +192,9 @@ make docs          # Build documentation
 
 </div>
 
-- **[📖 Full Documentation](https://your-org.github.io/jsonschema-diff/)**
-- **[🚀 Quick Start Guide](https://your-org.github.io/jsonschema-diff/quickstart.html)**
-- **[⚙️ Configuration](https://your-org.github.io/jsonschema-diff/configuration.html)**
-- **[🔧 API Reference](https://your-org.github.io/jsonschema-diff/api/)**
-- **[🐛 Troubleshooting](https://your-org.github.io/jsonschema-diff/troubleshooting.html)**
+- **[📖 Full Documentation](https://miskler.github.io/jsonschema-diff/)**
+- **[🚀 Quick Start Guide](https://miskler.github.io/jsonschema-diff/basic/quick_start/)**
+- **[🔧 API Reference](https://miskler.github.io/jsonschema-diff/reference/api/index.html)**
 
 <div align="center">
 
@@ -219,15 +223,7 @@ make type-check
 
 ## 📄 License
 
-</div>
-
 MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-<div align="center">
-
-**[⭐ Star us on GitHub](https://github.com/your-org/jsonschema-diff)** | **[📚 Read the Docs](https://your-org.github.io/jsonschema-diff/)** | **[🐛 Report Bug](https://github.com/your-org/jsonschema-diff/issues)**
 
 *Made with ❤️ for developers working with evolving JSON schemas*
 
