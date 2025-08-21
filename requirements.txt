@@ -7,7 +7,9 @@ isort
 mypy
 flake8
 pytest-xdist
+
 sphinx
 sphinx-autoapi
+furo
 docutils
 types-docutils

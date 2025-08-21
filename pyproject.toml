@@ -39,8 +39,10 @@ dev = [
     "isort",
     "mypy",
     "flake8",
+    
     "sphinx",
     "sphinx-autoapi",
+    "furo",
     "docutils",
     "types-docutils"
 ]
