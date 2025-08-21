@@ -25,7 +25,6 @@ install:
 
 install-dev:
 	pip install -e .
-	pip install -r requirements-dev.txt
 
 test:
 	pytest --cov=jsonschema_diff --cov-report=xml --cov-report=html --cov-report=term-missing
