@@ -24,7 +24,7 @@ install:
 	pip install .
 
 install-dev:
-	pip install -e .
+	pip install -e .[dev]
 
 test:
 	pytest --cov=jsonschema_diff --cov-report=xml --cov-report=html --cov-report=term-missing
