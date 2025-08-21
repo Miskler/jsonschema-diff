@@ -1,6 +1,7 @@
 # .github/workflows/label-sync.yml
 name: Sync labels
-on: [push]              # or: workflow_dispatch
+on:
+  workflow_dispatch:
 permissions:
   issues: write
 jobs:
