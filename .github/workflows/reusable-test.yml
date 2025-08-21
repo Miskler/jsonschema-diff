@@ -44,6 +44,7 @@ jobs:
           pytest -n auto \
             --cov=jsonschema_diff \
             --cov-report=xml \
+            --cov-report=html \
             --cov-report=term \
             --junitxml=junit.xml
 
@@ -58,7 +59,7 @@ jobs:
 
   reports:
     needs: tests
-    if: contains(fromJson(inputs.python-versions), '3.12')
+    if: contains(fromJson(inputs.python-versions), '3.12') && inputs.upload-coverage
     runs-on: ubuntu-latest
 
     steps:
@@ -86,11 +87,11 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload final artifacts
-        if: inputs.upload-coverage
         uses: actions/upload-artifact@v4
         with:
           name: coverage-reports
           path: |
+            htmlcov/
             coverage.xml
             coverage.svg
             tests-badge.svg
