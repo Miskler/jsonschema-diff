@@ -3,7 +3,7 @@
 
 # 🔍 JSON Schema Diff
 
-<img src="./assets/logo.webp" width="70%" alt="example_working.svg" />
+<img src="https://raw.githubusercontent.com/Miskler/jsonschema-diff/refs/heads/main/assets/logo.webp" width="70%" alt="logo.webp" />
 
 *A powerful, intelligent library for comparing JSON schemas with **beautiful formatted output**, **smart parameter combination**, and **contextual information**.*
 
@@ -72,7 +72,7 @@ prop.print(with_legend=True)
 ```
 
 **Output:**
-![example_working.svg](./assets/example_working.svg)
+![./assets/example_working.svg](https://raw.githubusercontent.com/Miskler/jsonschema-diff/refs/heads/main/assets/example_working.svg)
 
 
 ### CLI Usage
