@@ -49,7 +49,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/Miskler/jsonschema-diff"
-Repository = "https://github.com/yourusername/jsonschema-diff"
+Repository = "https://github.com/Miskler/jsonschema-diff"
 Documentation = "https://miskler.github.io/jsonschema-diff/basic/quick_start/index.html"
 Issues = "https://github.com/Miskler/jsonschema-diff/issues"
 
