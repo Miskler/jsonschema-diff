@@ -73,7 +73,7 @@ class HighlighterPipeline:  # noqa: D101
                     stage.colorize_line(rl)
         return Text("\n").join(rich_lines)
 
-    def colorize_and_render(self, text: str) -> str:
+    def colorize_and_render(self, text: str, auto_line_wrapping: bool = False) -> str:
         """Colourise and immediately render to ANSI.
 
         Parameters
@@ -90,7 +90,7 @@ class HighlighterPipeline:  # noqa: D101
         console = Console(
             force_terminal=True,
             color_system="truecolor",
-            width=self._detect_width(),
+            width=self._detect_width() if auto_line_wrapping else None,
             legacy_windows=False,
         )
         with console.capture() as cap:
@@ -101,7 +101,7 @@ class HighlighterPipeline:  # noqa: D101
     # Internal helpers
     # ------------------------------------------------------------------
     @staticmethod
-    def _detect_width(default: int = 512) -> int:  # noqa: D401
+    def _detect_width(default: int = 2048) -> int:  # noqa: D401
         """Best-effort terminal width detection.
 
         Falls back to *default* when a real TTY is not present

@@ -38,8 +38,12 @@ class CompareList(Compare):
                 self.changed_elements.append(element)
         elif self.status == Statuses.REPLACED:  # replace or no-diff
             # делаем гарантированно массив строк прогоняя циклом
-            real_old_value = [str(v) for v in self.old_value]
-            real_new_value = [str(v) for v in self.new_value]
+            def get_str_list(v: Any) -> list[str] | str:
+                if isinstance(v, list):
+                    return [str(i) for i in v]
+                return str(v)
+            real_old_value = get_str_list(self.old_value)
+            real_new_value = get_str_list(self.new_value)
 
             sm = difflib.SequenceMatcher(a=real_old_value, b=real_new_value, autojunk=False)
             for tag, i1, i2, j1, j2 in sm.get_opcodes():
