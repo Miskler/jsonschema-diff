@@ -190,9 +190,11 @@ class Property:
 
         return list(with_context.values())
 
-    def self_render(self, tab_level: int = 0) -> tuple[str, list[type["Compare"]]]:
+    def self_render(self,
+                    tab_level: int = 0,
+                    all_for_rendering: bool = False) -> tuple[str, list[type["Compare"]]]:
         # Определение что рендерить
-        to_render_count = self.get_for_rendering()
+        to_render_count = self.get_for_rendering() if not all_for_rendering else list(self.parameters.values())
 
         # Рендер заголовка / пути
         my_to_render = []
@@ -226,17 +228,21 @@ class Property:
 
         return to_render, list(dict.fromkeys([*compare_list]))
 
-    def render(self, tab_level: int = 0) -> tuple[list[str], list[type["Compare"]]]:
+    def render(self,
+               tab_level: int = 0,
+               all_for_rendering: bool = True) -> tuple[list[str], list[type["Compare"]]]:
         to_return: list[str] = []
         compare_list: list[type["Compare"]] = []
 
-        if self.is_for_rendering():
-            start_line, start_compare = self.self_render(tab_level=tab_level)
+        if all_for_rendering or self.is_for_rendering():
+            start_line, start_compare = self.self_render(tab_level=tab_level,
+                                                         all_for_rendering=all_for_rendering)
             to_return.append(start_line)
             compare_list = list(dict.fromkeys([*compare_list, *start_compare]))
 
         for prop in self.propertys.values():
-            part_lines, part_compare = prop.render(tab_level=tab_level)
+            part_lines, part_compare = prop.render(tab_level=tab_level,
+                                                   all_for_rendering=all_for_rendering)
             to_return += part_lines
             compare_list = list(dict.fromkeys([*compare_list, *part_compare]))
 
