@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Literal, Mapping, Sequence, Union, cast
 
 if TYPE_CHECKING:
-    from .core.parameter_base import Compare
+    from .core.compare_base import Compare
 
 from rich import box
 from rich.console import Console, RenderableType

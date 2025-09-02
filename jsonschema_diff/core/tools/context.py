@@ -13,7 +13,7 @@ from typing import (
 )
 
 if TYPE_CHECKING:
-    from jsonschema_diff.core.parameter_base import Compare
+    from jsonschema_diff.core.compare_base import Compare
 
 # Key type accepted in rules: parameter name or Compare subclass
 RULE_KEY: TypeAlias = Union[str, Type["Compare"]]

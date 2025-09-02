@@ -37,7 +37,7 @@ from jsonschema_diff.color.stages import (
     PathHighlighter,
     ReplaceGenericHighlighter,
 )
-from jsonschema_diff.core.parameter_base import Compare
+from jsonschema_diff.core.compare_base import Compare
 
 
 def _make_highlighter(disable_color: bool) -> HighlighterPipeline:

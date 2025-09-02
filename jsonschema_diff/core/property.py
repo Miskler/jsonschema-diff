@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from .abstraction import Statuses, ToCompare
-from .parameter_base import Compare
+from .compare_base import Compare
 from .tools import CompareRules, LogicCombinerHandler, RenderContextHandler
 from .tools import RenderTool as RT
 

@@ -3,11 +3,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from ..abstraction import Statuses
-from ..parameter_base import Compare
+from ..compare_base import Compare
 
 if TYPE_CHECKING:
+    from ..compare_base import LEGEND_RETURN_TYPE
     from ..config import Config
-    from ..parameter_base import LEGEND_RETURN_TYPE
 
 
 @dataclass
@@ -37,7 +37,11 @@ class CompareList(Compare):
                 self.elements.append(element)
                 self.changed_elements.append(element)
         elif self.status == Statuses.REPLACED:  # replace or no-diff
-            sm = difflib.SequenceMatcher(a=self.old_value, b=self.new_value, autojunk=False)
+            # делаем гарантированно массив строк прогоняя циклом
+            real_old_value = [str(v) for v in self.old_value]
+            real_new_value = [str(v) for v in self.new_value]
+
+            sm = difflib.SequenceMatcher(a=real_old_value, b=real_new_value, autojunk=False)
             for tag, i1, i2, j1, j2 in sm.get_opcodes():
 
                 def add_element(

@@ -5,10 +5,10 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 from ..abstraction import Statuses, ToCompare
-from ..parameter_combined import CompareCombined
+from ..compare_combined import CompareCombined
 
 if TYPE_CHECKING:
-    from ..parameter_base import LEGEND_RETURN_TYPE
+    from ..compare_base import LEGEND_RETURN_TYPE
 
 
 Number = Union[int, float]

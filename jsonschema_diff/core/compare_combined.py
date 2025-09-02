@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Any, Dict
 
 from .abstraction import Statuses, ToCompare
-from .parameter_base import Compare
+from .compare_base import Compare
 
 if TYPE_CHECKING:
-    from .parameter_base import LEGEND_RETURN_TYPE
+    from .compare_base import LEGEND_RETURN_TYPE
 
 
 class CompareCombined(Compare):
