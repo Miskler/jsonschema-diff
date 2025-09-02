@@ -42,6 +42,7 @@ class CompareList(Compare):
                 if isinstance(v, list):
                     return [str(i) for i in v]
                 return str(v)
+
             real_old_value = get_str_list(self.old_value)
             real_new_value = get_str_list(self.new_value)
 

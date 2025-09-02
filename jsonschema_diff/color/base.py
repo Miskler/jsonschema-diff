@@ -23,7 +23,7 @@ from rich.console import Console
 from rich.text import Text
 
 if TYPE_CHECKING:  # pragma: no cover
-    from .abstraction import LineHighlighter  # noqa: F401 (imported for typing only)
+    from .abstraction import LineHighlighter
 
 
 class HighlighterPipeline:  # noqa: D101
@@ -48,7 +48,7 @@ class HighlighterPipeline:  # noqa: D101
     # ------------------------------------------------------------------
     # Public helpers
     # ------------------------------------------------------------------
-    def colorize(self, text: str) -> Text:  # noqa: D401
+    def colorize(self, text: str) -> Text:
         """Return a rich ``Text`` object with all styles applied.
 
         Parameters
@@ -73,7 +73,11 @@ class HighlighterPipeline:  # noqa: D101
                     stage.colorize_line(rl)
         return Text("\n").join(rich_lines)
 
-    def colorize_and_render(self, text: str, auto_line_wrapping: bool = False) -> str:
+    def colorize_and_render(
+        self,
+        text: str,
+        auto_line_wrapping: bool = False,
+    ) -> str:
         """Colourise and immediately render to ANSI.
 
         Parameters

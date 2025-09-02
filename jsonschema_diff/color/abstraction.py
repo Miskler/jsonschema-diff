@@ -1,7 +1,3 @@
-from typing import List, Protocol, Sequence
-
-from rich.text import Text
-
 """
 Abstraction for line-based high-lighters
 =======================================
@@ -14,6 +10,10 @@ Implementors are expected to decorate :class:`rich.text.Text` objects **in
 place**; therefore methods must not alter the underlying string content –
 only styling metadata.
 """
+
+from typing import List, Protocol, Sequence
+
+from rich.text import Text
 
 
 class LineHighlighter(Protocol):
@@ -34,7 +34,6 @@ class LineHighlighter(Protocol):
 
         Returns
         -------
-        rich.text.Text
             The **same** `Text` object, now containing style spans.
 
         Raises
@@ -56,7 +55,6 @@ class LineHighlighter(Protocol):
 
         Returns
         -------
-        list[rich.text.Text]
             The original objects, now styled in place.
         """
         return [self.colorize_line(t) for t in lines]

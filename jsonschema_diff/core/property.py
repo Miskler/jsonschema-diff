@@ -82,7 +82,7 @@ class Property:
             new_key = key if key in self.new_schema else None
             new_value = self.new_schema.get(key, None)
 
-            if key in ["properties", "$defs"]:
+            if key in ["properties", "$defs"]:  # словари содержащие Property
                 prop_keys = self._get_keys(old_value, new_value)
                 for prop_key in prop_keys:
                     old_to_prop = None if old_value is None else old_value.get(prop_key, None)
@@ -98,7 +98,7 @@ class Property:
                     )
                     prop.compare()
                     self.propertys[prop_key] = prop
-            elif key in ["prefixItems", "items"]:
+            elif key in ["prefixItems", "items"]:  # массивы содержащие Property
                 if not isinstance(old_value, list):
                     old_value = [old_value]
                 old_len = len(old_value)
@@ -190,11 +190,13 @@ class Property:
 
         return list(with_context.values())
 
-    def self_render(self,
-                    tab_level: int = 0,
-                    all_for_rendering: bool = False) -> tuple[str, list[type["Compare"]]]:
+    def self_render(
+        self, tab_level: int = 0, all_for_rendering: bool = False
+    ) -> tuple[str, list[type["Compare"]]]:
         # Определение что рендерить
-        to_render_count = self.get_for_rendering() if not all_for_rendering else list(self.parameters.values())
+        to_render_count = (
+            self.get_for_rendering() if not all_for_rendering else list(self.parameters.values())
+        )
 
         # Рендер заголовка / пути
         my_to_render = []
@@ -228,21 +230,23 @@ class Property:
 
         return to_render, list(dict.fromkeys([*compare_list]))
 
-    def render(self,
-               tab_level: int = 0,
-               all_for_rendering: bool = True) -> tuple[list[str], list[type["Compare"]]]:
+    def render(
+        self, tab_level: int = 0, all_for_rendering: bool = False
+    ) -> tuple[list[str], list[type["Compare"]]]:
         to_return: list[str] = []
         compare_list: list[type["Compare"]] = []
 
         if all_for_rendering or self.is_for_rendering():
-            start_line, start_compare = self.self_render(tab_level=tab_level,
-                                                         all_for_rendering=all_for_rendering)
+            start_line, start_compare = self.self_render(
+                tab_level=tab_level, all_for_rendering=all_for_rendering
+            )
             to_return.append(start_line)
             compare_list = list(dict.fromkeys([*compare_list, *start_compare]))
 
         for prop in self.propertys.values():
-            part_lines, part_compare = prop.render(tab_level=tab_level,
-                                                   all_for_rendering=all_for_rendering)
+            part_lines, part_compare = prop.render(
+                tab_level=tab_level, all_for_rendering=all_for_rendering
+            )
             to_return += part_lines
             compare_list = list(dict.fromkeys([*compare_list, *part_compare]))
 
