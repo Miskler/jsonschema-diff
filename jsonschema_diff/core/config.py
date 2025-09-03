@@ -11,6 +11,7 @@ COMPARE_CONFIG_TYPE: TypeAlias = dict[type, dict]
 
 PROPERTY_KEY_GROUPS_TYPE: TypeAlias = dict[type, list[str]]
 
+
 class Config:
     def __init__(
         self,
@@ -23,8 +24,8 @@ class Config:
         compare_config: COMPARE_CONFIG_TYPE = {},
         property_key_groups: PROPERTY_KEY_GROUPS_TYPE = {
             dict: ["properties", "$defs"],
-            list: ["prefixItems", "items"]#, "oneOf", "allOf", "anyOf"],
-        }
+            list: ["prefixItems", "items"],  # , "oneOf", "allOf", "anyOf"],
+        },
     ):
         self.TAB: str = tab
 
@@ -38,7 +39,8 @@ class Config:
         self.CONTEXT_RULES: CONTEXT_RULES_TYPE = context_rules
 
         self.COMPARE_CONFIG: COMPARE_CONFIG_TYPE = compare_config
-        """Configs for comparators. Can be obtained from Compare.my_config (content can be anything)"""
+        """Configs for comparators.
+        Can be obtained from Compare.my_config (content can be anything)"""
 
         self.PROPERTY_KEY_GROUPS: PROPERTY_KEY_GROUPS_TYPE = property_key_groups
 

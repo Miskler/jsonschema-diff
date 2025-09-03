@@ -1,7 +1,6 @@
 import difflib
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional
-import re
 
 from ..abstraction import Statuses
 from ..compare_base import Compare
@@ -44,16 +43,18 @@ class CompareListElement:
                 new_schema=new_schema,
             )
             self.compared_property.compare()
-    
 
     def replace_penultimate_space(self, tab_level: int, s: str, repl="X"):
-        position = 2*tab_level#1 + (len(self.config.TAB) * tab_level) - 1 # PREFIX + TAB * COUNT - 1
+        position = (
+            len(self.config.TAB) * tab_level
+        )  # 1 + (len(self.config.TAB) * tab_level) - 1 # PREFIX + TAB * COUNT - 1
         return s[:position] + repl + s[position:]
-
 
     def _real_render(self, tab_level: int = 0):
         if self.compared_property is not None:
-            render_lines, _render_compares = self.compared_property.render(tab_level=tab_level, all_for_rendering=True)
+            render_lines, _render_compares = self.compared_property.render(
+                tab_level=tab_level, all_for_rendering=True
+            )
 
             return "\n".join(render_lines)
 
@@ -61,22 +62,39 @@ class CompareListElement:
         return f"{self.status.value} {self.config.TAB * tab_level}{self.value}"
 
     def render(self, tab_level: int = 0) -> str:
-        lines = [line for line in self._real_render(tab_level=tab_level).split("\n") if line.strip() != ""]
+        lines = [
+            line
+            for line in self._real_render(tab_level=tab_level).split("\n")
+            if line.strip() != ""
+        ]
         # первая строка = START_LINE, последняя = END_LINE, остальное = MIDDLE_LINE
         if len(lines) > 1:
             prepare = []
             for i, line in enumerate(lines):
                 if i == 0:
-                    prepare.append(self.replace_penultimate_space(tab_level=tab_level, s=line, repl=self.my_config.get("START_LINE", " ")))
+                    prepare.append(
+                        self.replace_penultimate_space(
+                            tab_level=tab_level, s=line, repl=self.my_config.get("START_LINE", " ")
+                        )
+                    )
                 elif i == len(lines) - 1:
-                    prepare.append(self.replace_penultimate_space(tab_level=tab_level, s=line, repl=self.my_config.get("END_LINE", " ")))
+                    prepare.append(
+                        self.replace_penultimate_space(
+                            tab_level=tab_level, s=line, repl=self.my_config.get("END_LINE", " ")
+                        )
+                    )
                 else:
-                    prepare.append(self.replace_penultimate_space(tab_level=tab_level, s=line, repl=self.my_config.get("MIDDLE_LINE", " ")))
+                    prepare.append(
+                        self.replace_penultimate_space(
+                            tab_level=tab_level, s=line, repl=self.my_config.get("MIDDLE_LINE", " ")
+                        )
+                    )
 
             return "\n".join(prepare)
         else:
-            return self.replace_penultimate_space(tab_level=tab_level, s=lines[0], repl=self.my_config.get("SINGLE_LINE", " "))
-        
+            return self.replace_penultimate_space(
+                tab_level=tab_level, s=lines[0], repl=self.my_config.get("SINGLE_LINE", " ")
+            )
 
 
 class CompareList(Compare):

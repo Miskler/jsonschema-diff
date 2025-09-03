@@ -70,7 +70,7 @@ class Property:
     def compare(self) -> None:
         if len(self.old_schema) <= 0 and len(self.new_schema) > 0:
             self.status = Statuses.ADDED
-        elif len(self.new_schema) <= 0: # безопасное разрешение конфликта когда пара пустая
+        elif len(self.new_schema) <= 0:  # безопасное разрешение конфликта когда пара пустая
             self.status = Statuses.DELETED
 
         parameters_subset = {}

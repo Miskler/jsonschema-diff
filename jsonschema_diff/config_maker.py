@@ -4,8 +4,9 @@ Factory for a ready-to-use :class:`jsonschema_diff.core.Config` instance.
 All optional switches are enabled by default; pass ``False`` to disable.
 """
 
-from .core import Compare, Config
 from enum import Enum
+
+from .core import Compare, Config
 from .core.custom_compare import CompareList, CompareRange
 from .core.tools.combine import COMBINE_RULES_TYPE
 from .core.tools.compare import COMPARE_RULES_TYPE
@@ -21,9 +22,10 @@ class MultilineListRender(Enum):
         │  .then: something
         ╰  .else: something
         """
-        START_LINE  = "╭"
+
+        START_LINE = "╭"
         MIDDLE_LINE = "│"
-        END_LINE    = "╰"
+        END_LINE = "╰"
         SINGLE_LINE = " "
 
     class Hard:
@@ -33,9 +35,10 @@ class MultilineListRender(Enum):
         │  .then: something
         └  .else: something
         """
-        START_LINE  = "┌"
+
+        START_LINE = "┌"
         MIDDLE_LINE = "|"
-        END_LINE    = "└"
+        END_LINE = "└"
         SINGLE_LINE = " "
 
     class Double:
@@ -45,21 +48,23 @@ class MultilineListRender(Enum):
         ║  .then: something
         ╚  .else: something
         """
-        START_LINE  = "╔"
+
+        START_LINE = "╔"
         MIDDLE_LINE = "║"
-        END_LINE    = "╚"
+        END_LINE = "╚"
         SINGLE_LINE = " "
 
     class Without:
         """
-           .type: something 
-            .if: something
-            .then: something
-            .else: something
+        .type: something
+         .if: something
+         .then: something
+         .else: something
         """
-        START_LINE  = " "
+
+        START_LINE = " "
         MIDDLE_LINE = " "
-        END_LINE    = " "
+        END_LINE = " "
         SINGLE_LINE = " "
 
 
@@ -114,7 +119,9 @@ class ConfigMaker:
         # Built-in comparators
         if list_comparator:
             compare_rules[list] = CompareList
-            compare_config[CompareList] = { k: v for k, v in list_multiline_render.value.__dict__.items() if isinstance(v, str) }
+            compare_config[CompareList] = {
+                k: v for k, v in list_multiline_render.value.__dict__.items() if isinstance(v, str)
+            }
 
         def add_rule(keys: list[str], value: type[Compare]) -> None:
             combine_rules.append(keys)
@@ -151,5 +158,5 @@ class ConfigMaker:
             path_maker_ignore=path_maker_ignore,
             pair_context_rules=pair_context_rules,
             context_rules=context_rules,
-            compare_config=compare_config
+            compare_config=compare_config,
         )
