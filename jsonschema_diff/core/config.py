@@ -1,3 +1,5 @@
+from typing import TypeAlias
+
 from .custom_compare.list import CompareList
 from .custom_compare.range import CompareRange
 from .tools.combine import COMBINE_RULES_TYPE
@@ -5,6 +7,9 @@ from .tools.compare import COMPARE_RULES_TYPE
 from .tools.context import CONTEXT_RULES_TYPE, PAIR_CONTEXT_RULES_TYPE
 from .tools.render import PATH_MAKER_IGNORE_RULES_TYPE
 
+COMPARE_CONFIG_TYPE: TypeAlias = dict[type, dict]
+
+PROPERTY_KEY_GROUPS_TYPE: TypeAlias = dict[type, list[str]]
 
 class Config:
     def __init__(
@@ -15,23 +20,27 @@ class Config:
         path_maker_ignore: PATH_MAKER_IGNORE_RULES_TYPE = ["properties", "items"],
         pair_context_rules: PAIR_CONTEXT_RULES_TYPE = [],
         context_rules: CONTEXT_RULES_TYPE = {},
-        property_key_groups: dict[type, list[str]] = {
+        compare_config: COMPARE_CONFIG_TYPE = {},
+        property_key_groups: PROPERTY_KEY_GROUPS_TYPE = {
             dict: ["properties", "$defs"],
             list: ["prefixItems", "items"]#, "oneOf", "allOf", "anyOf"],
         }
     ):
-        self.TAB = tab
+        self.TAB: str = tab
 
-        self.COMPARE_RULES = compare_rules
+        self.COMPARE_RULES: COMPARE_RULES_TYPE = compare_rules
 
-        self.COMBINE_RULES = combine_rules
+        self.COMBINE_RULES: COMBINE_RULES_TYPE = combine_rules
 
-        self.PATH_MAKER_IGNORE = path_maker_ignore
+        self.PATH_MAKER_IGNORE: PATH_MAKER_IGNORE_RULES_TYPE = path_maker_ignore
 
-        self.PAIR_CONTEXT_RULES = pair_context_rules
-        self.CONTEXT_RULES = context_rules
+        self.PAIR_CONTEXT_RULES: PAIR_CONTEXT_RULES_TYPE = pair_context_rules
+        self.CONTEXT_RULES: CONTEXT_RULES_TYPE = context_rules
 
-        self.PROPERTY_KEY_GROUPS = property_key_groups
+        self.COMPARE_CONFIG: COMPARE_CONFIG_TYPE = compare_config
+        """Configs for comparators. Can be obtained from Compare.my_config (content can be anything)"""
+
+        self.PROPERTY_KEY_GROUPS: PROPERTY_KEY_GROUPS_TYPE = property_key_groups
 
 
 default_config = Config(

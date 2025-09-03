@@ -31,6 +31,10 @@ class Compare:
             raise ValueError("Cannot compare empty list")
         self.to_compare = to_compare
 
+    @property
+    def my_config(self) -> dict:
+        return self.config.COMPARE_CONFIG.get(type(self), {})
+
     def compare(self) -> Statuses:
         if len(self.to_compare) > 1:
             raise ValueError("Unsupported multiple compare for base logic")
