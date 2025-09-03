@@ -26,11 +26,11 @@ class CompareCombined(Compare):
         return self.status
 
     def get_name(self) -> str:
-        raise NotImplementedError("CompareCombined.get_name должен быть переопределен")
+        raise NotImplementedError("The get_name method must be overridden")
 
     def render(self, tab_level: int = 0, with_path: bool = True) -> str:
-        raise NotImplementedError("CompareCombined.render должен быть переопределен")
+        raise NotImplementedError("The render method must be overridden")
 
     @staticmethod
     def legend() -> "LEGEND_RETURN_TYPE":
-        raise NotImplementedError("CompareCombined.legend должен быть переопределен")
+        raise NotImplementedError("The legend method must be overridden")
