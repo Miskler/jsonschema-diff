@@ -14,4 +14,4 @@ def __getattr__(name: str) -> ModuleType:  # pragma: no cover
 
 __all__ = ["JsonSchemaDiff", "ConfigMaker"]
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"

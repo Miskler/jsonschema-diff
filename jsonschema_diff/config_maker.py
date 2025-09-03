@@ -4,6 +4,7 @@ Factory for a ready-to-use :class:`jsonschema_diff.core.Config` instance.
 All optional switches are enabled by default; pass ``False`` to disable.
 """
 
+from dataclasses import dataclass
 from enum import Enum
 
 from .core import Compare, Config
@@ -14,58 +15,19 @@ from .core.tools.context import CONTEXT_RULES_TYPE, PAIR_CONTEXT_RULES_TYPE
 from .core.tools.render import PATH_MAKER_IGNORE_RULES_TYPE
 
 
+@dataclass(frozen=True)
+class MultilineChars:
+    START_LINE: str
+    MIDDLE_LINE: str
+    END_LINE: str
+    SINGLE_LINE: str
+
+
 class MultilineListRender(Enum):
-    class Soft:
-        """
-           .type: something
-        ╭  .if: something
-        │  .then: something
-        ╰  .else: something
-        """
-
-        START_LINE = "╭"
-        MIDDLE_LINE = "│"
-        END_LINE = "╰"
-        SINGLE_LINE = " "
-
-    class Hard:
-        """
-           .type: something
-        ┌  .if: something
-        │  .then: something
-        └  .else: something
-        """
-
-        START_LINE = "┌"
-        MIDDLE_LINE = "|"
-        END_LINE = "└"
-        SINGLE_LINE = " "
-
-    class Double:
-        """
-           .type: something
-        ╔  .if: something
-        ║  .then: something
-        ╚  .else: something
-        """
-
-        START_LINE = "╔"
-        MIDDLE_LINE = "║"
-        END_LINE = "╚"
-        SINGLE_LINE = " "
-
-    class Without:
-        """
-        .type: something
-         .if: something
-         .then: something
-         .else: something
-        """
-
-        START_LINE = " "
-        MIDDLE_LINE = " "
-        END_LINE = " "
-        SINGLE_LINE = " "
+    Soft = MultilineChars("╭", "│", "╰", " ")
+    Hard = MultilineChars("┌", "│", "└", " ")
+    Double = MultilineChars("╔", "║", "╚", " ")
+    Without = MultilineChars(" ", " ", " ", " ")
 
 
 class ConfigMaker:
@@ -120,7 +82,8 @@ class ConfigMaker:
         if list_comparator:
             compare_rules[list] = CompareList
             compare_config[CompareList] = {
-                k: v for k, v in list_multiline_render.value.__dict__.items() if isinstance(v, str)
+                field: getattr(list_multiline_render.value, field)
+                for field in list_multiline_render.value.__dataclass_fields__
             }
 
         def add_rule(keys: list[str], value: type[Compare]) -> None:

@@ -14,6 +14,7 @@ class DummyConfig:
     def __init__(self, tab: str = "  "):
         self.TAB = tab
         self.PATH_MAKER_IGNORE = []
+        self.COMPARE_CONFIG = {}
 
 
 # ---------------------------------

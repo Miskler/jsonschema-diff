@@ -43,7 +43,8 @@ def test_status_added_and_render():
     # первая строка начинается с «+»
     assert lines[0].lstrip().startswith("+")
     # присутствует путь к полю и сама строка «string»
-    assert '"field"]:' in lines[0] and "string" in lines[0]
+    assert '"field"].type:' in lines[0]
+    assert "string" in lines[0]
 
 
 def test_status_deleted():

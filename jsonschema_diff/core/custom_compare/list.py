@@ -19,7 +19,7 @@ class CompareListElement:
     status: Statuses
     compared_property: Optional[Property] = None
 
-    def compare(self):
+    def compare(self) -> None:
         # Если элемент списка — словарь, рендерим его как Property
         if isinstance(self.value, dict):
             # Подбираем old/new под статус элемента
@@ -44,13 +44,13 @@ class CompareListElement:
             )
             self.compared_property.compare()
 
-    def replace_penultimate_space(self, tab_level: int, s: str, repl="X"):
+    def replace_penultimate_space(self, tab_level: int, s: str, repl: str) -> str:
         position = (
             len(self.config.TAB) * tab_level
         )  # 1 + (len(self.config.TAB) * tab_level) - 1 # PREFIX + TAB * COUNT - 1
         return s[:position] + repl + s[position:]
 
-    def _real_render(self, tab_level: int = 0):
+    def _real_render(self, tab_level: int = 0) -> str:
         if self.compared_property is not None:
             render_lines, _render_compares = self.compared_property.render(
                 tab_level=tab_level, all_for_rendering=True
