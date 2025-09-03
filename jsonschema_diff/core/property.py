@@ -68,9 +68,9 @@ class Property:
         return merged
 
     def compare(self) -> None:
-        if len(self.old_schema) <= 0:
+        if len(self.old_schema) <= 0 and len(self.new_schema) > 0:
             self.status = Statuses.ADDED
-        elif len(self.new_schema) <= 0:
+        elif len(self.new_schema) <= 0: # безопасное разрешение конфликта когда пара пустая
             self.status = Statuses.DELETED
 
         parameters_subset = {}
@@ -201,7 +201,7 @@ class Property:
         # Рендер заголовка / пути
         my_to_render = []
         property_line_render = self.name is not None and (
-            self.status != Statuses.MODIFIED or len(to_render_count) > 1
+            self.status == Statuses.MODIFIED or len(to_render_count) > 1
         )
         params_tab_level = tab_level
         if property_line_render:

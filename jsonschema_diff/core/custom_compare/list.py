@@ -61,7 +61,7 @@ class CompareListElement:
         return f"{self.status.value} {self.config.TAB * tab_level}{self.value}"
 
     def render(self, tab_level: int = 0) -> str:
-        lines = self._real_render(tab_level=tab_level).split("\n")
+        lines = [line for line in self._real_render(tab_level=tab_level).split("\n") if line.strip() != ""]
         # первая строка = START_LINE, последняя = END_LINE, остальное = MIDDLE_LINE
         if len(lines) > 1:
             prepare = []
