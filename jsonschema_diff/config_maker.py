@@ -5,11 +5,62 @@ All optional switches are enabled by default; pass ``False`` to disable.
 """
 
 from .core import Compare, Config
+from enum import Enum
 from .core.custom_compare import CompareList, CompareRange
 from .core.tools.combine import COMBINE_RULES_TYPE
 from .core.tools.compare import COMPARE_RULES_TYPE
 from .core.tools.context import CONTEXT_RULES_TYPE, PAIR_CONTEXT_RULES_TYPE
 from .core.tools.render import PATH_MAKER_IGNORE_RULES_TYPE
+
+
+class MultilineListRender(Enum):
+    class Soft:
+        """
+           .type: something
+        ╭  .if: something
+        │  .then: something
+        ╰  .else: something
+        """
+        START_LINE  = "╭"
+        MIDDLE_LINE = "│"
+        END_LINE    = "╰"
+        SINGLE_LINE = " "
+
+    class Hard:
+        """
+           .type: something
+        ┌  .if: something
+        │  .then: something
+        └  .else: something
+        """
+        START_LINE  = "┌"
+        MIDDLE_LINE = "|"
+        END_LINE    = "└"
+        SINGLE_LINE = " "
+
+    class Double:
+        """
+           .type: something
+        ╔  .if: something
+        ║  .then: something
+        ╚  .else: something
+        """
+        START_LINE  = "╔"
+        MIDDLE_LINE = "║"
+        END_LINE    = "╚"
+        SINGLE_LINE = " "
+
+    class Without:
+        """
+           .type: something 
+            .if: something
+            .then: something
+            .else: something
+        """
+        START_LINE  = " "
+        MIDDLE_LINE = " "
+        END_LINE    = " "
+        SINGLE_LINE = " "
 
 
 class ConfigMaker:
@@ -23,6 +74,7 @@ class ConfigMaker:
         path_render_with_properies: bool = False,
         path_render_with_items: bool = False,
         list_comparator: bool = True,
+        list_multiline_render: MultilineListRender = MultilineListRender.Soft,
         range_digit_comparator: bool = True,
         range_length_comparator: bool = True,
         range_items_comparator: bool = True,
@@ -57,10 +109,12 @@ class ConfigMaker:
         pair_context_rules: list[list[str | type[Compare]]] = []
         context_rules: dict[str | type[Compare], list[str | type[Compare]]] = {}
         path_maker_ignore: list[str] = []
+        compare_config: dict[type[Compare], dict] = {}
 
         # Built-in comparators
         if list_comparator:
             compare_rules[list] = CompareList
+            compare_config[CompareList] = { k: v for k, v in list_multiline_render.value.__dict__.items() if isinstance(v, str) }
 
         def add_rule(keys: list[str], value: type[Compare]) -> None:
             combine_rules.append(keys)
@@ -97,4 +151,5 @@ class ConfigMaker:
             path_maker_ignore=path_maker_ignore,
             pair_context_rules=pair_context_rules,
             context_rules=context_rules,
+            compare_config=compare_config
         )

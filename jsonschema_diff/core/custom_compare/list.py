@@ -1,9 +1,11 @@
 import difflib
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
+import re
 
 from ..abstraction import Statuses
 from ..compare_base import Compare
+from ..property import Property
 
 if TYPE_CHECKING:
     from ..compare_base import LEGEND_RETURN_TYPE
@@ -13,11 +15,68 @@ if TYPE_CHECKING:
 @dataclass
 class CompareListElement:
     config: "Config"
+    my_config: dict
     value: Any
     status: Statuses
+    compared_property: Optional[Property] = None
+
+    def compare(self):
+        # Если элемент списка — словарь, рендерим его как Property
+        if isinstance(self.value, dict):
+            # Подбираем old/new под статус элемента
+            if self.status == Statuses.DELETED:
+                old_schema = self.value
+                new_schema = None
+            elif self.status == Statuses.ADDED:
+                old_schema = None
+                new_schema = self.value
+            else:
+                # NO_DIFF и прочие — считаем, что значение одинаково слева и справа
+                old_schema = self.value
+                new_schema = self.value
+
+            self.compared_property = Property(
+                config=self.config,
+                name=None,
+                schema_path=[],
+                json_path=[],
+                old_schema=old_schema,
+                new_schema=new_schema,
+            )
+            self.compared_property.compare()
+    
+
+    def replace_penultimate_space(self, tab_level: int, s: str, repl="X"):
+        position = 2*tab_level#1 + (len(self.config.TAB) * tab_level) - 1 # PREFIX + TAB * COUNT - 1
+        return s[:position] + repl + s[position:]
+
+
+    def _real_render(self, tab_level: int = 0):
+        if self.compared_property is not None:
+            render_lines, _render_compares = self.compared_property.render(tab_level=tab_level, all_for_rendering=True)
+
+            return "\n".join(render_lines)
+
+        # Иначе — старое поведение (строка/число/пр. выводим как есть)
+        return f"{self.status.value} {self.config.TAB * tab_level}{self.value}"
 
     def render(self, tab_level: int = 0) -> str:
-        return f"{self.status.value} {self.config.TAB * tab_level}{self.value}"
+        lines = self._real_render(tab_level=tab_level).split("\n")
+        # первая строка = START_LINE, последняя = END_LINE, остальное = MIDDLE_LINE
+        if len(lines) > 1:
+            prepare = []
+            for i, line in enumerate(lines):
+                if i == 0:
+                    prepare.append(self.replace_penultimate_space(tab_level=tab_level, s=line, repl=self.my_config.get("START_LINE", " ")))
+                elif i == len(lines) - 1:
+                    prepare.append(self.replace_penultimate_space(tab_level=tab_level, s=line, repl=self.my_config.get("END_LINE", " ")))
+                else:
+                    prepare.append(self.replace_penultimate_space(tab_level=tab_level, s=line, repl=self.my_config.get("MIDDLE_LINE", " ")))
+
+            return "\n".join(prepare)
+        else:
+            return self.replace_penultimate_space(tab_level=tab_level, s=lines[0], repl=self.my_config.get("SINGLE_LINE", " "))
+        
 
 
 class CompareList(Compare):
@@ -33,7 +92,8 @@ class CompareList(Compare):
             return self.status
         elif self.status in [Statuses.ADDED, Statuses.DELETED]:  # add
             for v in self.value:
-                element = CompareListElement(self.config, v, self.status)
+                element = CompareListElement(self.config, self.my_config, v, self.status)
+                element.compare()
                 self.elements.append(element)
                 self.changed_elements.append(element)
         elif self.status == Statuses.REPLACED:  # replace or no-diff
@@ -54,7 +114,8 @@ class CompareList(Compare):
                 ) -> None:
                     is_change = status != Statuses.NO_DIFF
                     for v in source[from_index:to_index]:
-                        element = CompareListElement(self.config, v, status)
+                        element = CompareListElement(self.config, self.my_config, v, status)
+                        element.compare()
                         self.elements.append(element)
                         if is_change:
                             self.changed_elements.append(element)
