@@ -82,7 +82,7 @@ class Property:
             new_key = key if key in self.new_schema else None
             new_value = self.new_schema.get(key, None)
 
-            if key in ["properties", "$defs"]:  # словари содержащие Property
+            if key in self.config.PROPERTY_KEY_GROUPS[dict]:  # словари содержащие Property
                 prop_keys = self._get_keys(old_value, new_value)
                 for prop_key in prop_keys:
                     old_to_prop = None if old_value is None else old_value.get(prop_key, None)
@@ -98,7 +98,7 @@ class Property:
                     )
                     prop.compare()
                     self.propertys[prop_key] = prop
-            elif key in ["prefixItems", "items"]:  # массивы содержащие Property
+            elif key in self.config.PROPERTY_KEY_GROUPS[list]:  # массивы содержащие Property
                 if not isinstance(old_value, list):
                     old_value = [old_value]
                 old_len = len(old_value)
@@ -144,7 +144,7 @@ class Property:
             inner_value_field="to_compare",
         )
 
-        for key_tuple, values in result_combine.items():
+        for values in result_combine.values():
             comparator_cls = values["comparator"]
             comparator = comparator_cls(
                 self.config,

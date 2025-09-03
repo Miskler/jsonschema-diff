@@ -15,6 +15,10 @@ class Config:
         path_maker_ignore: PATH_MAKER_IGNORE_RULES_TYPE = ["properties", "items"],
         pair_context_rules: PAIR_CONTEXT_RULES_TYPE = [],
         context_rules: CONTEXT_RULES_TYPE = {},
+        property_key_groups: dict[type, list[str]] = {
+            dict: ["properties", "$defs"],
+            list: ["prefixItems", "items"]#, "oneOf", "allOf", "anyOf"],
+        }
     ):
         self.TAB = tab
 
@@ -26,6 +30,8 @@ class Config:
 
         self.PAIR_CONTEXT_RULES = pair_context_rules
         self.CONTEXT_RULES = context_rules
+
+        self.PROPERTY_KEY_GROUPS = property_key_groups
 
 
 default_config = Config(
