@@ -63,6 +63,8 @@ class ConfigMaker:
             Include these schema service tokens in rendered paths.
         list_comparator : bool
             Enable :class:`~jsonschema_diff.core.custom_compare.CompareList`.
+        list_multiline_render : MultilineListRender
+            How to render multi-line elements of list.
         range_*_comparator : bool
             Enable :class:`~jsonschema_diff.core.custom_compare.CompareRange`
             for numeric/length/items/properties limits.
