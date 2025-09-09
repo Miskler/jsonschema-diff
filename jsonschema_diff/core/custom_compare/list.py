@@ -1,6 +1,6 @@
 import difflib
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Dict, Tuple, List
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from ..abstraction import Statuses
 from ..compare_base import Compare
@@ -106,7 +106,9 @@ class CompareList(Compare):
     # --- вспомогательное: score ∈ [0..1] из Property.calc_diff()
     def _score_from_stats(self, stats: Dict[str, int]) -> float:
         unchanged = stats.get("NO_DIFF", 0) + stats.get("UNKNOWN", 0)
-        changed = stats.get("ADDED", 0) + stats.get("DELETED", 0) + stats.get("REPLACED", 0)# модификации не в счет + stats.get("MODIFIED", 0)
+        changed = (
+            stats.get("ADDED", 0) + stats.get("DELETED", 0) + stats.get("REPLACED", 0)
+        )  # модификации не в счет + stats.get("MODIFIED", 0)
         denom = unchanged + changed
         if denom == 0:
             return 1.0
@@ -130,8 +132,12 @@ class CompareList(Compare):
             old_list = self.old_value if isinstance(self.old_value, list) else [self.old_value]
             new_list = self.new_value if isinstance(self.new_value, list) else [self.new_value]
 
-            old_dicts: list[tuple[int, dict]] = [(i, v) for i, v in enumerate(old_list) if isinstance(v, dict)]
-            new_dicts: list[tuple[int, dict]] = [(j, v) for j, v in enumerate(new_list) if isinstance(v, dict)]
+            old_dicts: list[tuple[int, dict]] = [
+                (i, v) for i, v in enumerate(old_list) if isinstance(v, dict)
+            ]
+            new_dicts: list[tuple[int, dict]] = [
+                (j, v) for j, v in enumerate(new_list) if isinstance(v, dict)
+            ]
 
             threshold = float(self.my_config.get("DICT_MATCH_THRESHOLD", 0.10))
 
@@ -167,7 +173,9 @@ class CompareList(Compare):
                 # добавляем как один элемент списка с compared_property
                 # статус NO_DIFF, если проперти без отличий, иначе MODIFIED
                 status = Statuses.NO_DIFF if prop.status == Statuses.NO_DIFF else Statuses.MODIFIED
-                el = CompareListElement(self.config, self.my_config, value=None, status=status, compared_property=prop)
+                el = CompareListElement(
+                    self.config, self.my_config, value=None, status=status, compared_property=prop
+                )
                 self.elements.append(el)
                 if status != Statuses.NO_DIFF:
                     self.changed_elements.append(el)
@@ -175,7 +183,9 @@ class CompareList(Compare):
             # все старые dict, что не подобрались → DELETED
             for oi, ov in old_dicts:
                 if oi not in matched_old:
-                    el = CompareListElement(self.config, self.my_config, value=ov, status=Statuses.DELETED)
+                    el = CompareListElement(
+                        self.config, self.my_config, value=ov, status=Statuses.DELETED
+                    )
                     el.compare()
                     self.elements.append(el)
                     self.changed_elements.append(el)
@@ -183,7 +193,9 @@ class CompareList(Compare):
             # все новые dict, что не подобрались → ADDED
             for nj, nv in new_dicts:
                 if nj not in matched_new:
-                    el = CompareListElement(self.config, self.my_config, value=nv, status=Statuses.ADDED)
+                    el = CompareListElement(
+                        self.config, self.my_config, value=nv, status=Statuses.ADDED
+                    )
                     el.compare()
                     self.elements.append(el)
                     self.changed_elements.append(el)

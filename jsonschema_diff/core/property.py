@@ -170,7 +170,7 @@ class Property:
             Statuses.REPLACED,
             Statuses.MODIFIED,
         ]
-    
+
     def calc_diff(self) -> dict[str, int]:
         """
         Summarizes the difference statistics:
@@ -188,7 +188,7 @@ class Property:
         }
         # current Property status
         stats[self.status.name] += 1
-        
+
         def _merge_stats(dst: dict[str, int], src: dict[str, int]) -> None:
             for key, value in src.items():
                 dst[key] = dst.get(key, 0) + value
