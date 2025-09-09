@@ -1,6 +1,6 @@
 import difflib
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Dict, Tuple, List
 
 from ..abstraction import Statuses
 from ..compare_base import Compare
@@ -103,6 +103,15 @@ class CompareList(Compare):
         self.elements: list[CompareListElement] = []
         self.changed_elements: list[CompareListElement] = []
 
+    # --- вспомогательное: score ∈ [0..1] из Property.calc_diff()
+    def _score_from_stats(self, stats: Dict[str, int]) -> float:
+        unchanged = stats.get("NO_DIFF", 0) + stats.get("UNKNOWN", 0)
+        changed = stats.get("ADDED", 0) + stats.get("DELETED", 0) + stats.get("REPLACED", 0)# модификации не в счет + stats.get("MODIFIED", 0)
+        denom = unchanged + changed
+        if denom == 0:
+            return 1.0
+        return unchanged / float(denom)
+
     def compare(self) -> Statuses:
         super().compare()
 
@@ -115,14 +124,87 @@ class CompareList(Compare):
                 self.elements.append(element)
                 self.changed_elements.append(element)
         elif self.status == Statuses.REPLACED:  # replace or no-diff
-            # делаем гарантированно массив строк прогоняя циклом
+            # ------------------------------
+            # 1) Матричное сопоставление dict↔dict (order-independent)
+            # ------------------------------
+            old_list = self.old_value if isinstance(self.old_value, list) else [self.old_value]
+            new_list = self.new_value if isinstance(self.new_value, list) else [self.new_value]
+
+            old_dicts: list[tuple[int, dict]] = [(i, v) for i, v in enumerate(old_list) if isinstance(v, dict)]
+            new_dicts: list[tuple[int, dict]] = [(j, v) for j, v in enumerate(new_list) if isinstance(v, dict)]
+
+            threshold = float(self.my_config.get("DICT_MATCH_THRESHOLD", 0.10))
+
+            matched_old: set[int] = set()
+            matched_new: set[int] = set()
+
+            # сформируем все кандидаты (score, i, j, prop), отсортируем по score по убыванию
+            candidates: list[tuple[float, int, int, Property]] = []
+            for oi, ov in old_dicts:
+                for nj, nv in new_dicts:
+                    prop = Property(
+                        config=self.config,
+                        name=None,
+                        schema_path=[],
+                        json_path=[],
+                        old_schema=ov,
+                        new_schema=nv,
+                    )
+                    prop.compare()
+                    score = self._score_from_stats(prop.calc_diff())
+                    candidates.append((score, oi, nj, prop))
+            candidates.sort(key=lambda t: t[0], reverse=True)
+
+            # жадный матч по убыванию score с порогом
+            for score, oi, nj, prop in candidates:
+                if score < threshold:
+                    break
+                if oi in matched_old or nj in matched_new:
+                    continue
+                matched_old.add(oi)
+                matched_new.add(nj)
+
+                # добавляем как один элемент списка с compared_property
+                # статус NO_DIFF, если проперти без отличий, иначе MODIFIED
+                status = Statuses.NO_DIFF if prop.status == Statuses.NO_DIFF else Statuses.MODIFIED
+                el = CompareListElement(self.config, self.my_config, value=None, status=status, compared_property=prop)
+                self.elements.append(el)
+                if status != Statuses.NO_DIFF:
+                    self.changed_elements.append(el)
+
+            # все старые dict, что не подобрались → DELETED
+            for oi, ov in old_dicts:
+                if oi not in matched_old:
+                    el = CompareListElement(self.config, self.my_config, value=ov, status=Statuses.DELETED)
+                    el.compare()
+                    self.elements.append(el)
+                    self.changed_elements.append(el)
+
+            # все новые dict, что не подобрались → ADDED
+            for nj, nv in new_dicts:
+                if nj not in matched_new:
+                    el = CompareListElement(self.config, self.my_config, value=nv, status=Statuses.ADDED)
+                    el.compare()
+                    self.elements.append(el)
+                    self.changed_elements.append(el)
+
+            # ------------------------------
+            # 2) Прежняя логика для НЕ-словарей (order-sensitive) — через SequenceMatcher
+            #    ВАЖНО: словари из сравнения исключаем, чтобы не дублировать их как insert/delete
+            # ------------------------------
+            def filter_non_dict(src: list[Any]) -> list[Any]:
+                return [v for v in src if not isinstance(v, dict)]
+
+            old_rest = filter_non_dict(old_list)
+            new_rest = filter_non_dict(new_list)
+
             def get_str_list(v: Any) -> list[str] | str:
                 if isinstance(v, list):
                     return [str(i) for i in v]
                 return str(v)
 
-            real_old_value = get_str_list(self.old_value)
-            real_new_value = get_str_list(self.new_value)
+            real_old_value = get_str_list(old_rest)
+            real_new_value = get_str_list(new_rest)
 
             sm = difflib.SequenceMatcher(a=real_old_value, b=real_new_value, autojunk=False)
             for tag, i1, i2, j1, j2 in sm.get_opcodes():
@@ -140,14 +222,14 @@ class CompareList(Compare):
 
                 match tag:
                     case "equal":
-                        add_element(self.old_value, Statuses.NO_DIFF, i1, i2)
+                        add_element(old_rest, Statuses.NO_DIFF, i1, i2)
                     case "delete":
-                        add_element(self.old_value, Statuses.DELETED, i1, i2)
+                        add_element(old_rest, Statuses.DELETED, i1, i2)
                     case "insert":
-                        add_element(self.new_value, Statuses.ADDED, j1, j2)
+                        add_element(new_rest, Statuses.ADDED, j1, j2)
                     case "replace":
-                        add_element(self.old_value, Statuses.DELETED, i1, i2)
-                        add_element(self.new_value, Statuses.ADDED, j1, j2)
+                        add_element(old_rest, Statuses.DELETED, i1, i2)
+                        add_element(new_rest, Statuses.ADDED, j1, j2)
                     case _:
                         raise ValueError(f"Unknown tag: {tag}")
 
