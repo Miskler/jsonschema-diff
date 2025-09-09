@@ -57,6 +57,13 @@ class Compare:
             Statuses.MODIFIED,
         ]
 
+    def calc_diff(self) -> dict[str, int]:
+        """
+        Basic implementation: counts its own status as 1 element.
+        Complex comparators (e.g. CompareList) override this to return an aggregate.
+        """
+        return {self.status.name: 1}
+
     def _render_start_line(
         self, tab_level: int = 0, with_path: bool = True, with_key: bool = True
     ) -> str:

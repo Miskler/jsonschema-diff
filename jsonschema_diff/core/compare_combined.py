@@ -25,6 +25,19 @@ class CompareCombined(Compare):
 
         return self.status
 
+    def calc_diff(self) -> dict[str, int]:
+        """
+        Multiple implementation: counts its own status as the number of keys.
+        Complex comparators (e.g. CompareList) override this to return an aggregate.
+        """
+        stats = {self.status.name: 1}
+        for comp in self.dict_compare.values():
+            if comp.status.name not in stats:
+                stats[comp.status.name] = 0
+            stats[comp.status.name] += 1
+
+        return stats
+
     def get_name(self) -> str:
         raise NotImplementedError("The get_name method must be overridden")
 

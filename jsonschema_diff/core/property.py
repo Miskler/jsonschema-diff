@@ -170,6 +170,38 @@ class Property:
             Statuses.REPLACED,
             Statuses.MODIFIED,
         ]
+    
+    def calc_diff(self) -> dict[str, int]:
+        """
+        Summarizes the difference statistics:
+        - all parameters (Compare.calc_diff)
+        - child properties (Property.calc_diff)
+        - plus the status of the current Property (as a single observation)
+        """
+        stats: dict[str, int] = {
+            "ADDED": 0,
+            "DELETED": 0,
+            "REPLACED": 0,
+            "MODIFIED": 0,
+            "NO_DIFF": 0,
+            "UNKNOWN": 0,
+        }
+        # current Property status
+        stats[self.status.name] += 1
+        
+        def _merge_stats(dst: dict[str, int], src: dict[str, int]) -> None:
+            for key, value in src.items():
+                dst[key] = dst.get(key, 0) + value
+
+        # parameters (Compare)
+        for cmp in self.parameters.values():
+            _merge_stats(stats, cmp.calc_diff())
+
+        # child properties
+        for prop in self.propertys.values():
+            _merge_stats(stats, prop.calc_diff())
+
+        return stats
 
     def get_for_rendering(self) -> list["Compare"]:
         # Определение что рендерить
