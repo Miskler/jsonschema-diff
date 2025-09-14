@@ -222,8 +222,25 @@ class Property:
 
         return list(with_context.values())
 
+    def _make_path_line(self, tab_level: int = 0, to_crop: tuple[int, int] = (0, 0)) -> str:
+        rendered_path = RT.make_path(
+            self.schema_path[to_crop[0] :] + [self.name],
+            self.json_path[to_crop[1] :] + [self.name],
+            ignore=self.config.PATH_MAKER_IGNORE,
+        )
+
+        return (
+            f"{RT.make_prefix(self.status)} "
+            f"{RT.make_tab(self.config, tab_level)}"
+            f"{rendered_path}:"
+        )
+
     def self_render(
-        self, tab_level: int = 0, all_for_rendering: bool = False
+        self,
+        tab_level: int = 0,
+        all_for_rendering: bool = False,
+        to_crop: tuple[int, int] = (0, 0),
+        force_multiline: bool = False,
     ) -> tuple[str, list[type["Compare"]]]:
         # Определение что рендерить
         to_render_count = (
@@ -233,26 +250,16 @@ class Property:
         # Рендер заголовка / пути
         my_to_render = []
         property_line_render = self.name is not None and (
-            self.status == Statuses.MODIFIED or len(to_render_count) > 1
+            self.status == Statuses.MODIFIED or len(to_render_count) > 1 or force_multiline
         )
         params_tab_level = tab_level
         if property_line_render:
-            rendered_path = RT.make_path(
-                self.schema_path + [self.name],
-                self.json_path + [self.name],
-                ignore=self.config.PATH_MAKER_IGNORE,
-            )
-
-            my_to_render.append(
-                f"{RT.make_prefix(self.status)} "
-                f"{RT.make_tab(self.config, tab_level)}"
-                f"{rendered_path}:"
-            )
+            my_to_render.append(self._make_path_line(tab_level, to_crop))
             params_tab_level += 1
 
-        # Рендер параметров
-        for param in to_render_count:
-            my_to_render.append(param.render(params_tab_level, not property_line_render))
+        # Рендер компараторов
+        for compare in to_render_count:
+            my_to_render.append(compare.render(params_tab_level, not property_line_render, to_crop))
 
         to_render = "\n".join(my_to_render)
 
@@ -263,21 +270,42 @@ class Property:
         return to_render, list(dict.fromkeys([*compare_list]))
 
     def render(
-        self, tab_level: int = 0, all_for_rendering: bool = False
+        self,
+        tab_level: int = 0,
+        all_for_rendering: bool = False,
+        crop_path: bool = True,
+        _to_crop: tuple[int, int] = (0, 0),  # [schema, json]
     ) -> tuple[list[str], list[type["Compare"]]]:
         to_return: list[str] = []
         compare_list: list[type["Compare"]] = []
 
+        children_for_rendering = []
+        for prop in self.propertys.values():
+            if prop.is_for_rendering() or all_for_rendering:
+                children_for_rendering.append(prop)
+
         if all_for_rendering or self.is_for_rendering():
             start_line, start_compare = self.self_render(
-                tab_level=tab_level, all_for_rendering=all_for_rendering
+                tab_level=tab_level,
+                all_for_rendering=all_for_rendering,
+                to_crop=_to_crop,
+                force_multiline=len(children_for_rendering) > 0 and crop_path,
             )
             to_return.append(start_line)
             compare_list = list(dict.fromkeys([*compare_list, *start_compare]))
 
+        next_to_crop: bool = (len(children_for_rendering) > 0) and crop_path
+
+        if next_to_crop:
+            if not (all_for_rendering or self.is_for_rendering()):
+                to_return.append(self._make_path_line(tab_level=tab_level, to_crop=_to_crop))
+            _to_crop = (len(self.schema_path) + 1, len(self.json_path) + 1)
+
         for prop in self.propertys.values():
             part_lines, part_compare = prop.render(
-                tab_level=tab_level, all_for_rendering=all_for_rendering
+                tab_level=tab_level + (1 if next_to_crop else 0),
+                all_for_rendering=all_for_rendering,
+                _to_crop=_to_crop,
             )
             to_return += part_lines
             compare_list = list(dict.fromkeys([*compare_list, *part_compare]))

@@ -37,7 +37,7 @@ class ConfigMaker:
     @staticmethod
     def make(
         *,
-        tab_size: int = 2,
+        tab_size: int = 1,
         path_render_with_properies: bool = False,
         path_render_with_items: bool = False,
         list_comparator: bool = True,
@@ -71,7 +71,7 @@ class ConfigMaker:
         additional_* : collections
             User-supplied rules that override the built-ins.
         """
-        tab = " " * tab_size
+        tab = "  " * tab_size
 
         compare_rules: COMPARE_RULES_TYPE = {}
         combine_rules: COMBINE_RULES_TYPE = []

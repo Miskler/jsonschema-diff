@@ -7,6 +7,8 @@ Usage::
        :name:   my_diff.svg   # optional custom file name (".svg" can be omitted)
        :title:  Schema Diff   # title shown inside the virtual terminal tab
        :no-body:             # hide diff body, keep legend only
+       :all-for-rendering:   # show the full body
+       :crop-path:           # show diff as a tree
        :no-legend:           # hide legend, show body only
        :width:  80%          # pass through to the resulting <img> tag
 
@@ -40,6 +42,8 @@ class JsonSchemaDiffDirective(Directive):
         # behaviour flags
         "no-legend": directives.flag,
         "no-body": directives.flag,
+        "all-for-rendering": directives.flag,
+        "crop-path": directives.flag,
         # styling / output options
         "width": directives.unchanged,
         "name": directives.unchanged,
@@ -76,7 +80,10 @@ class JsonSchemaDiffDirective(Directive):
         # Produce Rich renderables
         diff.compare(str(old_path), str(new_path))
         renderables: list = []
-        body = diff.rich_render()
+        body = diff.rich_render(
+            all_for_rendering="all-for-rendering" in self.options,
+            crop_path="crop-path" in self.options,
+        )
         if "no-body" not in self.options:
             renderables.append(body)
         if "no-legend" not in self.options and hasattr(diff, "rich_legend"):

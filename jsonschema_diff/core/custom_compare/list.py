@@ -257,8 +257,12 @@ class CompareList(Compare):
     def is_for_rendering(self) -> bool:
         return super().is_for_rendering() or len(self.changed_elements) > 0
 
-    def render(self, tab_level: int = 0, with_path: bool = True) -> str:
-        to_return = self._render_start_line(tab_level=tab_level, with_path=with_path)
+    def render(
+        self, tab_level: int = 0, with_path: bool = True, to_crop: tuple[int, int] = (0, 0)
+    ) -> str:
+        to_return = self._render_start_line(
+            tab_level=tab_level, with_path=with_path, to_crop=to_crop
+        )
 
         for i in self.elements:
             to_return += f"\n{i.render(tab_level + 1)}"

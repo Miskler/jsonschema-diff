@@ -11,6 +11,7 @@ Typical usage
 >>> jsonschema-diff old.schema.json new.schema.json
 >>> jsonschema-diff --no-color --legend old.json new.json
 >>> jsonschema-diff --exit-code old.json new.json  # useful in CI
+>>> jsonschema-diff --no-crop-path --all-for-rendering
 
 Exit status
 -----------
@@ -121,6 +122,17 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Print a legend explaining diff symbols at the end",
     )
 
+    p.add_argument(
+        "--no-crop-path",
+        action="store_true",
+        help="Show flat diff",
+    )
+    p.add_argument(
+        "--all-for-rendering",
+        action="store_true",
+        help="Show the entire file, even those places where there are no changes",
+    )
+
     # Exit-code control
     p.add_argument(
         "--exit-code",
@@ -176,8 +188,11 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
     )
 
     # 3. Print the result
+    print(args.no_crop_path)
     diff.print(
         with_legend=args.legend,
+        all_for_rendering=args.all_for_rendering,
+        crop_path=not bool(args.no_crop_path),
     )
 
     # 4. Optional special exit code

@@ -41,7 +41,9 @@ class CompareCombined(Compare):
     def get_name(self) -> str:
         raise NotImplementedError("The get_name method must be overridden")
 
-    def render(self, tab_level: int = 0, with_path: bool = True) -> str:
+    def render(
+        self, tab_level: int = 0, with_path: bool = True, to_crop: tuple[int, int] = (0, 0)
+    ) -> str:
         raise NotImplementedError("The render method must be overridden")
 
     @staticmethod

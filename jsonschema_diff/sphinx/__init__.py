@@ -26,7 +26,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
         app.config.html_static_path.append(str(static_root))
 
     return {
-        "version": "0.4.0",
+        "version": "0.4.1",
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

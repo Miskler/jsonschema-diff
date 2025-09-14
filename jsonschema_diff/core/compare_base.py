@@ -65,22 +65,32 @@ class Compare:
         return {self.status.name: 1}
 
     def _render_start_line(
-        self, tab_level: int = 0, with_path: bool = True, with_key: bool = True
+        self,
+        tab_level: int = 0,
+        with_path: bool = True,
+        with_key: bool = True,
+        to_crop: tuple[int, int] = (0, 0),
     ) -> str:
         to_return = (
             f"{RenderTool.make_prefix(self.status)} {RenderTool.make_tab(self.config, tab_level)}"
         )
         if with_path:
             to_return += RenderTool.make_path(
-                self.schema_path, self.json_path, ignore=self.config.PATH_MAKER_IGNORE
+                self.schema_path[to_crop[0] :],
+                self.json_path[to_crop[1] :],
+                ignore=self.config.PATH_MAKER_IGNORE,
             )
 
         if with_key:
             to_return += f".{self.get_name()}"
         return to_return + ":"
 
-    def render(self, tab_level: int = 0, with_path: bool = True) -> str:
-        to_return = self._render_start_line(tab_level=tab_level, with_path=with_path)
+    def render(
+        self, tab_level: int = 0, with_path: bool = True, to_crop: tuple[int, int] = (0, 0)
+    ) -> str:
+        to_return = self._render_start_line(
+            tab_level=tab_level, with_path=with_path, to_crop=to_crop
+        )
 
         if self.status in [Statuses.ADDED, Statuses.DELETED, Statuses.NO_DIFF]:
             to_return += f" {self.value}"

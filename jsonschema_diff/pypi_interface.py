@@ -61,6 +61,9 @@ class JsonSchemaDiff:
         old_schema: dict | str,
         new_schema: dict | str,
         colorize_pipeline: Optional["HighlighterPipeline"],
+        *,
+        all_for_rendering: bool = False,
+        crop_path: bool = True,
     ) -> tuple[str, list[type[Compare]]]:
         """
         One-shot utility: compare *old_schema* vs *new_schema* and
@@ -77,8 +80,10 @@ class JsonSchemaDiff:
             new_schema=JsonSchemaDiff._schema_resolver(new_schema),
         )
         prop.compare()
-        output_text, compare_list = prop.render()
-        rendered_text = "\n\n".join(output_text)
+        output_text, compare_list = prop.render(
+            all_for_rendering=all_for_rendering, crop_path=crop_path
+        )
+        rendered_text = "\n".join(output_text)
 
         if colorize_pipeline is not None:
             rendered_text = colorize_pipeline.colorize_and_render(rendered_text)
@@ -105,7 +110,7 @@ class JsonSchemaDiff:
         self.property.compare()
         return self
 
-    def rich_render(self) -> Text:
+    def rich_render(self, all_for_rendering: bool = False, crop_path: bool = True) -> Text:
         """
         Return the diff body ANSI-colored.
 
@@ -114,13 +119,13 @@ class JsonSchemaDiff:
         * ``self.last_render_output`` – cached rendered text.
         * ``self.last_compare_list`` – list of Compare subclasses encountered.
         """
-        body, compare_list = self.property.render()
-        self.last_render_output = "\n\n".join(body)
+        body, compare_list = self.property.render(all_for_rendering=all_for_rendering, crop_path=crop_path)
+        self.last_render_output = "\n".join(body)
         self.last_compare_list = compare_list
 
         return self.colorize_pipeline.colorize(self.last_render_output)
 
-    def render(self) -> str:
+    def render(self, all_for_rendering: bool = False, crop_path: bool = True) -> str:
         """
         Return the diff body ANSI-colored.
 
@@ -129,8 +134,10 @@ class JsonSchemaDiff:
         * ``self.last_render_output`` – cached rendered text.
         * ``self.last_compare_list`` – list of Compare subclasses encountered.
         """
-        body, compare_list = self.property.render()
-        self.last_render_output = "\n\n".join(body)
+        body, compare_list = self.property.render(
+            all_for_rendering=all_for_rendering, crop_path=crop_path
+        )
+        self.last_render_output = "\n".join(body)
         self.last_compare_list = compare_list
 
         return self.colorize_pipeline.colorize_and_render(self.last_render_output)
@@ -166,6 +173,8 @@ class JsonSchemaDiff:
         *,
         with_body: bool = True,
         with_legend: bool = True,
+        all_for_rendering: bool = False,
+        crop_path: bool = True,
     ) -> None:
         """
         Pretty-print the diff and/or the legend.
@@ -178,7 +187,7 @@ class JsonSchemaDiff:
             Toggle respective sections.
         """
         if with_body:
-            print(self.render())
+            print(self.render(all_for_rendering=all_for_rendering, crop_path=crop_path))
 
         if with_body and with_legend:
             print()
