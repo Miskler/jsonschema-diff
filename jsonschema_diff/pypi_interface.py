@@ -60,7 +60,7 @@ class JsonSchemaDiff:
         config: "Config",
         old_schema: dict | str,
         new_schema: dict | str,
-        colorize_pipeline: Optional["HighlighterPipeline"]
+        colorize_pipeline: Optional["HighlighterPipeline"],
     ) -> tuple[str, list[type[Compare]]]:
         """
         One-shot utility: compare *old_schema* vs *new_schema* and

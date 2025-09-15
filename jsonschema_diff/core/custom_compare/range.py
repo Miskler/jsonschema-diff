@@ -76,7 +76,9 @@ class CompareRange(CompareCombined):
         dimension = self._detect_dimension()
         return self._key_for_dimension(dimension)
 
-    def render(self, tab_level: int = 0, with_path: bool = True, to_crop: tuple[int, int] = (0, 0)) -> str:
+    def render(
+        self, tab_level: int = 0, with_path: bool = True, to_crop: tuple[int, int] = (0, 0)
+    ) -> str:
         header = self._render_start_line(tab_level=tab_level, with_path=with_path, to_crop=to_crop)
 
         dimension = self._detect_dimension()

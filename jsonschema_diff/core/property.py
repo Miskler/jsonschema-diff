@@ -243,13 +243,15 @@ class Property:
     ) -> tuple[str, list[type["Compare"]]]:
         # Определение что рендерить
         to_render_count = (
-            self.get_for_rendering() if not self.config.ALL_FOR_RENDERING else list(self.parameters.values())
+            self.get_for_rendering()
+            if not self.config.ALL_FOR_RENDERING
+            else list(self.parameters.values())
         )
 
         # Рендер заголовка / пути
         my_to_render = []
         property_line_render = self.name is not None and (
-            len(to_render_count) > 1 or force_multiline# or self.status == Statuses.MODIFIED
+            len(to_render_count) > 1 or force_multiline  # or self.status == Statuses.MODIFIED
         )
         params_tab_level = tab_level
         if property_line_render:
@@ -290,7 +292,9 @@ class Property:
             to_return.append(start_line)
             compare_list = list(dict.fromkeys([*compare_list, *start_compare]))
 
-        next_to_crop: bool = (len(children_for_rendering) > 0) and self.config.CROP_PATH and self.name is not None
+        next_to_crop: bool = (
+            (len(children_for_rendering) > 0) and self.config.CROP_PATH and self.name is not None
+        )
 
         if next_to_crop:
             if not (self.config.ALL_FOR_RENDERING or self.is_for_rendering()):

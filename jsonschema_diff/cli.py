@@ -171,8 +171,7 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
     # 1. Build the wrapper object
     diff = JsonSchemaDiff(
         config=ConfigMaker.make(
-            all_for_rendering=args.all_for_rendering,
-            crop_path=not bool(args.no_crop_path)
+            all_for_rendering=args.all_for_rendering, crop_path=not bool(args.no_crop_path)
         ),
         colorize_pipeline=_make_highlighter(args.no_color),
         legend_ignore=[Compare],  # as in the library example
@@ -192,9 +191,7 @@ def main(argv: list[str] | None = None) -> None:  # pragma: no cover
 
     # 3. Print the result
     print(args.no_crop_path)
-    diff.print(
-        with_legend=args.legend
-    )
+    diff.print(with_legend=args.legend)
 
     # 4. Optional special exit code
     if args.exit_code:

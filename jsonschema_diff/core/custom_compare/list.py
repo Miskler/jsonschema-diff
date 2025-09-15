@@ -52,9 +52,7 @@ class CompareListElement:
 
     def _real_render(self, tab_level: int = 0) -> str:
         if self.compared_property is not None:
-            render_lines, _render_compares = self.compared_property.render(
-                tab_level=tab_level, all_for_rendering=True
-            )
+            render_lines, _render_compares = self.compared_property.render(tab_level=tab_level)
 
             return "\n".join(render_lines)
 
