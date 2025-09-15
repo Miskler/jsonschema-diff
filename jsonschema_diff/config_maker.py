@@ -38,6 +38,8 @@ class ConfigMaker:
     def make(
         *,
         tab_size: int = 1,
+        all_for_rendering: bool = False,
+        crop_path: bool = True,
         path_render_with_properies: bool = False,
         path_render_with_items: bool = False,
         list_comparator: bool = True,
@@ -118,6 +120,8 @@ class ConfigMaker:
 
         return Config(
             tab=tab,
+            all_for_rendering=all_for_rendering,
+            crop_path=crop_path,
             compare_rules=compare_rules,
             combine_rules=combine_rules,
             path_maker_ignore=path_maker_ignore,

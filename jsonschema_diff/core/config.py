@@ -16,6 +16,8 @@ class Config:
     def __init__(
         self,
         tab: str = "  ",
+        all_for_rendering: bool = False,
+        crop_path: bool = True,
         compare_rules: COMPARE_RULES_TYPE = {},
         combine_rules: COMBINE_RULES_TYPE = [],
         path_maker_ignore: PATH_MAKER_IGNORE_RULES_TYPE = ["properties", "items"],
@@ -28,6 +30,9 @@ class Config:
         },
     ):
         self.TAB: str = tab
+
+        self.ALL_FOR_RENDERING = all_for_rendering
+        self.CROP_PATH = crop_path
 
         self.COMPARE_RULES: COMPARE_RULES_TYPE = compare_rules
 

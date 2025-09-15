@@ -27,7 +27,7 @@ To disable it use:
 
 
 Range Compare
---------------------
+-------------
 
 .. jsonschemadiff:: basic/how_read_it/jsons/range.old.schema.json basic/how_read_it/jsons/range.new.schema.json
    :title: Terminal
@@ -44,3 +44,8 @@ To disable it use:
         range_properties_comparator = False,
     )
 
+Real-world example
+------------------
+
+.. jsonschemadiff:: basic/how_read_it/jsons/realworld.old.schema.json basic/how_read_it/jsons/realworld.new.schema.json
+   :title: Terminal
