@@ -290,7 +290,7 @@ class Property:
             to_return.append(start_line)
             compare_list = list(dict.fromkeys([*compare_list, *start_compare]))
 
-        next_to_crop: bool = (len(children_for_rendering) > 0) and self.config.CROP_PATH
+        next_to_crop: bool = (len(children_for_rendering) > 0) and self.config.CROP_PATH and self.name is not None
 
         if next_to_crop:
             if not (self.config.ALL_FOR_RENDERING or self.is_for_rendering()):
