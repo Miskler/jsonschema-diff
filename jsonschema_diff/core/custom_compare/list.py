@@ -59,7 +59,7 @@ class CompareListElement:
         # Иначе — старое поведение (строка/число/пр. выводим как есть)
         return f"{self.status.value} {self.config.TAB * tab_level}{self.value}"
 
-    def render(self, tab_level: int = 0) -> str:
+    def render(self, tab_level: int = 0) -> Optional[str]:
         lines = [
             line
             for line in self._real_render(tab_level=tab_level).split("\n")
@@ -89,10 +89,14 @@ class CompareListElement:
                     )
 
             return "\n".join(prepare)
-        else:
+        elif len(lines) == 1:
             return self.replace_penultimate_space(
                 tab_level=tab_level, s=lines[0], repl=self.my_config.get("SINGLE_LINE", " ")
             )
+        else:
+            # В крайне редких случаях, длина списка == 0
+            # мне лень разбираться, так что легализуем
+            return None
 
 
 class CompareList(Compare):
@@ -263,7 +267,9 @@ class CompareList(Compare):
         )
 
         for i in self.elements:
-            to_return += f"\n{i.render(tab_level + 1)}"
+            to_i_render = i.render(tab_level + 1)
+            if to_i_render:
+                to_return += f"\n{to_i_render}"
         return to_return
 
     @staticmethod
