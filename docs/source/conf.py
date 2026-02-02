@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT))                       # import project without ins
 # ──────────────────────────────────────────────────────────────────────────────
 project   = "jsonschema-diff"
 author    = "Miskler"
-copyright = "2025, Miskler"
+copyright = "2026, Miskler"
 from jsonschema_diff import __version__
 release   = __version__
 
