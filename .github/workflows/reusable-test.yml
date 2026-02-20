@@ -22,7 +22,7 @@ jobs:
       matrix:
         python-version: ${{ fromJson(inputs.python-versions) }}
         include:
-          - python-version: "3.12"
+          - python-version: "3.13"
             primary: true
     steps:
       - uses: actions/checkout@v4
@@ -60,18 +60,18 @@ jobs:
 
   reports:
     needs: tests
-    if: contains(fromJson(inputs.python-versions), '3.12') && inputs.upload-coverage
+    if: contains(fromJson(inputs.python-versions), '3.13') && inputs.upload-coverage
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: junit-3.12
+          pattern: junit-3.13
           merge-multiple: true
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install reporting tools
         run: python -m pip install --no-cache-dir "genbadge[all]" junit2html
@@ -110,7 +110,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "pip"
           cache-dependency-path: |
             **/pyproject.toml
@@ -124,7 +124,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "pip"
           cache-dependency-path: |
             **/pyproject.toml
