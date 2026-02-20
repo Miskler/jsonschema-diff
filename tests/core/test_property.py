@@ -95,6 +95,18 @@ def test_nested_property_changes_bubble_down_only():
     assert not any(".root:" in line for line in lines)
 
 
+# ---------- Рекурсивные «patternProperties» --------------------------------
+def test_pattern_properties_changes_render_as_nested_diff():
+    old = {"patternProperties": {"^[0-9]+$": {"type": "string"}}}
+    new = {"patternProperties": {"^[0-9]+$": {"type": "number"}}}
+    prop = make_prop(old, new)
+
+    lines, _ = prop.render()
+    # изменение должно быть локальным, а не одной большой заменой dict -> dict
+    assert any("string -> number" in line for line in lines)
+    assert not any(".patternProperties: {" in line and "->" in line for line in lines)
+
+
 # ---------- prefixItems / items (массивы) ----------------------------------
 def test_items_indexed_children():
     old = {"prefixItems": [{"type": "string"}]}

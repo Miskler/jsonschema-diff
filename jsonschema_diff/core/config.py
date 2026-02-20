@@ -25,7 +25,7 @@ class Config:
         context_rules: CONTEXT_RULES_TYPE = {},
         compare_config: COMPARE_CONFIG_TYPE = {},
         property_key_groups: PROPERTY_KEY_GROUPS_TYPE = {
-            dict: ["properties", "$defs"],
+            dict: ["properties", "patternProperties", "$defs"],
             list: ["prefixItems", "items"],  # , "oneOf", "allOf", "anyOf"],
         },
     ):
