@@ -12,6 +12,7 @@ Usage::
 
 All options are optional; sensible defaults are applied when omitted.
 """
+
 from __future__ import annotations
 
 import hashlib
