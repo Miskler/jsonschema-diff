@@ -24,9 +24,10 @@ class MultilineChars:
 
 
 class MultilineListRender(Enum):
-    Soft = MultilineChars("╭", "│", "╰", " ")
-    Hard = MultilineChars("┌", "│", "└", " ")
-    Double = MultilineChars("╔", "║", "╚", " ")
+    Soft = MultilineChars("╭", "│", "╰", "•")
+    Hard = MultilineChars("┌", "│", "└", "▪")
+    HardBold = MultilineChars("┏", "┃", "┗", "■")
+    Double = MultilineChars("╔", "║", "╚", "◆")
     Without = MultilineChars(" ", " ", " ", " ")
 
 
