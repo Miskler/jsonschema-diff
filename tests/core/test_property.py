@@ -1,3 +1,4 @@
+from jsonschema_diff import ConfigMaker
 from jsonschema_diff.core import Config, Property, Statuses
 
 
@@ -8,12 +9,13 @@ def make_prop(
     old: dict | None,
     new: dict | None,
     *,
+    config: Config | None = None,
     name: str | int = "field",
     schema_path: list = None,
     json_path: list = None,
 ) -> Property:
     p = Property(
-        config=Config(),
+        config=Config() if config is None else config,
         name=name,
         schema_path=[] if schema_path is None else schema_path,
         json_path=[] if json_path is None else json_path,
@@ -119,3 +121,34 @@ def test_items_indexed_children():
     lines, _ = prop.render()
     # убедимся, что путь содержит индекс [1]
     assert any("[1]" in line for line in lines)
+
+
+def test_list_multiline_boundaries_follow_status_groups_for_matched_dict():
+    old = {"anyOf": [{"type": "string", "format": "uri"}]}
+    new = {
+        "anyOf": [
+            {
+                "type": "string",
+                "anyOf": [
+                    {"type": "string"},
+                    {"type": "string", "format": "uri"},
+                ],
+            }
+        ]
+    }
+    prop = make_prop(old, new, config=ConfigMaker.make())
+
+    lines, _ = prop.render()
+
+    # deleted single line should stay a single bullet for the deleted group
+    assert any(
+        line.lstrip().startswith("-") and "•  .format: uri" in line and "╭" not in line
+        for line in lines
+    )
+    # added block should have its own start/end boundaries
+    assert any(
+        line.lstrip().startswith("+") and "╭" in line and ".anyOf:" in line for line in lines
+    )
+    assert any(
+        line.lstrip().startswith("+") and "╰" in line and ".format: uri" in line for line in lines
+    )

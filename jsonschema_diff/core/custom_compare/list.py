@@ -50,53 +50,74 @@ class CompareListElement:
         )  # 1 + (len(self.config.TAB) * tab_level) - 1 # PREFIX + TAB * COUNT - 1
         return s[:position] + repl + s[position:]
 
-    def _real_render(self, tab_level: int = 0) -> str:
+    def _raw_pairs(self, tab_level: int = 0) -> list[tuple[Statuses, str]]:
         if self.compared_property is not None:
-            render_lines, _render_compares = self.compared_property.render(tab_level=tab_level)
-
-            return "\n".join(render_lines)
+            render_lines, _render_compares = self.compared_property._render_pairs(
+                tab_level=tab_level
+            )
+            return render_lines
 
         # Иначе — старое поведение (строка/число/пр. выводим как есть)
-        return f"{self.status.value} {self.config.TAB * tab_level}{self.value}"
+        return [(self.status, f"{self.status.value} {self.config.TAB * tab_level}{self.value}")]
 
-    def render(self, tab_level: int = 0) -> Optional[str]:
+    def _render_pairs(self, tab_level: int = 0) -> list[tuple[Statuses, str]]:
         lines = [
-            line
-            for line in self._real_render(tab_level=tab_level).split("\n")
+            (status, line)
+            for status, line in self._raw_pairs(tab_level=tab_level)
             if line.strip() != ""
         ]
-        # первая строка = START_LINE, последняя = END_LINE, остальное = MIDDLE_LINE
-        if len(lines) > 1:
-            prepare = []
-            for i, line in enumerate(lines):
-                if i == 0:
-                    prepare.append(
+        if len(lines) <= 0:
+            # В крайне редких случаях, длина списка == 0
+            # мне лень разбираться, так что легализуем
+            return []
+
+        to_return: list[tuple[Statuses, str]] = []
+        i = 0
+        # Рендерим «рамку» по группам одинаковых статусов.
+        # Так границы не «перетекают» между DELETED/ADDED/NO_DIFF блоками.
+        while i < len(lines):
+            status = lines[i][0]
+            j = i + 1
+            while j < len(lines) and lines[j][0] == status:
+                j += 1
+
+            group = lines[i:j]
+            if len(group) == 1:
+                to_return.append(
+                    (
+                        group[0][0],
                         self.replace_penultimate_space(
-                            tab_level=tab_level, s=line, repl=self.my_config.get("START_LINE", " ")
-                        )
+                            tab_level=tab_level,
+                            s=group[0][1],
+                            repl=self.my_config.get("SINGLE_LINE", " "),
+                        ),
                     )
-                elif i == len(lines) - 1:
-                    prepare.append(
-                        self.replace_penultimate_space(
-                            tab_level=tab_level, s=line, repl=self.my_config.get("END_LINE", " ")
-                        )
-                    )
-                else:
-                    prepare.append(
-                        self.replace_penultimate_space(
-                            tab_level=tab_level, s=line, repl=self.my_config.get("MIDDLE_LINE", " ")
+                )
+            else:
+                for k, (line_status, line) in enumerate(group):
+                    if k == 0:
+                        repl = self.my_config.get("START_LINE", " ")
+                    elif k == len(group) - 1:
+                        repl = self.my_config.get("END_LINE", " ")
+                    else:
+                        repl = self.my_config.get("MIDDLE_LINE", " ")
+
+                    to_return.append(
+                        (
+                            line_status,
+                            self.replace_penultimate_space(tab_level=tab_level, s=line, repl=repl),
                         )
                     )
 
-            return "\n".join(prepare)
-        elif len(lines) == 1:
-            return self.replace_penultimate_space(
-                tab_level=tab_level, s=lines[0], repl=self.my_config.get("SINGLE_LINE", " ")
-            )
-        else:
-            # В крайне редких случаях, длина списка == 0
-            # мне лень разбираться, так что легализуем
+            i = j
+
+        return to_return
+
+    def render(self, tab_level: int = 0) -> Optional[str]:
+        lines_with_status = self._render_pairs(tab_level=tab_level)
+        if len(lines_with_status) <= 0:
             return None
+        return "\n".join([line for _status, line in lines_with_status])
 
 
 class CompareList(Compare):
@@ -262,14 +283,21 @@ class CompareList(Compare):
     def render(
         self, tab_level: int = 0, with_path: bool = True, to_crop: tuple[int, int] = (0, 0)
     ) -> str:
-        to_return = self._render_start_line(
-            tab_level=tab_level, with_path=with_path, to_crop=to_crop
-        )
+        lines = self._render_pairs(tab_level=tab_level, with_path=with_path, to_crop=to_crop)
+        return "\n".join([line for _status, line in lines])
+
+    def _render_pairs(
+        self, tab_level: int = 0, with_path: bool = True, to_crop: tuple[int, int] = (0, 0)
+    ) -> list[tuple[Statuses, str]]:
+        to_return: list[tuple[Statuses, str]] = [
+            (
+                self.status,
+                self._render_start_line(tab_level=tab_level, with_path=with_path, to_crop=to_crop),
+            )
+        ]
 
         for i in self.elements:
-            to_i_render = i.render(tab_level + 1)
-            if to_i_render:
-                to_return += f"\n{to_i_render}"
+            to_return += i._render_pairs(tab_level + 1)
         return to_return
 
     @staticmethod

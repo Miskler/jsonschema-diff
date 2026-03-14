@@ -101,6 +101,17 @@ class Compare:
 
         return to_return
 
+    def _render_pairs(
+        self, tab_level: int = 0, with_path: bool = True, to_crop: tuple[int, int] = (0, 0)
+    ) -> list[tuple[Statuses, str]]:
+        """Internal structured render: returns ``(status, line)`` pairs."""
+        return [
+            (
+                self.status,
+                self.render(tab_level=tab_level, with_path=with_path, to_crop=to_crop),
+            )
+        ]
+
     @staticmethod
     def legend() -> LEGEND_RETURN_TYPE:
         return {

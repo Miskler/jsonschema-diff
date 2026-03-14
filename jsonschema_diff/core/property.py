@@ -235,12 +235,12 @@ class Property:
             f"{rendered_path}:"
         )
 
-    def self_render(
+    def _self_render_pairs(
         self,
         tab_level: int = 0,
         to_crop: tuple[int, int] = (0, 0),
         force_multiline: bool = False,
-    ) -> tuple[str, list[type["Compare"]]]:
+    ) -> tuple[list[tuple[Statuses, str]], list[type["Compare"]]]:
         # Определение что рендерить
         to_render_count = (
             self.get_for_rendering()
@@ -249,33 +249,46 @@ class Property:
         )
 
         # Рендер заголовка / пути
-        my_to_render = []
+        my_to_render: list[tuple[Statuses, str]] = []
         property_line_render = self.name is not None and (
             len(to_render_count) > 1 or force_multiline  # or self.status == Statuses.MODIFIED
         )
         params_tab_level = tab_level
         if property_line_render:
-            my_to_render.append(self._make_path_line(tab_level, to_crop))
+            my_to_render.append((self.status, self._make_path_line(tab_level, to_crop)))
             params_tab_level += 1
 
         # Рендер компараторов
         for compare in to_render_count:
-            my_to_render.append(compare.render(params_tab_level, not property_line_render, to_crop))
-
-        to_render = "\n".join(my_to_render)
+            my_to_render += compare._render_pairs(
+                params_tab_level, not property_line_render, to_crop
+            )
 
         compare_list = []
         for compare in to_render_count:
             compare_list.append(type(compare))
 
-        return to_render, list(dict.fromkeys([*compare_list]))
+        return my_to_render, list(dict.fromkeys([*compare_list]))
 
-    def render(
+    def self_render(
+        self,
+        tab_level: int = 0,
+        to_crop: tuple[int, int] = (0, 0),
+        force_multiline: bool = False,
+    ) -> tuple[str, list[type["Compare"]]]:
+        lines, compare_list = self._self_render_pairs(
+            tab_level=tab_level,
+            to_crop=to_crop,
+            force_multiline=force_multiline,
+        )
+        return "\n".join([line for _status, line in lines]), compare_list
+
+    def _render_pairs(
         self,
         tab_level: int = 0,
         _to_crop: tuple[int, int] = (0, 0),  # [schema, json]
-    ) -> tuple[list[str], list[type["Compare"]]]:
-        to_return: list[str] = []
+    ) -> tuple[list[tuple[Statuses, str]], list[type["Compare"]]]:
+        to_return: list[tuple[Statuses, str]] = []
         compare_list: list[type["Compare"]] = []
 
         children_for_rendering = []
@@ -284,12 +297,12 @@ class Property:
                 children_for_rendering.append(prop)
 
         if self.config.ALL_FOR_RENDERING or self.is_for_rendering():
-            start_line, start_compare = self.self_render(
+            start_lines, start_compare = self._self_render_pairs(
                 tab_level=tab_level,
                 to_crop=_to_crop,
                 force_multiline=len(children_for_rendering) > 0 and self.config.CROP_PATH,
             )
-            to_return.append(start_line)
+            to_return += start_lines
             compare_list = list(dict.fromkeys([*compare_list, *start_compare]))
 
         next_to_crop: bool = (
@@ -298,11 +311,16 @@ class Property:
 
         if next_to_crop:
             if not (self.config.ALL_FOR_RENDERING or self.is_for_rendering()):
-                to_return.append(self._make_path_line(tab_level=tab_level, to_crop=_to_crop))
+                to_return.append(
+                    (
+                        self.status,
+                        self._make_path_line(tab_level=tab_level, to_crop=_to_crop),
+                    )
+                )
             _to_crop = (len(self.schema_path) + 1, len(self.json_path) + 1)
 
         for prop in self.propertys.values():
-            part_lines, part_compare = prop.render(
+            part_lines, part_compare = prop._render_pairs(
                 tab_level=tab_level + (1 if next_to_crop else 0),
                 _to_crop=_to_crop,
             )
@@ -310,3 +328,11 @@ class Property:
             compare_list = list(dict.fromkeys([*compare_list, *part_compare]))
 
         return to_return, compare_list
+
+    def render(
+        self,
+        tab_level: int = 0,
+        _to_crop: tuple[int, int] = (0, 0),  # [schema, json]
+    ) -> tuple[list[str], list[type["Compare"]]]:
+        lines_with_status, compare_list = self._render_pairs(tab_level=tab_level, _to_crop=_to_crop)
+        return [line for _status, line in lines_with_status], compare_list
