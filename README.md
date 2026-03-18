@@ -28,6 +28,7 @@
 - 🎨 **Beautiful Output** - Colored, formatted differences with clear symbols  
 - 🔗 **Smart Combination** - Combines related parameters *(e.g., `minimum` + `maximum` = `range`)*
 - 📍 **Context Aware** - Shows related fields for better understanding *(e.g., `type` + `format`)*
+- 🔄 **Semantic Array Diff** - Ignores pure reorder noise and reports only real adds/removes/changes
 - ⚡ **High Performance** - Efficient algorithms for large schemas
 - 🛠️ **CLI & Python API & Sphinx Extension** - Use programmatically or from command line or in `.rst`
 - 🔧 **Highly Configurable** - Customize behavior for your needs
@@ -73,6 +74,23 @@ prop.print(with_legend=True)
 
 **Output:**
 ![./assets/example_working.svg](https://raw.githubusercontent.com/Miskler/jsonschema-diff/refs/heads/main/assets/example_working.svg)
+
+### Why It Beats Line-Based Diffs For Schemas
+
+For array-like schema parts, this library performs a semantic diff:
+
+- Pure reorder does not create noisy changes
+- `dict` elements are matched by structure (not by position)
+- Scalar elements are matched by value multiplicity (multiset logic)
+
+Example:
+
+```text
+[1, 2, 3] -> [3, 1, 2, 1]
+```
+
+A line-based diff typically reports multiple moved lines.
+`jsonschema-diff` reports just one meaningful change: `+ 1`.
 
 
 ### CLI Usage

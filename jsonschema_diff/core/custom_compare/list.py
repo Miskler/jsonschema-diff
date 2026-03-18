@@ -1,4 +1,6 @@
-import difflib
+import hashlib
+import json
+from collections import defaultdict, deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
@@ -137,6 +139,88 @@ class CompareList(Compare):
             return 1.0
         return unchanged / float(denom)
 
+    @staticmethod
+    def _stable_repr(value: Any) -> str:
+        try:
+            return json.dumps(value, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+        except TypeError:
+            return str(value)
+
+    @staticmethod
+    def _scalar_match_key(value: Any) -> str:
+        return f"{type(value).__qualname__}:{CompareList._stable_repr(value)}"
+
+    @staticmethod
+    def _stable_tie_break(old_repr: str, new_repr: str) -> float:
+        digest = hashlib.sha1(f"{old_repr}|{new_repr}".encode("utf-8")).digest()
+        return (int.from_bytes(digest[:8], byteorder="big", signed=False) / (2**64)) * 1e-9
+
+    @staticmethod
+    def _hungarian_max(weights: list[list[float]]) -> list[int]:
+        row_count = len(weights)
+        if row_count == 0:
+            return []
+
+        column_count = len(weights[0])
+        if column_count < row_count:
+            raise ValueError("Hungarian solver expects columns >= rows")
+
+        max_weight = max(max(row) for row in weights)
+        cost = [[max_weight - w for w in row] for row in weights]
+
+        u = [0.0] * (row_count + 1)
+        v = [0.0] * (column_count + 1)
+        p = [0] * (column_count + 1)
+        way = [0] * (column_count + 1)
+
+        for i in range(1, row_count + 1):
+            p[0] = i
+            j0 = 0
+            minv = [float("inf")] * (column_count + 1)
+            used = [False] * (column_count + 1)
+
+            while True:
+                used[j0] = True
+                i0 = p[j0]
+                delta = float("inf")
+                j1 = 0
+
+                for j in range(1, column_count + 1):
+                    if used[j]:
+                        continue
+                    cur = cost[i0 - 1][j - 1] - u[i0] - v[j]
+                    if cur < minv[j]:
+                        minv[j] = cur
+                        way[j] = j0
+                    if minv[j] < delta:
+                        delta = minv[j]
+                        j1 = j
+
+                for j in range(column_count + 1):
+                    if used[j]:
+                        u[p[j]] += delta
+                        v[j] -= delta
+                    else:
+                        minv[j] -= delta
+
+                j0 = j1
+                if p[j0] == 0:
+                    break
+
+            while True:
+                j1 = way[j0]
+                p[j0] = p[j1]
+                j0 = j1
+                if j0 == 0:
+                    break
+
+        assignment = [-1] * row_count
+        for j in range(1, column_count + 1):
+            if p[j] != 0:
+                assignment[p[j] - 1] = j - 1
+
+        return assignment
+
     def compare(self) -> Statuses:
         super().compare()
 
@@ -167,41 +251,79 @@ class CompareList(Compare):
             matched_old: set[int] = set()
             matched_new: set[int] = set()
 
-            # сформируем все кандидаты (score, i, j, prop), отсортируем по score по убыванию
-            candidates: list[tuple[float, int, int, Property]] = []
-            for oi, ov in old_dicts:
-                for nj, nv in new_dicts:
-                    prop = Property(
-                        config=self.config,
-                        name=None,
-                        schema_path=[],
-                        json_path=[],
-                        old_schema=ov,
-                        new_schema=nv,
+            if len(old_dicts) > 0 and len(new_dicts) > 0:
+                row_count = len(old_dicts)
+                real_column_count = len(new_dicts)
+
+                old_repr = [self._stable_repr(item[1]) for item in old_dicts]
+                new_repr = [self._stable_repr(item[1]) for item in new_dicts]
+
+                # Добавляем "dummy" колонки (unmatched old), чтобы не форсировать плохие пары.
+                score_matrix: list[list[float]] = [
+                    [0.0 for _ in range(real_column_count + row_count)] for _ in range(row_count)
+                ]
+                properties: dict[tuple[int, int], tuple[float, Property]] = {}
+
+                disallowed_score = -1_000_000.0
+                for old_row, (_oi, ov) in enumerate(old_dicts):
+                    for new_col, (_nj, nv) in enumerate(new_dicts):
+                        prop = Property(
+                            config=self.config,
+                            name=None,
+                            schema_path=[],
+                            json_path=[],
+                            old_schema=ov,
+                            new_schema=nv,
+                        )
+                        prop.compare()
+                        score = self._score_from_stats(prop.calc_diff())
+                        properties[(old_row, new_col)] = (score, prop)
+
+                        if score >= threshold:
+                            score_matrix[old_row][new_col] = score + self._stable_tie_break(
+                                old_repr[old_row],
+                                new_repr[new_col],
+                            )
+                        else:
+                            score_matrix[old_row][new_col] = disallowed_score
+
+                assignment = self._hungarian_max(score_matrix)
+                matched_by_old_row: dict[int, tuple[int, Property]] = {}
+
+                for old_row, matched_col in enumerate(assignment):
+                    if matched_col < 0 or matched_col >= real_column_count:
+                        continue
+
+                    score, prop = properties[(old_row, matched_col)]
+                    if score >= threshold:
+                        matched_by_old_row[old_row] = (matched_col, prop)
+
+                for old_row, (oi, _ov) in enumerate(old_dicts):
+                    pair = matched_by_old_row.get(old_row)
+                    if pair is None:
+                        continue
+
+                    matched_col, prop = pair
+                    nj, _nv = new_dicts[matched_col]
+
+                    matched_old.add(oi)
+                    matched_new.add(nj)
+
+                    # добавляем как один элемент списка с compared_property
+                    # статус NO_DIFF, если проперти без отличий, иначе MODIFIED
+                    status = (
+                        Statuses.NO_DIFF if prop.status == Statuses.NO_DIFF else Statuses.MODIFIED
                     )
-                    prop.compare()
-                    score = self._score_from_stats(prop.calc_diff())
-                    candidates.append((score, oi, nj, prop))
-            candidates.sort(key=lambda t: t[0], reverse=True)
-
-            # жадный матч по убыванию score с порогом
-            for score, oi, nj, prop in candidates:
-                if score < threshold:
-                    break
-                if oi in matched_old or nj in matched_new:
-                    continue
-                matched_old.add(oi)
-                matched_new.add(nj)
-
-                # добавляем как один элемент списка с compared_property
-                # статус NO_DIFF, если проперти без отличий, иначе MODIFIED
-                status = Statuses.NO_DIFF if prop.status == Statuses.NO_DIFF else Statuses.MODIFIED
-                el = CompareListElement(
-                    self.config, self.my_config, value=None, status=status, compared_property=prop
-                )
-                self.elements.append(el)
-                if status != Statuses.NO_DIFF:
-                    self.changed_elements.append(el)
+                    el = CompareListElement(
+                        self.config,
+                        self.my_config,
+                        value=None,
+                        status=status,
+                        compared_property=prop,
+                    )
+                    self.elements.append(el)
+                    if status != Statuses.NO_DIFF:
+                        self.changed_elements.append(el)
 
             # все старые dict, что не подобрались → DELETED
             for oi, ov in old_dicts:
@@ -224,7 +346,7 @@ class CompareList(Compare):
                     self.changed_elements.append(el)
 
             # ------------------------------
-            # 2) Прежняя логика для НЕ-словарей (order-sensitive) — через SequenceMatcher
+            # 2) НЕ-словари: order-insensitive multiset diff
             #    ВАЖНО: словари из сравнения исключаем, чтобы не дублировать их как insert/delete
             # ------------------------------
             def filter_non_dict(src: list[Any]) -> list[Any]:
@@ -233,40 +355,34 @@ class CompareList(Compare):
             old_rest = filter_non_dict(old_list)
             new_rest = filter_non_dict(new_list)
 
-            def get_str_list(v: Any) -> list[str] | str:
-                if isinstance(v, list):
-                    return [str(i) for i in v]
-                return str(v)
+            old_pool: dict[str, deque[int]] = defaultdict(deque)
+            for old_idx, old_value in enumerate(old_rest):
+                old_pool[self._scalar_match_key(old_value)].append(old_idx)
 
-            real_old_value = get_str_list(old_rest)
-            real_new_value = get_str_list(new_rest)
+            matched_old_indices: set[int] = set()
 
-            sm = difflib.SequenceMatcher(a=real_old_value, b=real_new_value, autojunk=False)
-            for tag, i1, i2, j1, j2 in sm.get_opcodes():
+            def add_element(value: Any, status: Statuses) -> None:
+                element = CompareListElement(self.config, self.my_config, value, status)
+                element.compare()
+                self.elements.append(element)
+                if status != Statuses.NO_DIFF:
+                    self.changed_elements.append(element)
 
-                def add_element(
-                    source: list[Any], status: Statuses, from_index: int, to_index: int
-                ) -> None:
-                    is_change = status != Statuses.NO_DIFF
-                    for v in source[from_index:to_index]:
-                        element = CompareListElement(self.config, self.my_config, v, status)
-                        element.compare()
-                        self.elements.append(element)
-                        if is_change:
-                            self.changed_elements.append(element)
+            # Рендерим в порядке new: совпавшие элементы считаем NO_DIFF, "лишние" справа — ADDED.
+            for new_value in new_rest:
+                key = self._scalar_match_key(new_value)
+                bucket = old_pool.get(key)
+                if bucket is not None and len(bucket) > 0:
+                    old_idx = bucket.popleft()
+                    matched_old_indices.add(old_idx)
+                    add_element(old_rest[old_idx], Statuses.NO_DIFF)
+                else:
+                    add_element(new_value, Statuses.ADDED)
 
-                match tag:
-                    case "equal":
-                        add_element(old_rest, Statuses.NO_DIFF, i1, i2)
-                    case "delete":
-                        add_element(old_rest, Statuses.DELETED, i1, i2)
-                    case "insert":
-                        add_element(new_rest, Statuses.ADDED, j1, j2)
-                    case "replace":
-                        add_element(old_rest, Statuses.DELETED, i1, i2)
-                        add_element(new_rest, Statuses.ADDED, j1, j2)
-                    case _:
-                        raise ValueError(f"Unknown tag: {tag}")
+            # Все непокрытые элементы old — DELETED (в старом порядке).
+            for old_idx, old_value in enumerate(old_rest):
+                if old_idx not in matched_old_indices:
+                    add_element(old_value, Statuses.DELETED)
 
             if len(self.changed_elements) > 0:
                 self.status = Statuses.MODIFIED

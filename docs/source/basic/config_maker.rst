@@ -25,3 +25,31 @@ For detailed information about the allowed parameters, see :py:meth:`~jsonschema
 
 The resulting object is :py:class:`~jsonschema_diff.core.config.Config`.
 
+
+Comparator-specific settings (advanced)
+---------------------------------------
+
+Use ``Config.COMPARE_CONFIG`` for comparator-specific knobs.
+For such cases, configure :class:`~jsonschema_diff.core.config.Config` directly.
+
+For :py:class:`~jsonschema_diff.core.custom_compare.list.CompareList`:
+
+* ``DICT_MATCH_THRESHOLD`` (``float``, default: ``0.10``) controls how strictly
+  dictionary elements are matched inside arrays.
+* This is intentionally **not** exposed as a dedicated ``ConfigMaker`` argument.
+
+.. code-block:: python
+
+   from jsonschema_diff.core import Config
+   from jsonschema_diff.core.custom_compare import CompareList
+
+   config = Config(
+       compare_rules={
+           list: CompareList,
+       },
+       compare_config={
+           CompareList: {
+               "DICT_MATCH_THRESHOLD": 0.25,
+           },
+       },
+   )

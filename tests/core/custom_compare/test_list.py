@@ -15,12 +15,22 @@ class DummyConfig:
         self.TAB = tab
         self.PATH_MAKER_IGNORE = []
         self.COMPARE_CONFIG = {}
+        self.PROPERTY_KEY_GROUPS = {
+            dict: ["properties", "patternProperties", "$defs"],
+            list: ["prefixItems", "items"],
+        }
+        self.COMPARE_RULES = {list: CompareList}
+        self.COMBINE_RULES = []
+        self.PAIR_CONTEXT_RULES = []
+        self.CONTEXT_RULES = {}
+        self.ALL_FOR_RENDERING = False
+        self.CROP_PATH = True
 
 
 # ---------------------------------
 # Вспомогательная фабрика
 # ---------------------------------
-def make_compare_list(old, new, key="myList"):
+def make_compare_list(old, new, key="myList", compare_config=None):
     """
     Создаёт CompareList, сразу вызывает .compare() и возвращает объект.
     old / new могут быть None.
@@ -31,8 +41,12 @@ def make_compare_list(old, new, key="myList"):
         new_key=key if new is not None else None,
         new_value=new,
     )
+    config = DummyConfig()
+    if compare_config is not None:
+        config.COMPARE_CONFIG = compare_config
+
     cmp = CompareList(
-        config=DummyConfig(),
+        config=config,
         schema_path=[],
         json_path=[],
         to_compare=[tc],
@@ -113,6 +127,44 @@ def test_modified_list_replace_middle():
     expected = [Statuses.NO_DIFF, Statuses.ADDED, Statuses.NO_DIFF, Statuses.NO_DIFF]
     assert [e.status for e in cmp.elements] == expected
     assert len(cmp.changed_elements) == 1 and cmp.changed_elements[0].value == "X"
+
+
+def test_scalar_reorder_with_extra_duplicate_reports_only_added():
+    old = [1, 2, 3]
+    new = [3, 1, 2, 1]
+
+    cmp = make_compare_list(old, new)
+
+    assert cmp.status is Statuses.MODIFIED
+    assert [e.status for e in cmp.changed_elements] == [Statuses.ADDED]
+    assert [e.value for e in cmp.changed_elements] == [1]
+    assert all(e.status is not Statuses.DELETED for e in cmp.changed_elements)
+
+
+def test_dict_matching_is_stable_for_new_order():
+    compare_config = {CompareList: {"DICT_MATCH_THRESHOLD": 0.40}}
+
+    old = [
+        {"common": 1},
+        {"common": 1, "bx": 0},
+    ]
+    new_xy = [
+        {"common": 1, "bx": 1},
+        {"common": 1, "ay": 1},
+    ]
+    new_yx = [new_xy[1], new_xy[0]]
+
+    cmp_xy = make_compare_list(old, new_xy, compare_config=compare_config)
+    cmp_yx = make_compare_list(old, new_yx, compare_config=compare_config)
+
+    assert cmp_xy.status is Statuses.MODIFIED
+    assert cmp_yx.status is Statuses.MODIFIED
+
+    changed_xy = [e.status for e in cmp_xy.changed_elements]
+    changed_yx = [e.status for e in cmp_yx.changed_elements]
+    assert changed_xy == [Statuses.MODIFIED, Statuses.MODIFIED]
+    assert changed_yx == [Statuses.MODIFIED, Statuses.MODIFIED]
+    assert cmp_xy.render(with_path=False) == cmp_yx.render(with_path=False)
 
 
 # --- Legend ------------------------------------------------------
