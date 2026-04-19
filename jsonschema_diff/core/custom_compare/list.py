@@ -1,5 +1,6 @@
 import hashlib
 import json
+import string
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Optional
@@ -215,10 +216,55 @@ class CompareListElement:
 
 
 class CompareList(Compare):
+    DELETED_LIST_RENDER_DEFAULT = "[{count} items]"
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.elements: list[CompareListElement] = []
         self.changed_elements: list[CompareListElement] = []
+
+    def _deleted_list_render_template(self) -> str | None:
+        template = self.my_config.get("DELETED_LIST_RENDER", self.DELETED_LIST_RENDER_DEFAULT)
+        if template is None:
+            return None
+        if not isinstance(template, str):
+            raise TypeError("CompareList DELETED_LIST_RENDER must be str or None")
+
+        formatter = string.Formatter()
+        field_names = {
+            field_name
+            for _literal_text, field_name, _format_spec, _conversion in formatter.parse(template)
+            if field_name is not None
+        }
+        if "count" not in field_names:
+            raise ValueError("CompareList DELETED_LIST_RENDER must contain {count}")
+
+        return template
+
+    def _deleted_items_count(self) -> int:
+        if isinstance(self.old_value, list):
+            return len(self.old_value)
+        if self.old_value is None:
+            return 0
+        return 1
+
+    def _render_deleted_summary(
+        self, tab_level: int = 0, with_path: bool = True, to_crop: tuple[int, int] = (0, 0)
+    ) -> list[tuple[Statuses, str]] | None:
+        if self.status is not Statuses.DELETED:
+            return None
+
+        template = self._deleted_list_render_template()
+        if template is None:
+            return None
+
+        return [
+            (
+                self.status,
+                f"{self._render_start_line(tab_level=tab_level, with_path=with_path, to_crop=to_crop)} "
+                f"{template.format(count=self._deleted_items_count())}",
+            )
+        ]
 
     # --- вспомогательное: score ∈ [0..1] из Property.calc_diff()
     def _score_from_stats(self, stats: Dict[str, int]) -> float:
@@ -497,6 +543,12 @@ class CompareList(Compare):
     def _render_pairs(
         self, tab_level: int = 0, with_path: bool = True, to_crop: tuple[int, int] = (0, 0)
     ) -> list[tuple[Statuses, str]]:
+        deleted_summary = self._render_deleted_summary(
+            tab_level=tab_level, with_path=with_path, to_crop=to_crop
+        )
+        if deleted_summary is not None:
+            return deleted_summary
+
         to_return: list[tuple[Statuses, str]] = [
             (
                 self.status,

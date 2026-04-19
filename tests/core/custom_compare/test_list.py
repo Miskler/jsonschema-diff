@@ -1,6 +1,8 @@
 # ---------------------------------
 # Импортируем тестируемый модуль
 # ---------------------------------
+import pytest
+
 from jsonschema_diff.core.abstraction import Statuses, ToCompare
 from jsonschema_diff.core.custom_compare.list import CompareList
 
@@ -97,8 +99,30 @@ def test_deleted_list():
     assert [e.status for e in cmp.elements] == [Statuses.DELETED] * len(old)
 
     lines = cmp.render(with_path=False).splitlines()
+    assert lines == ["- .myList: [2 items]"]
+
+
+def test_deleted_list_can_render_fully_when_summary_disabled():
+    old = [1, 2]
+    cmp = make_compare_list(old, None, compare_config={CompareList: {"DELETED_LIST_RENDER": None}})
+
+    lines = cmp.render(with_path=False).splitlines()
+
     assert len(lines) == 1 + len(old)
+    assert lines[0] == "- .myList:"
     assert all(line.lstrip().startswith("-") for line in lines[1:])
+
+
+def test_deleted_list_template_must_contain_count():
+    old = [1, 2]
+    cmp = make_compare_list(
+        old,
+        None,
+        compare_config={CompareList: {"DELETED_LIST_RENDER": "[items]"}},
+    )
+
+    with pytest.raises(ValueError, match=r"\{count\}"):
+        cmp.render(with_path=False)
 
 
 # --- MODIFIED (insert) ------------------------------------------

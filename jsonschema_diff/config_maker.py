@@ -6,6 +6,7 @@ All optional switches are enabled by default; pass ``False`` to disable.
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 from .core import Compare, Config
 from .core.custom_compare import CompareList, CompareRange
@@ -45,6 +46,7 @@ class ConfigMaker:
         path_render_with_items: bool = False,
         list_comparator: bool = True,
         list_multiline_render: MultilineListRender = MultilineListRender.Soft,
+        deleted_list_render: Optional[str] = "[{count} items]",
         range_digit_comparator: bool = True,
         range_length_comparator: bool = True,
         range_items_comparator: bool = True,
@@ -68,6 +70,10 @@ class ConfigMaker:
             Enable :class:`~jsonschema_diff.core.custom_compare.CompareList`.
         list_multiline_render : MultilineListRender
             How to render multi-line elements of list.
+        deleted_list_render : str | None
+            How to render a fully deleted array key. ``None`` keeps the old
+            full multi-line rendering, while a string template must include
+            ``{count}``.
         range_*_comparator : bool
             Enable :class:`~jsonschema_diff.core.custom_compare.CompareRange`
             for numeric/length/items/properties limits.
@@ -90,6 +96,7 @@ class ConfigMaker:
                 field: getattr(list_multiline_render.value, field)
                 for field in list_multiline_render.value.__dataclass_fields__
             }
+            compare_config[CompareList]["DELETED_LIST_RENDER"] = deleted_list_render
 
         def add_rule(keys: list[str], value: type[Compare]) -> None:
             combine_rules.append(keys)
