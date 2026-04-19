@@ -152,3 +152,61 @@ def test_list_multiline_boundaries_follow_status_groups_for_matched_dict():
     assert any(
         line.lstrip().startswith("+") and "╰" in line and ".format: uri" in line for line in lines
     )
+
+
+def test_nested_scalar_enum_keeps_single_multiline_frame_when_item_added_in_middle():
+    old = {
+        "properties": {
+            "workTime": {
+                "anyOf": [
+                    {
+                        "enum": [
+                            "Откроется в 09:00",
+                            "Откроется в 08:00",
+                            "Откроется в 10:00",
+                            "Откроется в 07:30",
+                            "Откроется в 08:30",
+                            "Откроется в 09:30",
+                            "Откроется в 07:00",
+                            "Откроется в 11:00",
+                            "Откроется в 00:09",
+                            "Откроется в 09:21",
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+    new = {
+        "properties": {
+            "workTime": {
+                "anyOf": [
+                    {
+                        "enum": [
+                            "Откроется в 09:00",
+                            "Откроется в 08:00",
+                            "Откроется в 10:00",
+                            "Откроется в 07:30",
+                            "Откроется в 08:30",
+                            "Откроется в 09:30",
+                            "Откроется в 07:00",
+                            "Открыто до 21:00",
+                            "Откроется в 11:00",
+                            "Откроется в 00:09",
+                            "Откроется в 09:21",
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+
+    prop = make_prop(old, new, config=ConfigMaker.make(), name=None)
+
+    lines, _ = prop.render()
+
+    assert any(line == 'm ["workTime"].anyOf:' for line in lines)
+    assert any(line == "m •  .enum:" for line in lines)
+    assert any("╭  •  Откроется в 09:00" in line for line in lines)
+    assert any("│  •  Открыто до 21:00" in line for line in lines)
+    assert any("╰  •  Откроется в 09:21" in line for line in lines)

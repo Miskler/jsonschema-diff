@@ -62,6 +62,95 @@ class CompareListElement:
         # Иначе — старое поведение (строка/число/пр. выводим как есть)
         return [(self.status, f"{self.status.value} {self.config.TAB * tab_level}{self.value}")]
 
+    def _is_nested_scalar_list(
+        self, lines: list[tuple[Statuses, str]], tab_level: int
+    ) -> bool:
+        if self.compared_property is None or len(lines) <= 1:
+            return False
+
+        first_line = lines[0][1]
+        if ":" not in first_line:
+            return False
+
+        markers = {
+            value
+            for value in (
+                self.my_config.get("SINGLE_LINE", " "),
+                self.my_config.get("START_LINE", " "),
+                self.my_config.get("MIDDLE_LINE", " "),
+                self.my_config.get("END_LINE", " "),
+            )
+            if value != " "
+        }
+        if len(markers) <= 0:
+            return False
+
+        probe_start = len(self.config.TAB) * tab_level
+        for _status, line in lines[1:]:
+            probe = line[probe_start:]
+            marker_positions = [
+                (probe.find(marker), marker) for marker in markers if probe.find(marker) != -1
+            ]
+            if len(marker_positions) <= 0:
+                return False
+            marker_idx, marker = min(marker_positions, key=lambda item: item[0])
+            tail = probe[marker_idx + len(marker) :].strip()
+            if len(tail) <= 0:
+                return False
+            if tail.endswith(":"):
+                return False
+            if tail.startswith(".") or tail.startswith("["):
+                return False
+
+        return True
+
+    def _render_nested_scalar_list(
+        self, lines: list[tuple[Statuses, str]], tab_level: int
+    ) -> list[tuple[Statuses, str]]:
+        head_status, head_line = lines[0]
+        rendered = [
+            (
+                head_status,
+                self.replace_penultimate_space(
+                    tab_level=tab_level,
+                    s=head_line,
+                    repl=self.my_config.get("SINGLE_LINE", " "),
+                ),
+            )
+        ]
+
+        body = lines[1:]
+        if len(body) == 1:
+            only_status, only_line = body[0]
+            rendered.append(
+                (
+                    only_status,
+                    self.replace_penultimate_space(
+                        tab_level=tab_level,
+                        s=only_line,
+                        repl=self.my_config.get("SINGLE_LINE", " "),
+                    ),
+                )
+            )
+            return rendered
+
+        for idx, (line_status, line) in enumerate(body):
+            if idx == 0:
+                repl = self.my_config.get("START_LINE", " ")
+            elif idx == len(body) - 1:
+                repl = self.my_config.get("END_LINE", " ")
+            else:
+                repl = self.my_config.get("MIDDLE_LINE", " ")
+
+            rendered.append(
+                (
+                    line_status,
+                    self.replace_penultimate_space(tab_level=tab_level, s=line, repl=repl),
+                )
+            )
+
+        return rendered
+
     def _render_pairs(self, tab_level: int = 0) -> list[tuple[Statuses, str]]:
         lines = [
             (status, line)
@@ -72,6 +161,9 @@ class CompareListElement:
             # В крайне редких случаях, длина списка == 0
             # мне лень разбираться, так что легализуем
             return []
+
+        if self._is_nested_scalar_list(lines, tab_level):
+            return self._render_nested_scalar_list(lines, tab_level)
 
         to_return: list[tuple[Statuses, str]] = []
         i = 0
