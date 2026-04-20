@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:test:catalog:v2",
+  "title": "CatalogEntry",
+  "description": "Expanded catalog entry schema for a richer storefront API.",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "sku": {
+      "type": "string",
+      "pattern": "^[A-Z0-9]{5}-[A-Z0-9]{5}$",
+      "minLength": 11,
+      "maxLength": 11
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "review", "active", "deleted"]
+    },
+    "price": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "exclusiveMaximum": 1500
+    },
+    "discount": {
+      "type": "number",
+      "minimum": 5,
+      "maximum": 75
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["USD", "EUR", "GBP"]
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 20
+      },
+      "minItems": 0,
+      "maxItems": 8,
+      "uniqueItems": true
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 9999
+        },
+        "height": {
+          "type": "number",
+          "minimum": 1
+        },
+        "depth": {
+          "type": "number",
+          "minimum": 0
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["mm", "cm", "in"]
+        }
+      },
+      "required": ["width", "height", "depth", "unit"],
+      "minProperties": 2,
+      "maxProperties": 4
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": {
+          "type": "string"
+        },
+        "^meta:": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "shippingAddress": {
+      "$ref": "#/$defs/address"
+    },
+    "channels": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "boolean"
+        }
+      ],
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "paymentMethods": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "card"
+            },
+            "last4": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 4
+            },
+            "token": {
+              "type": "string",
+              "minLength": 8
+            }
+          },
+          "required": ["kind", "last4", "token"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "wallet"
+            },
+            "provider": {
+              "type": "string",
+              "enum": ["apple", "google"]
+            }
+          },
+          "required": ["kind", "provider"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "crypto"
+            },
+            "network": {
+              "type": "string",
+              "enum": ["btc", "eth", "sol"]
+            }
+          },
+          "required": ["kind", "network"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": ["sku", "status", "price", "currency"],
+  "$defs": {
+    "address": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "line1": {
+          "type": "string",
+          "minLength": 1
+        },
+        "city": {
+          "type": "string",
+          "minLength": 3
+        },
+        "postalCode": {
+          "type": "string",
+          "pattern": "^[A-Z0-9 -]{4,12}$"
+        },
+        "country": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 2
+        },
+        "region": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64
+        }
+      },
+      "required": ["line1", "city", "postalCode", "country", "region"]
+    }
+  }
+}

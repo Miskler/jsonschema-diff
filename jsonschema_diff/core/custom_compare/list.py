@@ -53,6 +53,24 @@ class CompareListElement:
         )  # 1 + (len(self.config.TAB) * tab_level) - 1 # PREFIX + TAB * COUNT - 1
         return s[:position] + repl + s[position:]
 
+    def _probe_tail(self, line: str, tab_level: int) -> str:
+        return line[len(self.config.TAB) * tab_level :].lstrip()
+
+    def _probe(self, line: str, tab_level: int) -> str:
+        return line[len(self.config.TAB) * tab_level :]
+
+    @staticmethod
+    def _is_header_tail(tail: str) -> bool:
+        return tail.endswith(":")
+
+    @staticmethod
+    def _is_bullet_tail(tail: str) -> bool:
+        return tail.startswith("•")
+
+    @staticmethod
+    def _leading_spaces(value: str) -> int:
+        return len(value) - len(value.lstrip(" "))
+
     def _raw_pairs(self, tab_level: int = 0) -> list[tuple[Statuses, str]]:
         if self.compared_property is not None:
             render_lines, _render_compares = self.compared_property._render_pairs(
@@ -152,6 +170,83 @@ class CompareListElement:
 
         return rendered
 
+    def _render_group(
+        self, group: list[tuple[Statuses, str]], tab_level: int
+    ) -> list[tuple[Statuses, str]]:
+        if len(group) <= 0:
+            return []
+
+        if len(group) == 1:
+            return [
+                (
+                    group[0][0],
+                    self.replace_penultimate_space(
+                        tab_level=tab_level,
+                        s=group[0][1],
+                        repl=self.my_config.get("SINGLE_LINE", " "),
+                    ),
+                )
+            ]
+
+        rendered: list[tuple[Statuses, str]] = []
+        for idx, (line_status, line) in enumerate(group):
+            if idx == 0:
+                repl = self.my_config.get("START_LINE", " ")
+            elif idx == len(group) - 1:
+                repl = self.my_config.get("END_LINE", " ")
+            else:
+                repl = self.my_config.get("MIDDLE_LINE", " ")
+
+            rendered.append(
+                (
+                    line_status,
+                    self.replace_penultimate_space(tab_level=tab_level, s=line, repl=repl),
+                )
+            )
+
+        return rendered
+
+    def _split_logical_groups(
+        self, lines: list[tuple[Statuses, str]], tab_level: int
+    ) -> list[list[tuple[Statuses, str]]]:
+        groups: list[list[tuple[Statuses, str]]] = []
+        i = 0
+
+        while i < len(lines):
+            current_probe = self._probe(lines[i][1], tab_level)
+            current_indent = self._leading_spaces(current_probe)
+            current_tail = current_probe.lstrip()
+
+            # Preserve "header + its bullet/deeper children" as a single block,
+            # even if statuses differ inside that block.
+            if self._is_header_tail(current_tail):
+                j = i + 1
+                while j < len(lines):
+                    next_probe = self._probe(lines[j][1], tab_level)
+                    next_indent = self._leading_spaces(next_probe)
+                    next_tail = next_probe.lstrip()
+
+                    if next_indent < current_indent:
+                        break
+                    if next_indent == current_indent and not self._is_bullet_tail(next_tail):
+                        break
+                    j += 1
+
+                if j > i + 1:
+                    groups.append(lines[i:j])
+                    i = j
+                    continue
+
+            status = lines[i][0]
+            j = i + 1
+            while j < len(lines) and lines[j][0] == status:
+                j += 1
+
+            groups.append(lines[i:j])
+            i = j
+
+        return groups
+
     def _render_pairs(self, tab_level: int = 0) -> list[tuple[Statuses, str]]:
         lines = [
             (status, line)
@@ -167,44 +262,8 @@ class CompareListElement:
             return self._render_nested_scalar_list(lines, tab_level)
 
         to_return: list[tuple[Statuses, str]] = []
-        i = 0
-        # Рендерим «рамку» по группам одинаковых статусов.
-        # Так границы не «перетекают» между DELETED/ADDED/NO_DIFF блоками.
-        while i < len(lines):
-            status = lines[i][0]
-            j = i + 1
-            while j < len(lines) and lines[j][0] == status:
-                j += 1
-
-            group = lines[i:j]
-            if len(group) == 1:
-                to_return.append(
-                    (
-                        group[0][0],
-                        self.replace_penultimate_space(
-                            tab_level=tab_level,
-                            s=group[0][1],
-                            repl=self.my_config.get("SINGLE_LINE", " "),
-                        ),
-                    )
-                )
-            else:
-                for k, (line_status, line) in enumerate(group):
-                    if k == 0:
-                        repl = self.my_config.get("START_LINE", " ")
-                    elif k == len(group) - 1:
-                        repl = self.my_config.get("END_LINE", " ")
-                    else:
-                        repl = self.my_config.get("MIDDLE_LINE", " ")
-
-                    to_return.append(
-                        (
-                            line_status,
-                            self.replace_penultimate_space(tab_level=tab_level, s=line, repl=repl),
-                        )
-                    )
-
-            i = j
+        for group in self._split_logical_groups(lines, tab_level):
+            to_return.extend(self._render_group(group, tab_level))
 
         return to_return
 

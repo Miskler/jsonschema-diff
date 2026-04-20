@@ -68,6 +68,18 @@ For example the handler :class:`~jsonschema_diff.core.custom_compare.CompareRang
 * ("minItems", "maxItems")
 * ("minProperties", "maxProperties")
 
+Catalog stress test
+-------------------
+
+This pair is intentionally dense: it mixes range changes, enum churn, tuple arrays,
+`patternProperties`, nested `$defs`, and a `oneOf` branch swap in one schema.
+The `╭/│/╰` markers below belong to multiline nested blocks, not array boundaries;
+`rangeLength` here is the string-length comparator for `token`.
+
+.. jsonschemadiff:: basic/how_read_it/jsons/catalog.old.schema.json basic/how_read_it/jsons/catalog.new.schema.json
+   :title: Catalog stress test
+   :no-legend:
+
 .. toctree::
    :maxdepth: 4
 

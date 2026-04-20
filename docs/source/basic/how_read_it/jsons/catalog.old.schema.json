@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:test:catalog:v1",
+  "title": "CatalogItem",
+  "description": "Legacy catalog item schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "sku": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}-\\d{4}$",
+      "minLength": 8,
+      "maxLength": 8
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "active", "archived"]
+    },
+    "price": {
+      "type": "number",
+      "minimum": 0,
+      "exclusiveMaximum": 1000
+    },
+    "discount": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 50
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 12
+      },
+      "minItems": 1,
+      "maxItems": 5,
+      "uniqueItems": true
+    },
+    "dimensions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "width": {
+          "type": "number",
+          "minimum": 0
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0
+        },
+        "depth": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": ["width", "height", "depth"],
+      "minProperties": 3,
+      "maxProperties": 3
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "shippingAddress": {
+      "$ref": "#/$defs/address"
+    },
+    "channels": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "paymentMethods": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "card"
+            },
+            "last4": {
+              "type": "string",
+              "minLength": 4,
+              "maxLength": 4
+            }
+          },
+          "required": ["kind", "last4"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "bank"
+            },
+            "iban": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]+$"
+            }
+          },
+          "required": ["kind", "iban"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "required": ["sku", "status", "price"],
+  "$defs": {
+    "address": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "line1": {
+          "type": "string",
+          "minLength": 1
+        },
+        "city": {
+          "type": "string",
+          "minLength": 2
+        },
+        "postalCode": {
+          "type": "string",
+          "pattern": "^[0-9]{5}$"
+        },
+        "country": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 2
+        }
+      },
+      "required": ["line1", "city", "postalCode", "country"]
+    }
+  }
+}

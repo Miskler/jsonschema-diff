@@ -3,6 +3,7 @@
 # ---------------------------------
 import pytest
 
+from jsonschema_diff import ConfigMaker, JsonSchemaDiff
 from jsonschema_diff.core.abstraction import Statuses, ToCompare
 from jsonschema_diff.core.custom_compare.list import CompareList
 
@@ -196,3 +197,54 @@ def test_legend_has_required_keys():
     legend = CompareList.legend()
     assert isinstance(legend, dict)
     assert {"element", "description", "example"} <= legend.keys()
+
+
+def test_nested_required_block_splits_following_sibling_property_blocks():
+    old = {
+        "oneOf": [
+            {
+                "type": "object",
+                "properties": {
+                    "kind": {"const": "card"},
+                    "last4": {"type": "string", "minLength": 4, "maxLength": 4},
+                },
+                "required": ["kind", "last4"],
+                "additionalProperties": False,
+            }
+        ]
+    }
+    new = {
+        "oneOf": [
+            {
+                "type": "object",
+                "properties": {
+                    "kind": {"const": "card"},
+                    "last4": {"type": "string", "minLength": 4, "maxLength": 4},
+                    "token": {"type": "string", "minLength": 8},
+                    "provider": {"type": "string", "enum": ["visa", "mc"]},
+                },
+                "required": ["kind", "last4", "token", "provider"],
+                "additionalProperties": False,
+            }
+        ]
+    }
+
+    text, comparators = JsonSchemaDiff.fast_pipeline(ConfigMaker.make(), old, new, None)
+
+    assert text.splitlines() == [
+        "m .oneOf:",
+        "m ╭  .required:",
+        "  │  •  kind",
+        "  │  •  last4",
+        "+ │  •  token",
+        "+ ╰  •  provider",
+        '+ ╭  ["token"]:',
+        "+ │    .rangeLength: [8 ... ∞)",
+        "+ ╰    .type: string",
+        '+ ╭  ["provider"]:',
+        "+ │    .type: string",
+        "+ │    .enum:",
+        "+ │    •  visa",
+        "+ ╰    •  mc",
+    ]
+    assert [c.__name__ for c in comparators] == ["CompareList"]
